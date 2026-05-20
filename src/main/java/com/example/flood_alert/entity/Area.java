@@ -2,19 +2,19 @@ package com.example.flood_alert.entity;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
+
+import org.locationtech.jts.geom.MultiPolygon;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,15 +30,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level= AccessLevel.PRIVATE)
 @Entity
-public class Area {
-    @Id
-    @GeneratedValue(strategy=GenerationType.UUID)
-    String area_id;
-
+@Table(name="areas")
+public class Area extends BaseEntity{
     String tenkhuvuc;
 
-    
-    @Lob //Đánh dấu dữ liệu lớn
     @Column(columnDefinition = "TEXT") //ép PostgreSQL dùng kiểu TEXT
     String mota;
 
@@ -58,6 +53,9 @@ public class Area {
 
     @Column(precision=10,scale=6)
     BigDecimal lon;
+
+    @Column(columnDefinition="geometry(MultiPolygon,4326)")
+    MultiPolygon polygon;
 
     @JsonIgnore
     @OneToMany(mappedBy="area")
