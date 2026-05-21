@@ -41,6 +41,7 @@ public class AreaDataInitializerService {
     
     GeometryFactory geometryFactory =
         new GeometryFactory();
+
     @Transactional
     public void init() {
 

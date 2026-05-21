@@ -1,14 +1,12 @@
 package com.example.flood_alert.configuration;
 
-import java.util.UUID;
-
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.example.flood_alert.service.AreaDataInitializerService;
 import com.example.flood_alert.service.UserDataInitializerService;
-import com.fasterxml.uuid.Generators;
+import com.example.flood_alert.service.WeatherDataInitializerService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

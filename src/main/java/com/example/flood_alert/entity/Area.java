@@ -2,7 +2,6 @@ package com.example.flood_alert.entity;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 import org.locationtech.jts.geom.MultiPolygon;
 
@@ -60,4 +59,8 @@ public class Area extends BaseEntity{
     @JsonIgnore
     @OneToMany(mappedBy="area")
     List<User> users;
+
+    @JsonIgnore
+    @OneToMany(mappedBy="area")
+    List<WeatherData> weatherData;
 }
