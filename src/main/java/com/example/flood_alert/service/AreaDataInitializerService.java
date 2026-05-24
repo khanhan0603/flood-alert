@@ -19,9 +19,6 @@ import org.springframework.stereotype.Service;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.repository.AreaRepository;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -35,14 +32,9 @@ public class AreaDataInitializerService {
 
     AreaRepository areaRepository;
 
-    @PersistenceContext
-    EntityManager entityManager;
-
-    
     GeometryFactory geometryFactory =
         new GeometryFactory();
 
-    @Transactional
     public void init() {
 
         try {
@@ -73,11 +65,6 @@ public class AreaDataInitializerService {
 
             log.error(
                 "ERROR IMPORT",
-                e
-            );
-
-            throw new IllegalStateException(
-                "Cannot import area data",
                 e
             );
         }
@@ -202,13 +189,7 @@ public class AreaDataInitializerService {
 
             count++;
 
-            // batch flush
             if (count % 20 == 0) {
-
-                entityManager.flush();
-
-                entityManager.clear();
-
                 log.info(
                     "IMPORTED PROVINCE: {}",
                     count
@@ -359,13 +340,7 @@ public class AreaDataInitializerService {
 
             count++;
 
-            // batch flush
             if (count % 100 == 0) {
-
-                entityManager.flush();
-
-                entityManager.clear();
-
                 log.info(
                     "IMPORTED WARD: {}",
                     count
