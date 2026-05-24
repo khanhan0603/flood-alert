@@ -2,45 +2,21 @@ services:
   - type: web
     name: flood-alert-api
     runtime: docker
-    plan: free
+    plan: starter
     region: singapore
     healthCheckPath: /health
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: flood-alert-db
-          property: connectionString
+      - key: SPRING_DATASOURCE_URL
+        sync: false
       - key: SPRING_DATASOURCE_USERNAME
-        fromDatabase:
-          name: flood-alert-db
-          property: user
+        sync: false
       - key: SPRING_DATASOURCE_PASSWORD
-        fromDatabase:
-          name: flood-alert-db
-          property: password
+        sync: false
       - key: SPRING_DATA_REDIS_URL
-        fromService:
-          type: keyvalue
-          name: flood-alert-redis
-          property: connectionString
+        sync: false
       - key: JWT_SIGNEDKEY
-        generateValue: true
+        sync: false
       - key: SQL_INIT_MODE
-        value: always
+        value: never
       - key: SPRING_JPA_SHOW_SQL
         value: false
-
-  - type: keyvalue
-    name: flood-alert-redis
-    plan: free
-    region: singapore
-    ipAllowList: []
-    maxmemoryPolicy: noeviction
-
-databases:
-  - name: flood-alert-db
-    databaseName: flood_alert
-    user: flood_alert
-    plan: free
-    region: singapore
-    postgresMajorVersion: "15"
