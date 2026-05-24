@@ -32,6 +32,7 @@ services:
 
   - type: keyvalue
     name: flood-alert-redis
+    plan: free
     region: singapore
     ipAllowList: []
     maxmemoryPolicy: noeviction
