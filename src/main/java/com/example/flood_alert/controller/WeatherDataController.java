@@ -11,6 +11,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 @Slf4j
 @RestController
@@ -21,12 +23,11 @@ public class WeatherDataController {
     WeatherDataInitializerService weatherDataInitializerService;
 
     @PostMapping("/backfill")
-    public String backfill(
-            @RequestParam(defaultValue = "2") int limit
-    ) {
+    public String backfill() {
 
-        weatherDataInitializerService.backfill(limit);
+        weatherDataInitializerService.backfill();
 
         return "DONE";
     }
+    
 }

@@ -9,6 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +25,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name="weather_datas")
+@Table(name="weather_datas",
+        uniqueConstraints={
+            @UniqueConstraint(name="uk_area_id_time",columnNames={"area_id","time"})
+        })
 public class WeatherData extends BaseEntity{
     @Column(precision=10,scale=2)
     BigDecimal rainfall;

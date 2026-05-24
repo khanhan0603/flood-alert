@@ -1,0 +1,54 @@
+package com.example.flood_alert.service;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.flood_alert.dbo.response.AreaSimpleResponse;
+import com.example.flood_alert.entity.Area;
+import com.example.flood_alert.mapper.AreaMapper;
+import com.example.flood_alert.repository.AreaRepository;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Transactional(readOnly = true) // Thêm dòng này — giữ session mở trong suốt transaction
+public class AreaService {
+    final AreaMapper areaMapper;
+    final AreaRepository areaRepository;
+
+    public List<AreaSimpleResponse> getAllAreaByTree() {
+        List<Area> areas = areaRepository.findAllByOrderByLevelAsc();
+        Map<UUID, AreaSimpleResponse> map = new HashMap<>();
+        List<AreaSimpleResponse> roots = new ArrayList<>();
+
+        for (Area area : areas) {
+            AreaSimpleResponse response = areaMapper.toSimpleResponse(area);
+            map.put(area.getId(), response);
+        }
+
+        for (Area area : areas) {
+            AreaSimpleResponse current = map.get(area.getId());
+
+            if (area.getParent() == null) {
+                roots.add(current);
+            } else {
+                AreaSimpleResponse parent = map.get(area.getParent().getId()); // LAZY trigger ở đây
+                if (parent != null) { // Thêm null check phòng data inconsistent
+                    parent.getChildren().add(current);
+                }
+            }
+        }
+
+        return roots;
+    }
+}

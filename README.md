@@ -47,3 +47,27 @@ It is being developed to:
 ```bash
 mvn spring-boot:run
 ```
+
+---
+
+## Deploy Backend to Render
+
+This repo includes Render deployment files:
+
+- `Dockerfile`: builds and runs the Spring Boot app with Java 21
+- `render.yaml`: creates the API service, PostgreSQL database, and Redis-compatible Render Key Value instance
+- `/health`: lightweight health check endpoint for Render
+
+### Steps
+
+1. Push this repository to GitHub.
+2. In Render, choose **New > Blueprint**.
+3. Connect the GitHub repository and select the branch containing `render.yaml`.
+4. Apply the Blueprint.
+5. After the PostgreSQL database is created, open the database shell and run:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+
+The app also runs this SQL on startup when `SQL_INIT_MODE=always`, but running it once manually makes the first deploy easier to debug.

@@ -7,9 +7,11 @@ import org.locationtech.jts.geom.MultiPolygon;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -29,7 +31,11 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level= AccessLevel.PRIVATE)
 @Entity
-@Table(name="areas")
+@Table(name="areas",
+    indexes={
+        @Index(name="idx_area_level_id",columnList="level,id"),
+        @Index(name="idx_area_parent_id",columnList="parent_id")
+    })
 public class Area extends BaseEntity{
     String tenkhuvuc;
 
@@ -53,6 +59,7 @@ public class Area extends BaseEntity{
     @Column(precision=10,scale=6)
     BigDecimal lon;
 
+    @Basic(fetch=FetchType.LAZY)
     @Column(columnDefinition="geometry(MultiPolygon,4326)")
     MultiPolygon polygon;
 
