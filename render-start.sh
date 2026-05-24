@@ -15,4 +15,17 @@ if [ -n "${DATABASE_URL:-}" ] && [ -z "${SPRING_DATASOURCE_URL:-}" ]; then
   esac
 fi
 
+if [ -n "${SPRING_DATASOURCE_URL:-}" ]; then
+  case "$SPRING_DATASOURCE_URL" in
+    jdbc:*)
+      ;;
+    postgresql://*)
+      export SPRING_DATASOURCE_URL="jdbc:$SPRING_DATASOURCE_URL"
+      ;;
+    postgres://*)
+      export SPRING_DATASOURCE_URL="jdbc:postgresql://${SPRING_DATASOURCE_URL#postgres://}"
+      ;;
+  esac
+fi
+
 exec java ${JAVA_OPTS:-} -Dserver.port="${PORT:-8080}" -jar /app/app.jar
