@@ -39,13 +39,10 @@ public class AreaDataInitializerService {
 
         try {
 
-            // check exist
-            if (areaRepository.count() > 0) {
-
-                log.info(
-                    "AREA ALREADY EXISTS"
-                );
-
+            long wardCount = areaRepository.countByLevel(2);
+        
+            if (wardCount >= 3321) {
+                log.info("AREA ALREADY EXISTS");
                 return;
             }
 
