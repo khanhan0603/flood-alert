@@ -1,5 +1,6 @@
 package com.example.flood_alert.repository;
 
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,5 +20,20 @@ public interface  AreaRepository extends JpaRepository<Area, UUID> {
     @Query("SELECT a FROM Area a LEFT JOIN FETCH a.parent ORDER BY a.level ASC")
     List<Area> findAllByOrderByLevelAsc();
     long countByLevel(int level);
-   
+   @Query("""
+        SELECT a
+        FROM Area a
+        WHERE a.level = 2
+        AND a.lat IS NOT NULL
+        AND a.lon IS NOT NULL
+        AND NOT EXISTS (
+            SELECT 1
+            FROM WeatherData w
+            WHERE w.area.id = a.id
+        )
+    """)
+    List<Area> findAreasWithoutWeather(Pageable pageable);
+    List<Area> findByLevelAndLatIsNotNullAndLonIsNotNull(
+        Integer level
+    );
 }

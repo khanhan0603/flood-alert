@@ -1,5 +1,6 @@
 package com.example.flood_alert.repository;
 
+import java.awt.print.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -17,10 +18,11 @@ public interface WeatherDataRepository extends JpaRepository<WeatherData, UUID> 
     @Query("SELECT DISTINCT w.area.id FROM WeatherData w WHERE w.area.id IN :areaIds")
     List<UUID> findDistinctAreaIdsByAreaIdIn(@Param("areaIds") List<UUID> areaIds);
 
-    @Query("""
-        SELECT COUNT(a) FROM Area a
-        WHERE a.level = 2
-        AND a.id NOT IN (SELECT DISTINCT w.area.id FROM WeatherData w)
+    
+
+   @Query("""
+        SELECT COUNT(DISTINCT w.area.id)
+        FROM WeatherData w
     """)
-    long countAreaWithoutWeatherData();
+    long countDistinctAreaId();
 }

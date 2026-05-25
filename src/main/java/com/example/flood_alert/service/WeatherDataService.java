@@ -7,22 +7,41 @@ import com.example.flood_alert.repository.WeatherDataRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
-@FieldDefaults(level=AccessLevel.PRIVATE, makeFinal=true)
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class WeatherDataService {
+
+    static final long TOTAL_AREA = 3321;
+
     final WeatherDataRepository weatherDataRepository;
 
-    public String deleteScheduledWeather() {
-        long count=weatherDataRepository.countAreaWithoutWeatherData();
-        String alert="";
-        if(count==3321){
-            alert="Import đầy đủ dữ liệu thời tiết. "+count+" phường/xã";
+    boolean schedulerEnabled = true;
+
+    public boolean isSchedulerEnabled() {
+        return schedulerEnabled;
+    }
+
+    public void checkCompleted() {
+
+        long importedAreaCount =
+            weatherDataRepository.countDistinctAreaId();
+
+        log.info(
+            "WEATHER IMPORTED AREA: {}",
+            importedAreaCount
+        );
+
+        if (importedAreaCount >= TOTAL_AREA) {
+
+            schedulerEnabled = false;
+
+            log.info(
+                "IMPORT COMPLETED -> DISABLE SCHEDULER"
+            );
         }
-        else{
-            alert="Import dữ liệu thời tiết. "+count+" phường/xã";
-        }
-        return alert;
     }
 }
