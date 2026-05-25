@@ -30,6 +30,7 @@ public class ApplicationInitConfig {
             userDataInitializerService.init();
 
             // Reset Redis weather keys để backfill chạy lại từ đầu
+            // trigger redeploy
             stringRedisTemplate.delete("weather:backfill_done");
             stringRedisTemplate.delete("weather:last_area_id");
             log.info("RESET WEATHER REDIS KEYS");
