@@ -5,50 +5,42 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.flood_alert.service.WeatherDataInitializerService;
-import com.example.flood_alert.service.WeatherService;
+import com.example.flood_alert.service.WeatherDataService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import com.example.flood_alert.service.WeatherDataService;
-
-
-
 @Slf4j
 @RestController
 @RequestMapping("/weather-data")
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WeatherDataController {
+
     WeatherDataInitializerService weatherDataInitializerService;
     WeatherDataService weatherDataService;
+    StringRedisTemplate stringRedisTemplate;
 
     @PostMapping("/backfill")
     public String backfill() {
-
         weatherDataInitializerService.backfill();
-
         return "DONE";
     }
-
-    private final StringRedisTemplate stringRedisTemplate;
 
     @DeleteMapping("/admin/reset-weather")
     public String resetWeather() {
         stringRedisTemplate.delete("weather:backfill_done");
         stringRedisTemplate.delete("weather:last_area_id");
-        
-        // Kiểm tra lại
+
         String backfillDone = stringRedisTemplate.opsForValue().get("weather:backfill_done");
         String lastAreaId = stringRedisTemplate.opsForValue().get("weather:last_area_id");
-        
+
         return "backfill_done=" + backfillDone + ", last_area_id=" + lastAreaId;
     }
 
@@ -56,6 +48,4 @@ public class WeatherDataController {
     public void countArea(@RequestParam String param) {
         weatherDataService.deleteScheduledWeather();
     }
-    
-    
 }
