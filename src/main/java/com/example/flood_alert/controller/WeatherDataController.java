@@ -1,8 +1,9 @@
 package com.example.flood_alert.controller;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.service.WeatherDataInitializerService;
@@ -11,7 +12,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
 
 
 @Slf4j
@@ -28,6 +28,15 @@ public class WeatherDataController {
         weatherDataInitializerService.backfill();
 
         return "DONE";
+    }
+
+    private final StringRedisTemplate stringRedisTemplate;
+
+    @DeleteMapping("/reset-weather")
+    public String resetWeather() {
+        stringRedisTemplate.delete("weather:backfill_done");
+        stringRedisTemplate.delete("weather:last_area_id");
+        return "RESET DONE";
     }
     
 }
