@@ -33,7 +33,7 @@ public class WeatherDataController {
         return "DONE";
     }
 
-    @DeleteMapping("/admin/reset-weather")
+    @DeleteMapping("/reset-weather")
     public String resetWeather() {
         stringRedisTemplate.delete("weather:backfill_done");
         stringRedisTemplate.delete("weather:last_area_id");
@@ -45,7 +45,8 @@ public class WeatherDataController {
     }
 
     @GetMapping("/count-area")
-    public void countArea(@RequestParam String param) {
-        weatherDataService.deleteScheduledWeather();
+    public String countArea() {
+        weatherDataService.checkCompleted();
+        return "CHECK COMPLETED";
     }
 }
