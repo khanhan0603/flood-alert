@@ -19,4 +19,5 @@ public interface  AreaRepository extends JpaRepository<Area, UUID> {
     @Query("SELECT a FROM Area a LEFT JOIN FETCH a.parent ORDER BY a.level ASC")
     List<Area> findAllByOrderByLevelAsc();
     long countByLevel(int level);
+   
 }
