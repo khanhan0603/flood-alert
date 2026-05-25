@@ -4,10 +4,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.example.flood_alert.dbo.response.AreaWeatherResponse;
+import com.example.flood_alert.dbo.response.WDataResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.WeatherData;
 
@@ -48,4 +52,35 @@ public interface WeatherDataRepository
         WHERE w.area.level = 2
     """)
     long countDistinctAreaId();
+
+    @Query("""
+        SELECT DISTINCT new com.example.flood_alert.dbo.response.AreaWeatherResponse(
+            w.area.id,
+            w.area.tenkhuvuc
+        )
+        FROM WeatherData w
+        WHERE w.area.level = 2
+    """)
+    List<AreaWeatherResponse>
+    findDistinctAreaIdAndTenKhuvuc();
+
+    @Query("""
+    SELECT new com.example.flood_alert.dbo.response.WDataResponse(
+            w.rainfall,
+            w.temperature,
+            w.dewpoint,
+            w.pressure,
+            w.wind_speed,
+            w.wind_direction,
+            w.humidity,
+            w.evapotranspiration,
+            w.time
+        )
+        FROM WeatherData w
+        WHERE w.area.id = :areaId
+        ORDER BY w.time DESC
+    """)
+    List<WDataResponse> findWeatherResponseByAreaId(
+        @Param("areaId") UUID areaId
+    );
 }

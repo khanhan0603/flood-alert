@@ -16,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,6 +36,14 @@ import lombok.experimental.FieldDefaults;
     indexes={
         @Index(name="idx_area_level_id",columnList="level,id"),
         @Index(name="idx_area_parent_id",columnList="parent_id")
+    },
+    uniqueConstraints={
+        @UniqueConstraint(
+            columnNames = {
+                "tenkhuvuc",
+                "parent_id"
+            }
+        )
     })
 public class Area extends BaseEntity{
     String tenkhuvuc;

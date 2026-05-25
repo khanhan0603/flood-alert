@@ -148,7 +148,7 @@ public class AreaDataInitializerService {
                 continue;
             }
 
-            if (areaRepository.existsByTenkhuvucAndParent(wardName, province)) {
+            if (areaRepository.existsByTenkhuvucAndParentId(wardName, province.getId())) {
                 skipped++;
                 continue;
             }

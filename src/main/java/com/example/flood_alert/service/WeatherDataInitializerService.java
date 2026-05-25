@@ -8,7 +8,6 @@ import java.util.List;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -45,7 +44,7 @@ public class WeatherDataInitializerService {
     static final String BACKFILL_DONE_KEY =
         "weather:backfill_done";
 
-    StringRedisTemplate stringRedisTemplate;
+    //StringRedisTemplate stringRedisTemplate;
 
     WeatherDataRepository weatherDataRepository;
 

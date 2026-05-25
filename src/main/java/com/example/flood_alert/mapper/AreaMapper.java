@@ -8,6 +8,7 @@ import com.example.flood_alert.entity.Area;
 
 @Mapper(componentModel = "spring")
 public interface AreaMapper{
+
     @Mapping(target = "children", ignore = true)
     AreaSimpleResponse toSimpleResponse(Area area);
 }
