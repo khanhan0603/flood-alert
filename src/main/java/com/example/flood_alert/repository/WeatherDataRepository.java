@@ -18,7 +18,7 @@ public interface WeatherDataRepository extends JpaRepository<WeatherData, UUID> 
     @Query("SELECT DISTINCT w.area.id FROM WeatherData w WHERE w.area.id IN :areaIds")
     List<UUID> findDistinctAreaIdsByAreaIdIn(@Param("areaIds") List<UUID> areaIds);
 
-    
+    long countAreaWithoutWeatherData();
 
    @Query("""
         SELECT COUNT(DISTINCT w.area.id)

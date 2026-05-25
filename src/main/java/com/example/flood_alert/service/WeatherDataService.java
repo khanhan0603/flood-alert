@@ -27,15 +27,15 @@ public class WeatherDataService {
 
     public void checkCompleted() {
 
-        long importedAreaCount =
-            weatherDataRepository.countDistinctAreaId();
+        long missingCount =
+            weatherDataRepository.countAreaWithoutWeatherData();
 
         log.info(
-            "WEATHER IMPORTED AREA: {}",
-            importedAreaCount
+            "MISSING AREA COUNT: {}",
+            missingCount
         );
 
-        if (importedAreaCount >= TOTAL_AREA) {
+        if (missingCount == 0) {
 
             schedulerEnabled = false;
 
