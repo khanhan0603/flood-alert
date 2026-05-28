@@ -17,11 +17,10 @@ import com.example.flood_alert.dbo.response.AreaSimpleResponse;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
+import com.example.flood_alert.dbo.response.WardPolygonResponse;
 
 
 
@@ -40,5 +39,11 @@ public class AreaController {
     public List<AreaDataByParentResponse> getAreaBtParentId(@RequestParam UUID parentId) {
         return areaService.getAreaByParentId(parentId);
     }
+
+    @GetMapping("/polygon-by-id")
+    public WardPolygonResponse findPolygonById(@RequestParam UUID id) throws Exception{
+        return areaService.findPolygonById(id);
+    }
+    
     
 }

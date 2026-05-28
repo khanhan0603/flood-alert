@@ -49,4 +49,13 @@ public interface  AreaRepository extends JpaRepository<Area, UUID> {
     List<Area> findByLevelAndLatIsNotNullAndLonIsNotNull(
         Integer level
     );
+    @Query(value="""
+        SELECT 
+            a.id,
+            a.tenkhuvuc,
+            ST_AsGeoJSON(a.polygon) as geometry
+        FROM areas a
+        WHERE a.id= :id
+    """,nativeQuery=true) //nativeQuery = true => dùng tên table thật trong DB
+    Object findPolygonById(UUID id);
 }
