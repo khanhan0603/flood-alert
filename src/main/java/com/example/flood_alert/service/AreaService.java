@@ -9,8 +9,11 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
 import com.example.flood_alert.dbo.response.AreaSimpleResponse;
 import com.example.flood_alert.entity.Area;
+import com.example.flood_alert.exception.AppException;
+import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.mapper.AreaMapper;
 import com.example.flood_alert.repository.AreaRepository;
 
@@ -50,5 +53,13 @@ public class AreaService {
         }
 
         return roots;
+    }
+
+    public List<AreaDataByParentResponse> getAreaByParentId(UUID parentId){
+        List<AreaDataByParentResponse> areas=areaRepository.findByParentId(parentId);
+        if(areas.isEmpty()){
+            throw new AppException(ErrorCode.EMPTY_AREABYPARENDID);
+        }
+        return areas;
     }
 }

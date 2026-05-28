@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.flood_alert.dbo.response.AreaWeatherResponse;
 import com.example.flood_alert.dbo.response.WDataResponse;
-import com.example.flood_alert.entity.WeatherData;
 import com.example.flood_alert.service.WeatherDataInitializerService;
 import com.example.flood_alert.service.WeatherDataService;
 
