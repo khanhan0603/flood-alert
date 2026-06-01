@@ -1,11 +1,12 @@
 package com.example.flood_alert.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.enums.Status;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +15,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -61,16 +63,15 @@ public class User extends BaseEntity{
     @Column(columnDefinition="TEXT")
     String ghichu;
 
-    @Column(precision=10,scale=6)
-    BigDecimal home_lat;
-
-    @Column(precision=10,scale=6)
-    BigDecimal home_lon;
-
     @ManyToOne(fetch= FetchType.LAZY)
     @JoinColumn(name="area_id",nullable=false)
     Area area;
 
     LocalDateTime created_at;
     LocalDateTime updated_at;
+
+    @JsonIgnore
+    @OneToMany(mappedBy="user")
+    List<SosRequest> sosList;
+    
 }

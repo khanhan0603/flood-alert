@@ -79,4 +79,8 @@ public class Area extends BaseEntity{
     @JsonIgnore
     @OneToMany(mappedBy="area")
     List<WeatherData> weatherData;
+
+    @JsonIgnore
+    @OneToMany(mappedBy="area")
+    List<SosRequest> sosList;
 }

@@ -161,7 +161,16 @@ public class WeatherDataInitializerService {
         WeatherData weatherData=weatherDataMapper.toWeatherData(request);
         weatherData.setArea(area);
         weatherData.setTime(LocalDateTime.parse(current.path("time").asText()));
-        weatherDataRepository.save(weatherData);
+        try {
+            weatherDataRepository.save(weatherData);
+        }
+        catch (Exception e) {
+            log.debug(
+                "DUPLICATE CURRENT WEATHER AREA {} TIME {}",
+                area.getId(),
+                weatherData.getTime()
+            );
+        }
     }
 
     private void fetchAndSaveArchive(List<Area> areas) {
@@ -194,7 +203,7 @@ public class WeatherDataInitializerService {
                     continue;
                 }
 
-                saveHourlyData(area, response.path("hourly"));
+                saveHourlyData(area, response.path("hourly"),null);
 
                 log.info(
                     "SUCCESS AREA {}",
@@ -255,7 +264,7 @@ public class WeatherDataInitializerService {
                 if(response==null){
                     continue;
                 }
-                saveHourlyData(area, response.path("hourly"));
+                saveHourlyData(area, response.path("hourly"),lastTime);
                 Thread.sleep(1000);
             }
             catch(InterruptedException e){
@@ -267,7 +276,11 @@ public class WeatherDataInitializerService {
         }
     }
 
-    private void saveHourlyData(Area area, JsonNode hourly) {
+   private void saveHourlyData(
+        Area area,
+        JsonNode hourly,
+        LocalDateTime lastTime
+    ) {
 
         JsonNode times = hourly.path("time");
 
@@ -275,12 +288,22 @@ public class WeatherDataInitializerService {
             return;
         }
 
-        List<WeatherData> weatherDatas = new ArrayList<>();
+        List<WeatherData> weatherDatas =
+            new ArrayList<>();
 
         for (int i = 0; i < times.size(); i++) {
 
             LocalDateTime time =
-                LocalDateTime.parse(times.get(i).asText());
+                LocalDateTime.parse(
+                    times.get(i).asText()
+                );
+
+            if (
+                lastTime != null
+                && !time.isAfter(lastTime)
+            ) {
+                continue;
+            }
 
             WeatherDataCreationRequest request =
                 WeatherDataCreationRequest.builder()
@@ -305,7 +328,9 @@ public class WeatherDataInitializerService {
             weatherDatas.add(weatherData);
         }
 
-        weatherDataRepository.saveAll(weatherDatas);
+        if (!weatherDatas.isEmpty()) {
+            weatherDataRepository.saveAll(weatherDatas);
+        }
     }
 
     private BigDecimal decimal(JsonNode node,String field){
