@@ -15,7 +15,9 @@ public enum ErrorCode {
     EMPTY_POLYGIN_BY_ID(1003,"Không tìm thấy ranh giới hợp lệ!"),
     INVALID_PASSWORD(1002,"Mật khẩu phải ít nhất 6 ký tự!"),
     INVALID_EMAIL(1001,"Email không hợp lệ! Dạng email@gmail.com!"),
-    INVALID_PHONE(1006,"Số điện thoại không hợp lệ! Dạng 0xxxxxxxxx!")
+    INVALID_PHONE(1006,"Số điện thoại không hợp lệ! Dạng 0xxxxxxxxx!"),
+    EMAIL_EXISTED(1007,"Email này đã được đăng ký! Vui lòng dùng email khác!"),
+    PHONE_EXISTED(1008,"Số điện thoại này đã được đăng ký! Vui số dùng số khác!"),
     ;
     int code;
     String message;

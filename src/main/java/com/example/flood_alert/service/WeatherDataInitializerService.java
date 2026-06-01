@@ -135,7 +135,7 @@ public class WeatherDataInitializerService {
                 Thread.sleep(1000);
 
             } catch (HttpClientErrorException.TooManyRequests e) {
-                // ✅ Set cooldown 1 tiếng, không retry nữa trong hôm nay
+                // Set cooldown 1 tiếng, không retry nữa trong hôm nay
                 rateLimitUntil.set(System.currentTimeMillis() + RATE_LIMIT_COOLDOWN_MS);
                 log.warn("RATE LIMIT HIT, COOLDOWN 1 HOUR UNTIL {}",
                         java.time.LocalDateTime.now().plusHours(1));

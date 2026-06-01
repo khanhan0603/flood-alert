@@ -13,6 +13,7 @@ import com.example.flood_alert.enums.Role;
 
 public interface UserRepository extends JpaRepository<User,UUID> {
     boolean existsByRole(Role role);
-    boolean existsByEmailOrSodt(String email,String sodt);
+    boolean existsByEmail(String email);
+    boolean existsBySodt(String sodt);
     Optional<User> findByEmailOrSodt(String email, String sodt);
 }
