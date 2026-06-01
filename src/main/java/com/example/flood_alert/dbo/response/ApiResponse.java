@@ -1,5 +1,6 @@
 package com.example.flood_alert.dbo.response;
 
+import com.example.flood_alert.entity.User;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
