@@ -62,7 +62,7 @@ public class WeatherDataInitializerService {
             return;
         }
 
-        weatherDataService.checkCompleted();
+        //weatherDataService.checkCompleted();
 
         if (!weatherDataService.isSchedulerEnabled()) {
             return;
@@ -79,7 +79,7 @@ public class WeatherDataInitializerService {
         }
         List<Area> allArea=areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
         fetchMissingWeather(allArea);
-        weatherDataService.checkCompleted();
+        //weatherDataService.checkCompleted();
     }
 
     // Mỗi tiếng tại phút thứ 5 lấy 1 lần. Ví dụ: 00:05, 01:05
