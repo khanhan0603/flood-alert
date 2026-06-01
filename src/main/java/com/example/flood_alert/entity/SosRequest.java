@@ -2,8 +2,8 @@ package com.example.flood_alert.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.concurrent.locks.Condition;
 
+import com.example.flood_alert.enums.Condition;
 import com.example.flood_alert.enums.Priority;
 import com.example.flood_alert.enums.StatusSOS;
 
