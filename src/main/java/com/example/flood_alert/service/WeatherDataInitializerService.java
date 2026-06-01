@@ -180,54 +180,41 @@ public class WeatherDataInitializerService {
                 LocalDateTime lastTime = weatherDataRepository.findMaxTimeByAreaId(area.getId());
                 if (lastTime == null) continue;
 
-                LocalDate startDate = lastTime.toLocalDate();
                 LocalDate today = LocalDate.now();
-                LocalDate yesterday = today.minusDays(1);
 
-                // ✅ Bước 1: Fetch archive cho data từ startDate đến hôm qua
-                if (!startDate.isAfter(yesterday)) {
-                    String archiveUrl = UriComponentsBuilder
-                        .fromUriString(ARCHIVE_URL)
-                        .queryParam("latitude", area.getLat())
-                        .queryParam("longitude", area.getLon())
-                        .queryParam("start_date", startDate)
-                        .queryParam("end_date", yesterday)
-                        .queryParam("hourly", HOURLY_FIELDS)
-                        .queryParam("timezone", TIMEZONE)
-                        .toUriString();
+                // Tính số ngày cần lấy ngược về từ hôm nay
+                long daysBehind = java.time.temporal.ChronoUnit.DAYS.between(
+                    lastTime.toLocalDate(), today
+                );
 
-                    log.info(
-                        "FETCH ARCHIVE MISSING WEATHER AREA {} FROM {} TO {}",
-                        area.getId(), startDate, yesterday
-                    );
-
-                    JsonNode archiveResponse = restTemplate.getForObject(archiveUrl, JsonNode.class);
-                    if (archiveResponse != null) {
-                        saveHourlyData(area, archiveResponse.path("hourly"), lastTime);
-                    }
-                    Thread.sleep(500);
+                if (daysBehind <= 0) {
+                    log.info("NO MISSING DATA FOR AREA {}", area.getId());
+                    continue;
                 }
 
-                // ✅ Bước 2: Fetch forecast cho hôm nay (archive không có hôm nay)
-                String forecastUrl = UriComponentsBuilder
+                // Dùng forecast + past_days thay vì archive (tránh độ trễ 5 ngày)
+                // past_days tối đa 92
+                int pastDays = (int) Math.min(daysBehind, 92);
+
+                String url = UriComponentsBuilder
                     .fromUriString(FORECAST_URL)
                     .queryParam("latitude", area.getLat())
                     .queryParam("longitude", area.getLon())
-                    .queryParam("start_date", today)
-                    .queryParam("end_date", today)
+                    .queryParam("past_days", pastDays)
+                    .queryParam("forecast_days", 1)
                     .queryParam("hourly", HOURLY_FIELDS)
                     .queryParam("timezone", TIMEZONE)
                     .toUriString();
 
-                log.info("FETCH FORECAST TODAY AREA {} DATE {}", area.getId(), today);
+                log.info(
+                    "FETCH MISSING WEATHER AREA {} past_days={}",
+                    area.getId(), pastDays
+                );
 
-                JsonNode forecastResponse = restTemplate.getForObject(forecastUrl, JsonNode.class);
-                if (forecastResponse != null) {
-                    // lastTime được cập nhật lại sau khi đã save archive
-                    LocalDateTime updatedLastTime = weatherDataRepository.findMaxTimeByAreaId(area.getId());
-                    saveHourlyData(area, forecastResponse.path("hourly"), updatedLastTime);
-                }
+                JsonNode response = restTemplate.getForObject(url, JsonNode.class);
+                if (response == null) continue;
 
+                saveHourlyData(area, response.path("hourly"), lastTime);
                 Thread.sleep(500);
 
             } catch (InterruptedException e) {

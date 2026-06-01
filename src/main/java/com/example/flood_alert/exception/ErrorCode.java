@@ -13,6 +13,9 @@ public enum ErrorCode {
     UNAUTHENTICATED(1010,"Xác thực không hợp lệ"),
     EMPTY_AREA_BY_PARENT_ID(1004,"Không tìm thấy danh sách phường/xã hợp lệ!"),
     EMPTY_POLYGIN_BY_ID(1003,"Không tìm thấy ranh giới hợp lệ!"),
+    INVALID_PASSWORD(1002,"Mật khẩu phải ít nhất 6 ký tự!"),
+    INVALID_EMAIL(1001,"Email không hợp lệ! Dạng email@gmail.com!"),
+    INVALID_PHONE(1006,"Số điện thoại không hợp lệ! Dạng 0xxxxxxxxx!")
     ;
     int code;
     String message;
