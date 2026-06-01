@@ -35,12 +35,6 @@ public class WeatherDataController {
         return "DONE";
     }
 
-    @GetMapping("/count-area")
-    public String countArea() {
-        weatherDataService.checkCompleted();
-        return "CHECK COMPLETED";
-    }
-
     @GetMapping("/list-area")
     public List<AreaWeatherResponse> findDistinctAreaIdAndTenKhuvuc() {
         return weatherDataService.findDistinctAreaIdAndTenKhuvuc();

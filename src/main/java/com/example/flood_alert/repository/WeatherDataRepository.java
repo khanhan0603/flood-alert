@@ -86,20 +86,4 @@ public interface WeatherDataRepository
             """)
     LocalDateTime findMaxTimeByAreaId(@Param("areaId") UUID areaId);
 
-    // AreaRepository.java
-    @Query("""
-            SELECT a FROM Area a
-            WHERE a.level = 2
-              AND a.lat IS NOT NULL
-              AND a.lon IS NOT NULL
-              AND EXISTS (
-                  SELECT 1 FROM WeatherData w WHERE w.area = a
-              )
-              AND (
-                  SELECT MAX(w.time) FROM WeatherData w WHERE w.area = a
-              ) < :threshold
-            """)
-    List<Area> findAreasWithOutdatedWeather(
-            @Param("threshold") LocalDateTime threshold,
-            Pageable pageable);
 }

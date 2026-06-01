@@ -2,6 +2,7 @@ package com.example.flood_alert.repository;
 
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -11,6 +12,8 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
 import com.example.flood_alert.entity.Area;
+
+import io.lettuce.core.dynamic.annotation.Param;
 
 
 public interface  AreaRepository extends JpaRepository<Area, UUID> {
@@ -58,4 +61,20 @@ public interface  AreaRepository extends JpaRepository<Area, UUID> {
         WHERE a.id= :id
     """,nativeQuery=true) //nativeQuery = true => dùng tên table thật trong DB
     Object findPolygonById(UUID id);
+
+    @Query("""
+            SELECT a FROM Area a
+            WHERE a.level = 2
+              AND a.lat IS NOT NULL
+              AND a.lon IS NOT NULL
+              AND EXISTS (
+                  SELECT 1 FROM WeatherData w WHERE w.area = a
+              )
+              AND (
+                  SELECT MAX(w.time) FROM WeatherData w WHERE w.area = a
+              ) < :threshold
+            """)
+    List<Area> findAreasWithOutdatedWeather(
+            @Param("threshold") LocalDateTime threshold,
+            Pageable pageable);
 }
