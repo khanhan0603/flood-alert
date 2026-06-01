@@ -3,11 +3,11 @@ package com.example.flood_alert.controller;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.dbo.response.AreaWeatherResponse;
 import com.example.flood_alert.dbo.response.WDataResponse;
@@ -28,24 +28,12 @@ public class WeatherDataController {
 
     WeatherDataInitializerService weatherDataInitializerService;
     WeatherDataService weatherDataService;
-    //StringRedisTemplate stringRedisTemplate;
 
     @PostMapping("/backfill")
     public String backfill() {
         weatherDataInitializerService.backfill();
         return "DONE";
     }
-
-    // @DeleteMapping("/reset-weather")
-    // public String resetWeather() {
-    //     stringRedisTemplate.delete("weather:backfill_done");
-    //     stringRedisTemplate.delete("weather:last_area_id");
-
-    //     String backfillDone = stringRedisTemplate.opsForValue().get("weather:backfill_done");
-    //     String lastAreaId = stringRedisTemplate.opsForValue().get("weather:last_area_id");
-
-    //     return "backfill_done=" + backfillDone + ", last_area_id=" + lastAreaId;
-    // }
 
     @GetMapping("/count-area")
     public String countArea() {

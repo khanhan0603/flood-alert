@@ -3,14 +3,10 @@ package com.example.flood_alert.service;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.example.flood_alert.dbo.response.AreaWeatherResponse;
 import com.example.flood_alert.dbo.response.WDataResponse;
-import com.example.flood_alert.entity.WeatherData;
 import com.example.flood_alert.repository.WeatherDataRepository;
 
 import lombok.AccessLevel;

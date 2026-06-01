@@ -1,6 +1,7 @@
 package com.example.flood_alert.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,11 +42,6 @@ public class WeatherDataInitializerService {
     static final String HOURLY_FIELDS =
         "precipitation,temperature_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,relative_humidity_2m,et0_fao_evapotranspiration";
 
-    static final String BACKFILL_DONE_KEY =
-        "weather:backfill_done";
-
-    //StringRedisTemplate stringRedisTemplate;
-
     WeatherDataRepository weatherDataRepository;
 
     AreaRepository areaRepository;
@@ -77,14 +73,19 @@ public class WeatherDataInitializerService {
         List<Area> areas =
             areaRepository.findAreasWithoutWeather(pageable);
 
-        if (areas.isEmpty()) {
-
-            log.info("NO AREA NEED IMPORT");
-
+        if(!areas.isEmpty()){
+            fetchAndSaveArchive(areas);
             return;
         }
+        List<Area> allArea=areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
+        fetchMissingWeather(allArea);
+        weatherDataService.checkCompleted();
+    }
 
-        fetchAndSaveArchive(areas);
+    // Mỗi tiếng tại phút thứ 5 lấy 1 lần. Ví dụ: 00:05, 01:05
+    @Scheduled(cron="0 5 * * * *")
+    public void fetchHourlyScheduler(){
+        fetchHourly();
     }
 
     public void fetchHourly() {
@@ -121,7 +122,7 @@ public class WeatherDataInitializerService {
 
                 if (response == null) continue;
 
-                saveHourlyData(area, response.path("current"));
+                saveCurrentData(area, response.path("current"));
 
             } catch (Exception e) {
 
@@ -132,6 +133,28 @@ public class WeatherDataInitializerService {
                 );
             }
         }
+    }
+
+    private void saveCurrentData(Area area, JsonNode current) {
+       if(current.isMissingNode()||current.path("time").isMissingNode()){
+            return;
+       }
+       WeatherDataCreationRequest request=WeatherDataCreationRequest.builder()
+            .precipitation(decimal(current, "precipitation"))
+            .temperature2m(decimal(current, "temperature_2m"))
+            .dewpoint2m(decimal(current, "dew_point_2m"))
+            .surfacePressure(decimal(current, "surface_pressure"))
+            .windspeed10m(decimal(current, "wind_speed_10m"))
+            .winddirection10m(decimal(current, "wind_direction_10m"))
+            .relativehumidity2m(decimal(current, "relative_humidity_2m"))
+            .evapotranspiration(decimal(current, "et0_fao_evapotranspiration"))
+            .lat(area.getLat())
+            .lon(area.getLon())
+            .build();
+        WeatherData weatherData=weatherDataMapper.toWeatherData(request);
+        weatherData.setArea(area);
+        weatherData.setTime(LocalDateTime.parse(current.path("time").asText()));
+        weatherDataRepository.save(weatherData);
     }
 
     private void fetchAndSaveArchive(List<Area> areas) {
@@ -188,6 +211,51 @@ public class WeatherDataInitializerService {
         }
     }
 
+
+    public void fetchMissingWeather(List<Area> areas){
+        RestTemplate restTemplate=restTemplateBuilder.build();
+        for(Area area:areas){
+            try{
+                LocalDateTime lastTime=weatherDataRepository.findMaxTimeByAreaId(area.getId());
+                if(lastTime==null){
+                    continue;
+                }
+                LocalDate startDate=lastTime.toLocalDate();
+                LocalDate endDate=LocalDate.now();
+                if(startDate.isAfter(endDate)){
+                    continue;
+                }
+                String url=UriComponentsBuilder
+                        .fromUriString(FORECAST_URL)
+                        .queryParam("latitude", area.getLat())
+                        .queryParam("longitude", area.getLon())
+                        .queryParam("start_date", startDate)
+                        .queryParam("end_date", endDate)
+                        .queryParam("hourly", HOURLY_FIELDS)
+                        .queryParam("timezone", TIMEZONE)
+                        .toUriString();
+                log.info(
+                    "FETCH MISSING WEATHER AREA {} FROM {} TO {}",
+                    area.getId(),
+                    startDate,
+                    endDate
+                );
+                JsonNode response=restTemplate.getForObject(url, JsonNode.class);
+                if(response==null){
+                    continue;
+                }
+                saveHourlyData(area, response.path("hourly"));
+                Thread.sleep(1000);
+            }
+            catch(InterruptedException e){
+                Thread.currentThread().interrupt();
+            }
+            catch(Exception e){
+                log.error("ERROR FETCH MISSING WEATHER AREA {}", area.getId(),e);
+            }
+        }
+    }
+
     private void saveHourlyData(Area area, JsonNode hourly) {
 
         JsonNode times = hourly.path("time");
@@ -227,6 +295,14 @@ public class WeatherDataInitializerService {
         }
 
         weatherDataRepository.saveAll(weatherDatas);
+    }
+
+    private BigDecimal decimal(JsonNode node,String field){
+        JsonNode value=node.path(field);
+        if(value.isNull()){
+            return null;
+        }
+        return BigDecimal.valueOf(value.asDouble());
     }
 
     private BigDecimal decimal(
