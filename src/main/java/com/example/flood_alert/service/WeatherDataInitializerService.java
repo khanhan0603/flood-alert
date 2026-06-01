@@ -135,10 +135,11 @@ public class WeatherDataInitializerService {
                 Thread.sleep(1000);
 
             } catch (HttpClientErrorException.TooManyRequests e) {
-                // Set cooldown 1 tiếng, không retry nữa trong hôm nay
+                log.error("429 BODY = {}", e.getResponseBodyAsString());
+
                 rateLimitUntil.set(System.currentTimeMillis() + RATE_LIMIT_COOLDOWN_MS);
-                log.warn("RATE LIMIT HIT, COOLDOWN 1 HOUR UNTIL {}",
-                        java.time.LocalDateTime.now().plusHours(1));
+
+                log.warn("RATE LIMIT HIT, COOLDOWN 1 HOUR");
                 return;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -200,7 +201,10 @@ public class WeatherDataInitializerService {
                 Thread.sleep(200);
 
             } catch (HttpClientErrorException.TooManyRequests e) {
+                log.error("429 BODY = {}", e.getResponseBodyAsString());
+
                 rateLimitUntil.set(System.currentTimeMillis() + RATE_LIMIT_COOLDOWN_MS);
+
                 log.warn("RATE LIMIT HIT, COOLDOWN 1 HOUR");
                 return;
             } catch (InterruptedException e) {
@@ -282,7 +286,10 @@ public class WeatherDataInitializerService {
                 Thread.sleep(1500);
 
             } catch (HttpClientErrorException.TooManyRequests e) {
+                log.error("429 BODY = {}", e.getResponseBodyAsString());
+
                 rateLimitUntil.set(System.currentTimeMillis() + RATE_LIMIT_COOLDOWN_MS);
+
                 log.warn("RATE LIMIT HIT, COOLDOWN 1 HOUR");
                 return;
             } catch (InterruptedException e) {
