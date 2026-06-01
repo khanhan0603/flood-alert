@@ -5,12 +5,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -26,8 +28,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import java.util.stream.Collectors;
-import org.springframework.web.client.HttpClientErrorException;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,13 +38,17 @@ public class WeatherDataInitializerService {
     static final String FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
     static final String TIMEZONE = "Asia/Bangkok";
     static final String HOURLY_FIELDS = "precipitation,temperature_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,relative_humidity_2m,et0_fao_evapotranspiration";
-    static final int BATCH_SIZE = 50;
+    static final int BATCH_SIZE = 10;
+    static final long RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000L; // chờ 1 tiếng trước khi thử lại
 
     WeatherDataRepository weatherDataRepository;
     AreaRepository areaRepository;
     WeatherDataMapper weatherDataMapper;
     RestTemplateBuilder restTemplateBuilder;
     WeatherDataService weatherDataService;
+
+    // ✅ Không dùng @FieldDefaults makeFinal nên khai báo thủ công
+    private final java.util.concurrent.atomic.AtomicLong rateLimitUntil = new java.util.concurrent.atomic.AtomicLong(0);
 
     @Scheduled(cron = "0 */5 * * * *")
     public void backfill() {
@@ -52,9 +57,15 @@ public class WeatherDataInitializerService {
             return;
         }
 
+        // ✅ Kiểm tra đang trong cooldown rate limit không
+        if (System.currentTimeMillis() < rateLimitUntil.get()) {
+            log.info("RATE LIMIT COOLDOWN, SKIP BACKFILL UNTIL {}",
+                    java.time.Instant.ofEpochMilli(rateLimitUntil.get()));
+            return;
+        }
+
         Pageable pageable = PageRequest.of(0, 500);
 
-        // Bước 1: area chưa có data nào → fetch 31 ngày
         List<Area> areasWithoutWeather = areaRepository.findAreasWithoutWeather(pageable);
         log.info("AREAS WITHOUT WEATHER = {}", areasWithoutWeather.size());
 
@@ -63,7 +74,6 @@ public class WeatherDataInitializerService {
             return;
         }
 
-        // Bước 2: tìm ngày gần nhất còn thiếu data trong 31 ngày qua
         LocalDate today = LocalDate.now();
         for (int daysAgo = 1; daysAgo <= 31; daysAgo++) {
             LocalDate missingDate = today.minusDays(daysAgo);
@@ -75,14 +85,13 @@ public class WeatherDataInitializerService {
             if (!missingAreas.isEmpty()) {
                 log.info("AREAS MISSING DATA ON {} = {}", missingDate, missingAreas.size());
                 fetchMissingWeatherForDate(missingAreas, missingDate);
-                return; // mỗi lần chỉ xử lý 1 ngày, 5 phút sau tiếp tục
+                return;
             }
         }
 
         log.info("ALL DATA COMPLETE FOR LAST 31 DAYS");
     }
 
-    // Fetch data cho 1 ngày cụ thể bị thiếu
     private void fetchMissingWeatherForDate(List<Area> areas, LocalDate missingDate) {
         log.info("FETCH MISSING DATE {}, SIZE={}", missingDate, areas.size());
         RestTemplate restTemplate = restTemplateBuilder.build();
@@ -91,102 +100,50 @@ public class WeatherDataInitializerService {
         int pastDays = (int) Math.min(daysAgo + 1, 92);
 
         for (int i = 0; i < areas.size(); i += BATCH_SIZE) {
+            logMemory();
             List<Area> batch = areas.subList(i, Math.min(i + BATCH_SIZE, areas.size()));
 
-            String lats = batch.stream()
-                .map(a -> a.getLat().toString())
-                .collect(Collectors.joining(","));
-            String lons = batch.stream()
-                .map(a -> a.getLon().toString())
-                .collect(Collectors.joining(","));
+            String lats = batch.stream().map(a -> a.getLat().toString()).collect(Collectors.joining(","));
+            String lons = batch.stream().map(a -> a.getLon().toString()).collect(Collectors.joining(","));
 
             String url = UriComponentsBuilder
-                .fromUriString(FORECAST_URL)
-                .queryParam("latitude", lats)
-                .queryParam("longitude", lons)
-                .queryParam("past_days", pastDays)
-                .queryParam("forecast_days", 0)
-                .queryParam("hourly", HOURLY_FIELDS)
-                .queryParam("timezone", TIMEZONE)
-                .toUriString();
+                    .fromUriString(FORECAST_URL)
+                    .queryParam("latitude", lats)
+                    .queryParam("longitude", lons)
+                    .queryParam("past_days", pastDays)
+                    .queryParam("forecast_days", 0)
+                    .queryParam("hourly", HOURLY_FIELDS)
+                    .queryParam("timezone", TIMEZONE)
+                    .toUriString();
 
             log.info("FETCH MISSING DATE {} BATCH {}/{}",
-                missingDate, i / BATCH_SIZE + 1, (areas.size() + BATCH_SIZE - 1) / BATCH_SIZE);
+                    missingDate, i / BATCH_SIZE + 1, (areas.size() + BATCH_SIZE - 1) / BATCH_SIZE);
 
             try {
                 JsonNode response = restTemplate.getForObject(url, JsonNode.class);
-                if (response == null) continue;
+                if (response == null)
+                    continue;
 
                 if (response.isArray()) {
                     for (int j = 0; j < response.size(); j++) {
-                        Area area = batch.get(j);
-                        // Chỉ lưu data của ngày đang cần bù
-                        saveHourlyDataForDate(area, response.get(j).path("hourly"), missingDate);
+                        saveHourlyDataForDate(batch.get(j), response.get(j).path("hourly"), missingDate);
                     }
                 } else {
                     saveHourlyDataForDate(batch.get(0), response.path("hourly"), missingDate);
                 }
 
-                Thread.sleep(300);
+                Thread.sleep(1000);
 
             } catch (HttpClientErrorException.TooManyRequests e) {
-                log.warn("RATE LIMIT HIT, STOP MISSING DATE FETCH");
+                // ✅ Set cooldown 1 tiếng, không retry nữa trong hôm nay
+                rateLimitUntil.set(System.currentTimeMillis() + RATE_LIMIT_COOLDOWN_MS);
+                log.warn("RATE LIMIT HIT, COOLDOWN 1 HOUR UNTIL {}",
+                        java.time.LocalDateTime.now().plusHours(1));
                 return;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
                 log.error("ERROR FETCH MISSING DATE {} BATCH {}", missingDate, i / BATCH_SIZE + 1, e);
-            }
-        }
-    }
-
-    // Chỉ lưu record thuộc ngày cần bù, tránh duplicate các ngày khác
-    private void saveHourlyDataForDate(Area area, JsonNode hourly, LocalDate targetDate) {
-        JsonNode times = hourly.path("time");
-        if (!times.isArray()) return;
-
-        LocalDateTime startOfDay = targetDate.atStartOfDay();
-        LocalDateTime endOfDay = targetDate.plusDays(1).atStartOfDay();
-
-        List<WeatherData> weatherDatas = new ArrayList<>();
-        for (int i = 0; i < times.size(); i++) {
-            LocalDateTime time = LocalDateTime.parse(times.get(i).asText());
-
-            // Chỉ lấy record trong ngày targetDate
-            if (time.isBefore(startOfDay) || !time.isBefore(endOfDay)) continue;
-
-            WeatherDataCreationRequest request = WeatherDataCreationRequest.builder()
-                .precipitation(decimal(hourly, "precipitation", i))
-                .temperature2m(decimal(hourly, "temperature_2m", i))
-                .dewpoint2m(decimal(hourly, "dew_point_2m", i))
-                .surfacePressure(decimal(hourly, "surface_pressure", i))
-                .windspeed10m(decimal(hourly, "wind_speed_10m", i))
-                .winddirection10m(decimal(hourly, "wind_direction_10m", i))
-                .relativehumidity2m(decimal(hourly, "relative_humidity_2m", i))
-                .evapotranspiration(decimal(hourly, "et0_fao_evapotranspiration", i))
-                .lat(area.getLat())
-                .lon(area.getLon())
-                .build();
-
-            WeatherData weatherData = weatherDataMapper.toWeatherData(request);
-            weatherData.setArea(area);
-            weatherData.setTime(time);
-            weatherDatas.add(weatherData);
-        }
-
-        if (!weatherDatas.isEmpty()) {
-            try {
-                weatherDataRepository.saveAll(weatherDatas);
-                log.info("SAVED {} RECORDS FOR AREA {} DATE {}", weatherDatas.size(), area.getId(), targetDate);
-            } catch (Exception e) {
-                // saveAll fail cả batch → save từng cái để không mất data
-                for (WeatherData wd : weatherDatas) {
-                    try {
-                        weatherDataRepository.save(wd);
-                    } catch (Exception ex) {
-                        log.debug("DUPLICATE AREA {} TIME {}", area.getId(), wd.getTime());
-                    }
-                }
             }
         }
     }
@@ -197,6 +154,10 @@ public class WeatherDataInitializerService {
     }
 
     public void fetchHourly() {
+        if (System.currentTimeMillis() < rateLimitUntil.get()) {
+            log.info("RATE LIMIT COOLDOWN, SKIP HOURLY FETCH");
+            return;
+        }
         List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
         if (areas.isEmpty()) {
             log.info("SKIP HOURLY WEATHER FETCH: NO AREA");
@@ -209,26 +170,24 @@ public class WeatherDataInitializerService {
         RestTemplate restTemplate = restTemplateBuilder.build();
 
         for (int i = 0; i < areas.size(); i += BATCH_SIZE) {
+            logMemory();
             List<Area> batch = areas.subList(i, Math.min(i + BATCH_SIZE, areas.size()));
 
-            String lats = batch.stream()
-                .map(a -> a.getLat().toString())
-                .collect(Collectors.joining(","));
-            String lons = batch.stream()
-                .map(a -> a.getLon().toString())
-                .collect(Collectors.joining(","));
+            String lats = batch.stream().map(a -> a.getLat().toString()).collect(Collectors.joining(","));
+            String lons = batch.stream().map(a -> a.getLon().toString()).collect(Collectors.joining(","));
 
             String url = UriComponentsBuilder
-                .fromUriString(FORECAST_URL)
-                .queryParam("latitude", lats)
-                .queryParam("longitude", lons)
-                .queryParam("current", HOURLY_FIELDS)
-                .queryParam("timezone", TIMEZONE)
-                .toUriString();
+                    .fromUriString(FORECAST_URL)
+                    .queryParam("latitude", lats)
+                    .queryParam("longitude", lons)
+                    .queryParam("current", HOURLY_FIELDS)
+                    .queryParam("timezone", TIMEZONE)
+                    .toUriString();
 
             try {
                 JsonNode response = restTemplate.getForObject(url, JsonNode.class);
-                if (response == null) continue;
+                if (response == null)
+                    continue;
 
                 if (response.isArray()) {
                     for (int j = 0; j < response.size(); j++) {
@@ -241,7 +200,8 @@ public class WeatherDataInitializerService {
                 Thread.sleep(200);
 
             } catch (HttpClientErrorException.TooManyRequests e) {
-                log.warn("RATE LIMIT HIT, STOP HOURLY FETCH");
+                rateLimitUntil.set(System.currentTimeMillis() + RATE_LIMIT_COOLDOWN_MS);
+                log.warn("RATE LIMIT HIT, COOLDOWN 1 HOUR");
                 return;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -252,20 +212,21 @@ public class WeatherDataInitializerService {
     }
 
     private void saveCurrentData(Area area, JsonNode current) {
-        if (current.isMissingNode() || current.path("time").isMissingNode()) return;
+        if (current.isMissingNode() || current.path("time").isMissingNode())
+            return;
 
         WeatherDataCreationRequest request = WeatherDataCreationRequest.builder()
-            .precipitation(decimal(current, "precipitation"))
-            .temperature2m(decimal(current, "temperature_2m"))
-            .dewpoint2m(decimal(current, "dew_point_2m"))
-            .surfacePressure(decimal(current, "surface_pressure"))
-            .windspeed10m(decimal(current, "wind_speed_10m"))
-            .winddirection10m(decimal(current, "wind_direction_10m"))
-            .relativehumidity2m(decimal(current, "relative_humidity_2m"))
-            .evapotranspiration(decimal(current, "et0_fao_evapotranspiration"))
-            .lat(area.getLat())
-            .lon(area.getLon())
-            .build();
+                .precipitation(decimal(current, "precipitation"))
+                .temperature2m(decimal(current, "temperature_2m"))
+                .dewpoint2m(decimal(current, "dew_point_2m"))
+                .surfacePressure(decimal(current, "surface_pressure"))
+                .windspeed10m(decimal(current, "wind_speed_10m"))
+                .winddirection10m(decimal(current, "wind_direction_10m"))
+                .relativehumidity2m(decimal(current, "relative_humidity_2m"))
+                .evapotranspiration(decimal(current, "et0_fao_evapotranspiration"))
+                .lat(area.getLat())
+                .lon(area.getLon())
+                .build();
 
         WeatherData weatherData = weatherDataMapper.toWeatherData(request);
         weatherData.setArea(area);
@@ -281,31 +242,29 @@ public class WeatherDataInitializerService {
         RestTemplate restTemplate = restTemplateBuilder.build();
 
         for (int i = 0; i < areas.size(); i += BATCH_SIZE) {
+            logMemory();
             List<Area> batch = areas.subList(i, Math.min(i + BATCH_SIZE, areas.size()));
 
-            String lats = batch.stream()
-                .map(a -> a.getLat().toString())
-                .collect(Collectors.joining(","));
-            String lons = batch.stream()
-                .map(a -> a.getLon().toString())
-                .collect(Collectors.joining(","));
+            String lats = batch.stream().map(a -> a.getLat().toString()).collect(Collectors.joining(","));
+            String lons = batch.stream().map(a -> a.getLon().toString()).collect(Collectors.joining(","));
 
             String url = UriComponentsBuilder
-                .fromUriString(FORECAST_URL)
-                .queryParam("latitude", lats)
-                .queryParam("longitude", lons)
-                .queryParam("past_days", 31)
-                .queryParam("forecast_days", 0)
-                .queryParam("hourly", HOURLY_FIELDS)
-                .queryParam("timezone", TIMEZONE)
-                .toUriString();
+                    .fromUriString(FORECAST_URL)
+                    .queryParam("latitude", lats)
+                    .queryParam("longitude", lons)
+                    .queryParam("past_days", 31)
+                    .queryParam("forecast_days", 0)
+                    .queryParam("hourly", HOURLY_FIELDS)
+                    .queryParam("timezone", TIMEZONE)
+                    .toUriString();
 
             try {
                 log.info("FETCH ARCHIVE BATCH {}/{}",
-                    i / BATCH_SIZE + 1, (areas.size() + BATCH_SIZE - 1) / BATCH_SIZE);
+                        i / BATCH_SIZE + 1, (areas.size() + BATCH_SIZE - 1) / BATCH_SIZE);
 
                 JsonNode response = restTemplate.getForObject(url, JsonNode.class);
-                if (response == null) continue;
+                if (response == null)
+                    continue;
 
                 if (response.isArray()) {
                     for (int j = 0; j < response.size(); j++) {
@@ -320,10 +279,11 @@ public class WeatherDataInitializerService {
                 }
 
                 log.info("SUCCESS ARCHIVE BATCH {}", i / BATCH_SIZE + 1);
-                Thread.sleep(500);
+                Thread.sleep(1500);
 
             } catch (HttpClientErrorException.TooManyRequests e) {
-                log.warn("RATE LIMIT HIT, STOP ARCHIVE FETCH");
+                rateLimitUntil.set(System.currentTimeMillis() + RATE_LIMIT_COOLDOWN_MS);
+                log.warn("RATE LIMIT HIT, COOLDOWN 1 HOUR");
                 return;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -333,27 +293,32 @@ public class WeatherDataInitializerService {
         }
     }
 
-    private void saveHourlyData(Area area, JsonNode hourly, LocalDateTime lastTime) {
+    private void saveHourlyDataForDate(Area area, JsonNode hourly, LocalDate targetDate) {
         JsonNode times = hourly.path("time");
-        if (!times.isArray()) return;
+        if (!times.isArray())
+            return;
+
+        LocalDateTime startOfDay = targetDate.atStartOfDay();
+        LocalDateTime endOfDay = targetDate.plusDays(1).atStartOfDay();
 
         List<WeatherData> weatherDatas = new ArrayList<>();
         for (int i = 0; i < times.size(); i++) {
             LocalDateTime time = LocalDateTime.parse(times.get(i).asText());
-            if (lastTime != null && !time.isAfter(lastTime)) continue;
+            if (time.isBefore(startOfDay) || !time.isBefore(endOfDay))
+                continue;
 
             WeatherDataCreationRequest request = WeatherDataCreationRequest.builder()
-                .precipitation(decimal(hourly, "precipitation", i))
-                .temperature2m(decimal(hourly, "temperature_2m", i))
-                .dewpoint2m(decimal(hourly, "dew_point_2m", i))
-                .surfacePressure(decimal(hourly, "surface_pressure", i))
-                .windspeed10m(decimal(hourly, "wind_speed_10m", i))
-                .winddirection10m(decimal(hourly, "wind_direction_10m", i))
-                .relativehumidity2m(decimal(hourly, "relative_humidity_2m", i))
-                .evapotranspiration(decimal(hourly, "et0_fao_evapotranspiration", i))
-                .lat(area.getLat())
-                .lon(area.getLon())
-                .build();
+                    .precipitation(decimal(hourly, "precipitation", i))
+                    .temperature2m(decimal(hourly, "temperature_2m", i))
+                    .dewpoint2m(decimal(hourly, "dew_point_2m", i))
+                    .surfacePressure(decimal(hourly, "surface_pressure", i))
+                    .windspeed10m(decimal(hourly, "wind_speed_10m", i))
+                    .winddirection10m(decimal(hourly, "wind_direction_10m", i))
+                    .relativehumidity2m(decimal(hourly, "relative_humidity_2m", i))
+                    .evapotranspiration(decimal(hourly, "et0_fao_evapotranspiration", i))
+                    .lat(area.getLat())
+                    .lon(area.getLon())
+                    .build();
 
             WeatherData weatherData = weatherDataMapper.toWeatherData(request);
             weatherData.setArea(area);
@@ -362,20 +327,83 @@ public class WeatherDataInitializerService {
         }
 
         if (!weatherDatas.isEmpty()) {
+            try {
+                int count = weatherDatas.size();
+                weatherDataRepository.saveAll(weatherDatas);
+                weatherDatas.clear();
+                log.info("SAVED {} RECORDS FOR AREA {} DATE {}", count, area.getId(), targetDate);
+            } catch (Exception e) {
+                for (WeatherData wd : weatherDatas) {
+                    try {
+                        weatherDataRepository.save(wd);
+                    } catch (Exception ex) {
+                        log.debug("DUPLICATE AREA {} TIME {}", area.getId(), wd.getTime());
+                    }
+                }
+            }
+        }
+    }
+
+    private void saveHourlyData(Area area, JsonNode hourly, LocalDateTime lastTime) {
+        JsonNode times = hourly.path("time");
+        if (!times.isArray())
+            return;
+
+        List<WeatherData> weatherDatas = new ArrayList<>();
+        for (int i = 0; i < times.size(); i++) {
+            LocalDateTime time = LocalDateTime.parse(times.get(i).asText());
+            if (lastTime != null && !time.isAfter(lastTime))
+                continue;
+
+            WeatherDataCreationRequest request = WeatherDataCreationRequest.builder()
+                    .precipitation(decimal(hourly, "precipitation", i))
+                    .temperature2m(decimal(hourly, "temperature_2m", i))
+                    .dewpoint2m(decimal(hourly, "dew_point_2m", i))
+                    .surfacePressure(decimal(hourly, "surface_pressure", i))
+                    .windspeed10m(decimal(hourly, "wind_speed_10m", i))
+                    .winddirection10m(decimal(hourly, "wind_direction_10m", i))
+                    .relativehumidity2m(decimal(hourly, "relative_humidity_2m", i))
+                    .evapotranspiration(decimal(hourly, "et0_fao_evapotranspiration", i))
+                    .lat(area.getLat())
+                    .lon(area.getLon())
+                    .build();
+
+            WeatherData weatherData = weatherDataMapper.toWeatherData(request);
+            weatherData.setArea(area);
+            weatherData.setTime(time);
+            weatherDatas.add(weatherData);
+        }
+
+        if (!weatherDatas.isEmpty()) {
+            int count = weatherDatas.size();
             weatherDataRepository.saveAll(weatherDatas);
-            log.info("SAVED {} RECORDS FOR AREA {}", weatherDatas.size(), area.getId());
+            weatherDatas.clear();
+            log.info("SAVED {} RECORDS FOR AREA {}", count, area.getId());
         }
     }
 
     private BigDecimal decimal(JsonNode node, String field) {
         JsonNode value = node.path(field);
-        if (value.isNull() || value.isMissingNode()) return null;
+        if (value.isNull() || value.isMissingNode())
+            return null;
         return BigDecimal.valueOf(value.asDouble());
     }
 
     private BigDecimal decimal(JsonNode node, String field, int index) {
         JsonNode values = node.path(field);
-        if (!values.isArray() || index >= values.size() || values.get(index).isNull()) return null;
+        if (!values.isArray() || index >= values.size() || values.get(index).isNull())
+            return null;
         return BigDecimal.valueOf(values.get(index).asDouble());
+    }
+
+    private void logMemory() {
+        long used = (Runtime.getRuntime().totalMemory()
+                - Runtime.getRuntime().freeMemory())
+                / 1024 / 1024;
+
+        long max = Runtime.getRuntime().maxMemory()
+                / 1024 / 1024;
+
+        log.info("MEMORY USED={}MB / MAX={}MB", used, max);
     }
 }
