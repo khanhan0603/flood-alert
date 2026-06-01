@@ -70,8 +70,15 @@ public class WeatherDataInitializerService {
 
         Pageable pageable = PageRequest.of(0, 100);
 
+        log.info("BACKFILL START");
+
         List<Area> areas =
             areaRepository.findAreasWithoutWeather(pageable);
+
+        log.info(
+            "AREAS WITHOUT WEATHER = {}",
+            areas.size()
+        );
 
         if(!areas.isEmpty()){
             fetchAndSaveArchive(areas);
@@ -213,6 +220,10 @@ public class WeatherDataInitializerService {
 
 
     public void fetchMissingWeather(List<Area> areas){
+        log.info(
+            "ENTER FETCH MISSING WEATHER, AREA SIZE={}",
+            areas.size()
+        );
         RestTemplate restTemplate=restTemplateBuilder.build();
         for(Area area:areas){
             try{

@@ -1,5 +1,6 @@
 package com.example.flood_alert.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -59,6 +60,12 @@ public class User extends BaseEntity{
 
     @Column(columnDefinition="TEXT")
     String ghichu;
+
+    @Column(precision=10,scale=6)
+    BigDecimal home_lat;
+
+    @Column(precision=10,scale=6)
+    BigDecimal home_lon;
 
     @ManyToOne(fetch= FetchType.LAZY)
     @JoinColumn(name="area_id",nullable=false)
