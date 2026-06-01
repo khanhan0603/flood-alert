@@ -30,26 +30,6 @@ public class WeatherDataService {
         return schedulerEnabled;
     }
 
-    public void checkCompleted() {
-
-        long missingCount =
-            weatherDataRepository.countAreaWithoutWeatherData();
-
-        log.info(
-            "MISSING AREA COUNT: {}",
-            missingCount
-        );
-
-        if (missingCount == 0) {
-
-            schedulerEnabled = false;
-
-            log.info(
-                "IMPORT COMPLETED -> DISABLE SCHEDULER"
-            );
-        }
-    }
-
     public List<AreaWeatherResponse> findDistinctAreaIdAndTenKhuvuc() {
         return weatherDataRepository.findDistinctAreaIdAndTenKhuvuc();
     }

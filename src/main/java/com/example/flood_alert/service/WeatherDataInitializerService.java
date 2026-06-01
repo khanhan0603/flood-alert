@@ -49,21 +49,70 @@ public class WeatherDataInitializerService {
             log.info("SCHEDULER DISABLED");
             return;
         }
-        weatherDataService.checkCompleted();
-        if (!weatherDataService.isSchedulerEnabled()) {
+
+        Pageable pageable = PageRequest.of(0, 100);
+
+        // Bước 1: area chưa có data nào → fetch 31 ngày
+        List<Area> areasWithoutWeather = areaRepository.findAreasWithoutWeather(pageable);
+        log.info("AREAS WITHOUT WEATHER = {}", areasWithoutWeather.size());
+
+        if (!areasWithoutWeather.isEmpty()) {
+            fetchAndSaveArchive(areasWithoutWeather);
             return;
         }
 
-        Pageable pageable = PageRequest.of(0, 500);
-        List<Area> areas = areaRepository.findAreasWithoutWeather(pageable);
-        log.info("AREAS WITHOUT WEATHER = {}", areas.size());
+        // Bước 2: area có data nhưng lastTime < 2 giờ trước → fetch missing
+        LocalDateTime threshold = LocalDateTime.now().minusHours(2);
+        List<Area> outdatedAreas = areaRepository.findAreasWithOutdatedWeather(threshold, pageable);
+        log.info("AREAS WITH OUTDATED WEATHER = {}", outdatedAreas.size());
 
-        if (areas.isEmpty()) {
-            log.info("ALL AREAS HAVE DATA, SKIP BACKFILL");
-            return;
+        if (!outdatedAreas.isEmpty()) {
+            fetchMissingWeather(outdatedAreas);
         }
+    }
 
-        fetchAndSaveArchive(areas);
+    public void fetchMissingWeather(List<Area> areas) {
+        log.info("FETCH MISSING WEATHER, SIZE={}", areas.size());
+        RestTemplate restTemplate = restTemplateBuilder.build();
+
+        for (Area area : areas) {
+            try {
+                LocalDateTime lastTime = weatherDataRepository.findMaxTimeByAreaId(area.getId());
+                if (lastTime == null)
+                    continue;
+
+                long daysBehind = java.time.temporal.ChronoUnit.DAYS.between(
+                        lastTime.toLocalDate(), LocalDate.now());
+                if (daysBehind <= 0)
+                    continue;
+
+                int pastDays = (int) Math.min(daysBehind + 1, 92);
+
+                String url = UriComponentsBuilder
+                        .fromUriString(FORECAST_URL)
+                        .queryParam("latitude", area.getLat())
+                        .queryParam("longitude", area.getLon())
+                        .queryParam("past_days", pastDays)
+                        .queryParam("forecast_days", 1)
+                        .queryParam("hourly", HOURLY_FIELDS)
+                        .queryParam("timezone", TIMEZONE)
+                        .toUriString();
+
+                log.info("FETCH MISSING AREA {} past_days={}", area.getId(), pastDays);
+
+                JsonNode response = restTemplate.getForObject(url, JsonNode.class);
+                if (response == null)
+                    continue;
+
+                saveHourlyData(area, response.path("hourly"), lastTime);
+                Thread.sleep(500);
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                log.error("ERROR FETCH MISSING AREA {}", area.getId(), e);
+            }
+        }
     }
 
     @Scheduled(cron = "0 5 * * * *")
@@ -92,7 +141,8 @@ public class WeatherDataInitializerService {
                     .toUriString();
             try {
                 JsonNode response = restTemplate.getForObject(url, JsonNode.class);
-                if (response == null) continue;
+                if (response == null)
+                    continue;
                 saveCurrentData(area, response.path("current"));
             } catch (Exception e) {
                 log.error("ERROR FETCH CURRENT WEATHER FOR AREA {}", area.getId(), e);
@@ -101,9 +151,9 @@ public class WeatherDataInitializerService {
     }
 
     private void saveCurrentData(Area area, JsonNode current) {
-        if (current.isMissingNode() || current.path("time").isMissingNode()) {
+        if (current.isMissingNode() || current.path("time").isMissingNode())
             return;
-        }
+
         WeatherDataCreationRequest request = WeatherDataCreationRequest.builder()
                 .precipitation(decimal(current, "precipitation"))
                 .temperature2m(decimal(current, "temperature_2m"))
@@ -116,6 +166,7 @@ public class WeatherDataInitializerService {
                 .lat(area.getLat())
                 .lon(area.getLon())
                 .build();
+
         WeatherData weatherData = weatherDataMapper.toWeatherData(request);
         weatherData.setArea(area);
         weatherData.setTime(LocalDateTime.parse(current.path("time").asText()));
@@ -141,8 +192,13 @@ public class WeatherDataInitializerService {
             try {
                 log.info("FETCH ARCHIVE AREA {}", area.getId());
                 JsonNode response = restTemplate.getForObject(url, JsonNode.class);
-                if (response == null) continue;
-                saveHourlyData(area, response.path("hourly"));
+                if (response == null)
+                    continue;
+
+                // Lấy lastTime để tránh duplicate nếu area đã có 1 số record
+                LocalDateTime lastTime = weatherDataRepository.findMaxTimeByAreaId(area.getId());
+
+                saveHourlyData(area, response.path("hourly"), lastTime);
                 log.info("SUCCESS AREA {}", area.getId());
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -153,13 +209,20 @@ public class WeatherDataInitializerService {
         }
     }
 
-    private void saveHourlyData(Area area, JsonNode hourly) {
+    // 1 hàm duy nhất, lastTime=null thì lưu tất cả, có lastTime thì skip record
+    // cũ
+    private void saveHourlyData(Area area, JsonNode hourly, LocalDateTime lastTime) {
         JsonNode times = hourly.path("time");
-        if (!times.isArray()) return;
+        if (!times.isArray())
+            return;
 
         List<WeatherData> weatherDatas = new ArrayList<>();
         for (int i = 0; i < times.size(); i++) {
             LocalDateTime time = LocalDateTime.parse(times.get(i).asText());
+
+            if (lastTime != null && !time.isAfter(lastTime))
+                continue;
+
             WeatherDataCreationRequest request = WeatherDataCreationRequest.builder()
                     .precipitation(decimal(hourly, "precipitation", i))
                     .temperature2m(decimal(hourly, "temperature_2m", i))
@@ -172,11 +235,13 @@ public class WeatherDataInitializerService {
                     .lat(area.getLat())
                     .lon(area.getLon())
                     .build();
+
             WeatherData weatherData = weatherDataMapper.toWeatherData(request);
             weatherData.setArea(area);
             weatherData.setTime(time);
             weatherDatas.add(weatherData);
         }
+
         if (!weatherDatas.isEmpty()) {
             weatherDataRepository.saveAll(weatherDatas);
             log.info("SAVED {} RECORDS FOR AREA {}", weatherDatas.size(), area.getId());
@@ -185,13 +250,15 @@ public class WeatherDataInitializerService {
 
     private BigDecimal decimal(JsonNode node, String field) {
         JsonNode value = node.path(field);
-        if (value.isNull() || value.isMissingNode()) return null;
+        if (value.isNull() || value.isMissingNode())
+            return null;
         return BigDecimal.valueOf(value.asDouble());
     }
 
     private BigDecimal decimal(JsonNode node, String field, int index) {
         JsonNode values = node.path(field);
-        if (!values.isArray() || index >= values.size() || values.get(index).isNull()) return null;
+        if (!values.isArray() || index >= values.size() || values.get(index).isNull())
+            return null;
         return BigDecimal.valueOf(values.get(index).asDouble());
     }
 }
