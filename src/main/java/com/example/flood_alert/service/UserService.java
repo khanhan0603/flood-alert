@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,10 @@ public class UserService {
         if(userRepository.existsBySodt(request.getSodt()))
             throw new AppException(ErrorCode.PHONE_EXISTED);
         User user=userMapper.toUser(request);
-        Area area=areaRepository.findById(request.getArea_id()).orElseThrow(()->new AppException(ErrorCode.AREA_NOT_FOUND));
+
+        UUID areaId = UUID.fromString(request.getArea_id());
+
+        Area area=areaRepository.findById(areaId).orElseThrow(()->new AppException(ErrorCode.AREA_NOT_FOUND));
 
         user.setArea(area);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
