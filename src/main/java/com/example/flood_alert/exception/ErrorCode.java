@@ -18,6 +18,7 @@ public enum ErrorCode {
     INVALID_PHONE(1006,"Số điện thoại không hợp lệ! Dạng 0xxxxxxxxx!"),
     EMAIL_EXISTED(1007,"Email này đã được đăng ký! Vui lòng dùng email khác!"),
     PHONE_EXISTED(1008,"Số điện thoại này đã được đăng ký! Vui số dùng số khác!"),
+    AREA_NOT_FOUND(1011,"Không tìm thấy khu vực phù hợp!"),
     ;
     int code;
     String message;

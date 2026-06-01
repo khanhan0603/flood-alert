@@ -3,17 +3,20 @@ package com.example.flood_alert.service;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.flood_alert.dbo.request.UserCreationRequest;
+import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.mapper.UserMapper;
+import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
@@ -26,6 +29,7 @@ import lombok.experimental.FieldDefaults;
 public class UserService {
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
+    AreaRepository areaRepository;
     UserMapper userMapper;
     public User createUser(UserCreationRequest request){
         if(userRepository.existsByEmail(request.getEmail()))
@@ -33,6 +37,9 @@ public class UserService {
         if(userRepository.existsBySodt(request.getSodt()))
             throw new AppException(ErrorCode.PHONE_EXISTED);
         User user=userMapper.toUser(request);
+        Area area=areaRepository.findById(request.getArea_id()).orElseThrow(()->new AppException(ErrorCode.AREA_NOT_FOUND));
+
+        user.setArea(area);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.CITIZEN);
         user.setTrangthai(Status.ACTIVE);

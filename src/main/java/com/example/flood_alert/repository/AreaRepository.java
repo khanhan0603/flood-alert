@@ -100,4 +100,6 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
+
+    Optional<Area> findById(String id);
 }
