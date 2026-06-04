@@ -60,7 +60,7 @@ public class WeatherDataInitializerService {
     // =========================================================================
     // SCHEDULER 1: Backfill — 00:05 mỗi ngày
     // =========================================================================
-    @Scheduled(cron = "0 5 0 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 */5 * * * *", zone = "Asia/Ho_Chi_Minh")
     public void backfill() {
         log.info("=== START BACKFILL CHECK ===");
 
