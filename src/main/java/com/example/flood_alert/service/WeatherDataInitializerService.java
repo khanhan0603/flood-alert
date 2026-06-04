@@ -57,7 +57,7 @@ public class WeatherDataInitializerService {
     // SCHEDULER 1: Backfill — 00:05 mỗi ngày
     // Kiểm tra KEEP_DAYS ngày quá khứ có đủ 24h data không, nếu thiếu thì fetch bù
     // =========================================================================
-    @Scheduled(cron = "0 25 19 * * *")
+    @Scheduled(cron = "0 40 19 * * *", zone = "Asia/Ho_Chi_Minh")
     public void backfill() {
         log.info("=== START BACKFILL CHECK ===");
         List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
@@ -99,7 +99,7 @@ public class WeatherDataInitializerService {
     // SCHEDULER 2: Realtime — đầu mỗi giờ
     // Lấy data current cho hôm nay, 4 request cho 3321 areas
     // =========================================================================
-    @Scheduled(cron = "0 20 19 * * *")
+    @Scheduled(cron = "0 35 19 * * *", zone = "Asia/Ho_Chi_Minh")
     public void fetchRealtime() {
         log.info("=== START REALTIME FETCH ===");
         List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
@@ -115,7 +115,7 @@ public class WeatherDataInitializerService {
     // SCHEDULER 3: Cleanup — 23:55 mỗi ngày
     // Xóa data cũ hơn KEEP_DAYS ngày, chỉ giữ đúng 8 ngày + hôm nay
     // =========================================================================
-    @Scheduled(cron = "0 55 23 * * *")
+    @Scheduled(cron = "0 55 23 * * *", zone = "Asia/Ho_Chi_Minh")
     public void deleteOldData() {
         LocalDateTime cutoff = LocalDate.now().minusDays(KEEP_DAYS).atStartOfDay();
         log.info("=== DELETE OLD DATA BEFORE {} ===", cutoff);
