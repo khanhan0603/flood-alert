@@ -4,6 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import com.example.flood_alert.dbo.request.WeatherDataCreationRequest;
+import com.example.flood_alert.dbo.response.WDataResponse;
 import com.example.flood_alert.entity.WeatherData;
 
 @Mapper(componentModel = "spring")
@@ -17,4 +18,6 @@ public interface WeatherDataMapper {
     @Mapping(source = "relativehumidity2m", target="humidity")
     @Mapping(source = "evapotranspiration", target="evapotranspiration")
     WeatherData toWeatherData(WeatherDataCreationRequest weatherDataCreationRequest);
+
+    WDataResponse toWDataResponse(WeatherData weatherData);
 }

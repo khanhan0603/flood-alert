@@ -48,9 +48,9 @@ public class WeatherDataInitializerService {
     static final int KEEP_DAYS = 8;
     static final int HOURS_PER_DAY = 24;
 
-    static final int REQUEST_DELAY_MS = 5000;
-    static final int RETRY_ATTEMPTS = 5;
-    static final int RETRY_BACKOFF_MS = 60_000;
+    static final int REQUEST_DELAY_MS = 2000;
+    static final int RETRY_ATTEMPTS = 3;
+    static final int RETRY_BACKOFF_MS = 10_000;
 
     WeatherDataRepository weatherDataRepository;
     AreaRepository areaRepository;
@@ -60,14 +60,11 @@ public class WeatherDataInitializerService {
     // =========================================================================
     // SCHEDULER 1: Backfill — 00:05 mỗi ngày
     // =========================================================================
-    @Scheduled(cron = "0 5 0 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 30 0 * * *", zone = "Asia/Ho_Chi_Minh")
     public void backfill() {
         log.info("=== START BACKFILL CHECK ===");
 
-        List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2)
-                                        .stream()
-                                        .limit(50)
-                                        .toList();
+        List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
         if (areas.isEmpty()) {
             log.info("BACKFILL SKIP: NO AREA FOUND");
             return;
@@ -109,7 +106,7 @@ public class WeatherDataInitializerService {
     // =========================================================================
     // SCHEDULER 2: Realtime — mỗi giờ phút thứ 5
     // =========================================================================
-     @Scheduled(cron = "0 5 * * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 5 * * * *", zone = "Asia/Ho_Chi_Minh")
     public void fetchRealtime() {
         log.info("=== START REALTIME FETCH ===");
 
@@ -272,14 +269,32 @@ public class WeatherDataInitializerService {
             } catch (HttpClientErrorException.TooManyRequests e) {
                 log.warn("{} AREA {} hit 429 (attempt {}/{}) - {}", scope, areaId, attempt, RETRY_ATTEMPTS,
                         e.getResponseBodyAsString());
+                log.info(
+                        "{} AREA {} RETRY {}/{}",
+                        scope,
+                        areaId,
+                        attempt,
+                        RETRY_ATTEMPTS);
                 sleepQuietly((long) RETRY_BACKOFF_MS * attempt);
 
             } catch (ResourceAccessException e) {
                 log.warn("{} AREA {} network timeout (attempt {}/{})", scope, areaId, attempt, RETRY_ATTEMPTS);
+                log.info(
+                        "{} AREA {} RETRY {}/{}",
+                        scope,
+                        areaId,
+                        attempt,
+                        RETRY_ATTEMPTS);
                 sleepQuietly((long) RETRY_BACKOFF_MS * attempt);
 
             } catch (Exception e) {
                 log.warn("{} AREA {} error (attempt {}/{})", scope, areaId, attempt, RETRY_ATTEMPTS, e.toString());
+                log.info(
+                        "{} AREA {} RETRY {}/{}",
+                        scope,
+                        areaId,
+                        attempt,
+                        RETRY_ATTEMPTS);
                 sleepQuietly((long) RETRY_BACKOFF_MS * attempt);
             }
         }
