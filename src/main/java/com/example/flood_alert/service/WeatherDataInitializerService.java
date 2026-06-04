@@ -41,8 +41,7 @@ public class WeatherDataInitializerService {
 
     static final String FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
     static final String TIMEZONE = "Asia/Bangkok";
-    static final String HOURLY_FIELDS =
-            "precipitation,temperature_2m,dew_point_2m,surface_pressure,"
+    static final String HOURLY_FIELDS = "precipitation,temperature_2m,dew_point_2m,surface_pressure,"
             + "wind_speed_10m,wind_direction_10m,relative_humidity_2m,"
             + "et0_fao_evapotranspiration";
 
@@ -82,6 +81,10 @@ public class WeatherDataInitializerService {
 
             long completeAreas = weatherDataRepository.countAreasWithFullDay(start, end, HOURS_PER_DAY);
 
+            log.info("TOTAL AREAS = {}", totalAreas);
+            log.info("CHECK DATE {}", date);
+            log.info("COMPLETE AREAS = {}", completeAreas);
+
             if (completeAreas < totalAreas) {
                 log.info("DATE {} INCOMPLETE: {}/{} areas đủ 24h", date, completeAreas, totalAreas);
                 incompleteDates.add(date);
@@ -103,7 +106,7 @@ public class WeatherDataInitializerService {
     // =========================================================================
     // SCHEDULER 2: Realtime — mỗi giờ phút thứ 5
     // =========================================================================
-    //@Scheduled(cron = "0 5 * * * *", zone = "Asia/Ho_Chi_Minh")
+    // @Scheduled(cron = "0 5 * * * *", zone = "Asia/Ho_Chi_Minh")
     public void fetchRealtime() {
         log.info("=== START REALTIME FETCH ===");
 
@@ -288,7 +291,8 @@ public class WeatherDataInitializerService {
             Set<LocalDate> targetDates,
             Set<LocalDateTime> existingTimes) {
         JsonNode times = hourly.path("time");
-        if (!times.isArray()) return;
+        if (!times.isArray())
+            return;
 
         List<WeatherData> toSave = new ArrayList<>();
 
@@ -296,8 +300,10 @@ public class WeatherDataInitializerService {
             LocalDateTime time = LocalDateTime.parse(times.get(i).asText());
             LocalDate date = time.toLocalDate();
 
-            if (!targetDates.contains(date)) continue;
-            if (existingTimes.contains(time)) continue;
+            if (!targetDates.contains(date))
+                continue;
+            if (existingTimes.contains(time))
+                continue;
 
             toSave.add(buildWeatherData(area, hourly, i, time));
         }
@@ -309,7 +315,8 @@ public class WeatherDataInitializerService {
     // SAVE: Lưu current data
     // =========================================================================
     private void saveCurrentData(Area area, JsonNode current) {
-        if (current.isMissingNode() || current.path("time").isMissingNode()) return;
+        if (current.isMissingNode() || current.path("time").isMissingNode())
+            return;
 
         LocalDateTime time = LocalDateTime.parse(current.path("time").asText());
 
@@ -408,13 +415,15 @@ public class WeatherDataInitializerService {
     // =========================================================================
     private BigDecimal decimal(JsonNode node, String field) {
         JsonNode value = node.path(field);
-        if (value.isNull() || value.isMissingNode()) return null;
+        if (value.isNull() || value.isMissingNode())
+            return null;
         return BigDecimal.valueOf(value.asDouble());
     }
 
     private BigDecimal decimal(JsonNode node, String field, int index) {
         JsonNode values = node.path(field);
-        if (!values.isArray() || index >= values.size() || values.get(index).isNull()) return null;
+        if (!values.isArray() || index >= values.size() || values.get(index).isNull())
+            return null;
         return BigDecimal.valueOf(values.get(index).asDouble());
     }
 
