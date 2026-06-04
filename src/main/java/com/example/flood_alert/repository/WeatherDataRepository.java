@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,6 +13,8 @@ import com.example.flood_alert.dbo.response.AreaWeatherResponse;
 import com.example.flood_alert.dbo.response.WDataResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.WeatherData;
+
+import jakarta.transaction.Transactional;
 
 public interface WeatherDataRepository
         extends JpaRepository<WeatherData, UUID> {
@@ -85,5 +87,36 @@ public interface WeatherDataRepository
             WHERE area.id= :areaId
             """)
     LocalDateTime findMaxTimeByAreaId(@Param("areaId") UUID areaId);
+                
+//     Đếm số area có đủ 24h data trong 1 ngày
+        @Query("""
+                SELECT COUNT(cnt) FROM(
+                    SELECT COUNT(w.id) as cnt
+                    FROM WeatherData w
+                    WHERE w.time >= :start AND w.time < :end
+                    GROUP BY w.area.id
+                    HAVING COUNT(w.id) >= :requiredHours
+                )    
+        """)
+        long countAreasWithFullDay(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, @Param("requiredHours") int requiredHours);
+
+        // Lấy danh sách giờ đã có của 1 area trong khoảng thời gian
+        @Query("""
+                SELECT w.time
+                FROM WeatherData w
+                WHERE w.area.id = :areaId
+                        AND w.time >= :start AND w.time < :end        
+        """)
+        List<Object[]> findExistingTimesBatch(@Param("areaIds") List<UUID> areaId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+        // Xóa data cũ hơn 8 ngày
+        @Modifying
+        @Transactional
+        @Query("""
+                DELETE FROM WeatherData w
+                WHERE w.time < :cutoff        
+        """)
+        int deleteByTimeBefore(@Param("cutoff") LocalDateTime cutoff);
+
 
 }
