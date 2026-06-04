@@ -1,6 +1,7 @@
 package com.example.flood_alert.service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,6 +12,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,26 +42,26 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WeatherDataInitializerService {
 
-    static final String FORECAST_URL   = "https://api.open-meteo.com/v1/forecast";
-    static final String TIMEZONE       = "Asia/Bangkok";
-    static final String HOURLY_FIELDS  = "precipitation,temperature_2m,dew_point_2m,surface_pressure,"
-                                       + "wind_speed_10m,wind_direction_10m,relative_humidity_2m,"
-                                       + "et0_fao_evapotranspiration";
-    static final int    BATCH_SIZE     = 50; 
-    static final int    KEEP_DAYS      = 8;    // days_back=8 trong Python
-    static final int    HOURS_PER_DAY  = 24;
-    static final int    BATCH_SLEEP_MS = 2000;
+    static final String FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+    static final String TIMEZONE = "Asia/Bangkok";
+    static final String HOURLY_FIELDS = "precipitation,temperature_2m,dew_point_2m,surface_pressure,"
+            + "wind_speed_10m,wind_direction_10m,relative_humidity_2m,"
+            + "et0_fao_evapotranspiration";
+    static final int BATCH_SIZE = 20;
+    static final int KEEP_DAYS = 8; // days_back=8 trong Python
+    static final int HOURS_PER_DAY = 24;
+    static final int BATCH_SLEEP_MS = 2000;
 
     WeatherDataRepository weatherDataRepository;
-    AreaRepository        areaRepository;
-    WeatherDataMapper     weatherDataMapper;
-    RestTemplateBuilder   restTemplateBuilder;
+    AreaRepository areaRepository;
+    WeatherDataMapper weatherDataMapper;
+    RestTemplateBuilder restTemplateBuilder;
 
     // =========================================================================
     // SCHEDULER 1: Backfill — 00:05 mỗi ngày
     // Kiểm tra KEEP_DAYS ngày quá khứ có đủ 24h data không, nếu thiếu thì fetch bù
     // =========================================================================
-    @Scheduled(cron = "0 00 20 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 */10 * * * *", zone = "Asia/Ho_Chi_Minh")
     public void backfill() {
         log.info("=== START BACKFILL CHECK ===");
         List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
@@ -66,14 +70,14 @@ public class WeatherDataInitializerService {
             return;
         }
 
-        LocalDate today          = LocalDate.now();
-        long      totalAreas     = areas.size();
+        LocalDate today = LocalDate.now();
+        long totalAreas = areas.size();
         Set<LocalDate> incompleteDates = new HashSet<>();
 
         for (int daysAgo = 1; daysAgo <= KEEP_DAYS; daysAgo++) {
-            LocalDate     date  = today.minusDays(daysAgo);
+            LocalDate date = today.minusDays(daysAgo);
             LocalDateTime start = date.atStartOfDay();
-            LocalDateTime end   = date.plusDays(1).atStartOfDay();
+            LocalDateTime end = date.plusDays(1).atStartOfDay();
 
             long completeAreas = weatherDataRepository.countAreasWithFullDay(start, end, HOURS_PER_DAY);
 
@@ -99,7 +103,7 @@ public class WeatherDataInitializerService {
     // SCHEDULER 2: Realtime — đầu mỗi giờ
     // Lấy data current cho hôm nay, 4 request cho 3321 areas
     // =========================================================================
-    @Scheduled(cron = "0 50 19 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 */5 * * * *", zone = "Asia/Ho_Chi_Minh")
     public void fetchRealtime() {
         log.info("=== START REALTIME FETCH ===");
         List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
@@ -144,36 +148,42 @@ public class WeatherDataInitializerService {
     // CORE: Fetch & save cho các ngày còn thiếu
     // =========================================================================
     private void fetchAndSaveForDates(List<Area> areas, Set<LocalDate> incompleteDates) {
-        RestTemplate restTemplate  = restTemplateBuilder.build();
-        int          totalBatches  = (areas.size() + BATCH_SIZE - 1) / BATCH_SIZE;
+        RestTemplate restTemplate = restTemplateBuilder
+                .setConnectTimeout(Duration.ofSeconds(10))
+                .setReadTimeout(Duration.ofSeconds(30))
+                .build();
+        int totalBatches = (areas.size() + BATCH_SIZE - 1) / BATCH_SIZE;
 
         // Tính range để query existing times 1 lần/batch
         LocalDateTime rangeStart = incompleteDates.stream()
                 .min(LocalDate::compareTo).orElseThrow().atStartOfDay();
-        LocalDateTime rangeEnd   = incompleteDates.stream()
+        LocalDateTime rangeEnd = incompleteDates.stream()
                 .max(LocalDate::compareTo).orElseThrow().plusDays(1).atStartOfDay();
 
         for (int i = 0; i < areas.size(); i += BATCH_SIZE) {
-            int        batchNo = i / BATCH_SIZE + 1;
-            List<Area> batch   = areas.subList(i, Math.min(i + BATCH_SIZE, areas.size()));
+            int batchNo = i / BATCH_SIZE + 1;
+            List<Area> batch = areas.subList(i, Math.min(i + BATCH_SIZE, areas.size()));
 
             String lats = batch.stream().map(a -> a.getLat().toString()).collect(Collectors.joining(","));
             String lons = batch.stream().map(a -> a.getLon().toString()).collect(Collectors.joining(","));
 
             String url = UriComponentsBuilder
                     .fromUriString(FORECAST_URL)
-                    .queryParam("latitude",     lats)
-                    .queryParam("longitude",    lons)
-                    .queryParam("past_days",    KEEP_DAYS + 1) // +1 để bao phủ đủ
+                    .queryParam("latitude", lats)
+                    .queryParam("longitude", lons)
+                    .queryParam("past_days", KEEP_DAYS + 1) // +1 để bao phủ đủ
                     .queryParam("forecast_days", 0)
-                    .queryParam("hourly",       HOURLY_FIELDS)
-                    .queryParam("timezone",     TIMEZONE)
+                    .queryParam("hourly", HOURLY_FIELDS)
+                    .queryParam("timezone", TIMEZONE)
                     .toUriString();
 
             log.info("BACKFILL BATCH {}/{} ({} areas)", batchNo, totalBatches, batch.size());
 
             try {
+                log.info("CALLING OPENMETEO BATCH {}/{}", batchNo, totalBatches);
+                log.info("URL LENGTH = {}", url.length());
                 JsonNode response = restTemplate.getForObject(url, JsonNode.class);
+                log.info("RECEIVED OPENMETEO BATCH {}/{}", batchNo, totalBatches);
                 if (response == null) {
                     log.warn("NULL RESPONSE BACKFILL BATCH {}", batchNo);
                     continue;
@@ -186,14 +196,14 @@ public class WeatherDataInitializerService {
 
                 if (response.isArray()) {
                     for (int j = 0; j < response.size(); j++) {
-                        Area             area          = batch.get(j);
+                        Area area = batch.get(j);
                         Set<LocalDateTime> existingTimes = existingTimesMap
                                 .getOrDefault(area.getId(), Set.of());
                         saveHourlyForDates(area, response.get(j).path("hourly"),
                                 incompleteDates, existingTimes);
                     }
                 } else {
-                    Area             area          = batch.get(0);
+                    Area area = batch.get(0);
                     Set<LocalDateTime> existingTimes = existingTimesMap
                             .getOrDefault(area.getId(), Set.of());
                     saveHourlyForDates(area, response.path("hourly"),
@@ -219,53 +229,45 @@ public class WeatherDataInitializerService {
     // CORE: Fetch current weather — realtime mỗi giờ
     // =========================================================================
     private void fetchAndSaveCurrent(List<Area> areas) {
-        RestTemplate restTemplate = restTemplateBuilder.build();
-        int          totalBatches = (areas.size() + BATCH_SIZE - 1) / BATCH_SIZE;
+        ExecutorService executor = Executors.newFixedThreadPool(5);
 
-        for (int i = 0; i < areas.size(); i += BATCH_SIZE) {
-            int        batchNo = i / BATCH_SIZE + 1;
-            List<Area> batch   = areas.subList(i, Math.min(i + BATCH_SIZE, areas.size()));
+        for (Area area : areas) {
+            executor.submit(() -> {
+                RestTemplate restTemplate = restTemplateBuilder
+                        .setConnectTimeout(Duration.ofSeconds(10))
+                        .setReadTimeout(Duration.ofSeconds(30))
+                        .build();
 
-            String lats = batch.stream().map(a -> a.getLat().toString()).collect(Collectors.joining(","));
-            String lons = batch.stream().map(a -> a.getLon().toString()).collect(Collectors.joining(","));
+                try {
+                    String url = UriComponentsBuilder
+                            .fromUriString(FORECAST_URL)
+                            .queryParam("latitude", area.getLat())
+                            .queryParam("longitude", area.getLon())
+                            .queryParam("current", HOURLY_FIELDS)
+                            .queryParam("timezone", TIMEZONE)
+                            .toUriString();
 
-            String url = UriComponentsBuilder
-                    .fromUriString(FORECAST_URL)
-                    .queryParam("latitude",  lats)
-                    .queryParam("longitude", lons)
-                    .queryParam("current",   HOURLY_FIELDS)
-                    .queryParam("timezone",  TIMEZONE)
-                    .toUriString();
+                    JsonNode response = restTemplate.getForObject(url, JsonNode.class);
 
-            log.info("REALTIME BATCH {}/{} ({} areas)", batchNo, totalBatches, batch.size());
-
-            try {
-                JsonNode response = restTemplate.getForObject(url, JsonNode.class);
-                if (response == null) {
-                    log.warn("NULL RESPONSE REALTIME BATCH {}", batchNo);
-                    continue;
-                }
-
-                if (response.isArray()) {
-                    for (int j = 0; j < response.size(); j++) {
-                        saveCurrentData(batch.get(j), response.get(j).path("current"));
+                    if (response == null) {
+                        return;
                     }
-                } else {
-                    saveCurrentData(batch.get(0), response.path("current"));
+
+                    saveCurrentData(area, response.path("current"));
+                    log.info("SUCCESS AREA {}", area.getId());
+
+                } catch (Exception e) {
+                    log.error("ERROR AREA {}", area.getId(), e);
                 }
+            });
+        }
 
-                log.info("REALTIME BATCH {}/{} SUCCESS", batchNo, totalBatches);
-                Thread.sleep(BATCH_SLEEP_MS);
+        executor.shutdown();
 
-            } catch (HttpClientErrorException.TooManyRequests e) {
-                log.error("RATE LIMIT HIT AT REALTIME BATCH {}/{}", batchNo, totalBatches);
-                return;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            } catch (Exception e) {
-                log.error("ERROR REALTIME BATCH {}/{}", batchNo, totalBatches, e);
-            }
+        try {
+            executor.awaitTermination(2, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -273,18 +275,21 @@ public class WeatherDataInitializerService {
     // SAVE: Chỉ insert giờ còn thiếu, bỏ qua giờ đã có — O(1) lookup
     // =========================================================================
     private void saveHourlyForDates(Area area, JsonNode hourly,
-                                    Set<LocalDate> targetDates,
-                                    Set<LocalDateTime> existingTimes) {
+            Set<LocalDate> targetDates,
+            Set<LocalDateTime> existingTimes) {
         JsonNode times = hourly.path("time");
-        if (!times.isArray()) return;
+        if (!times.isArray())
+            return;
 
         List<WeatherData> toSave = new ArrayList<>();
         for (int i = 0; i < times.size(); i++) {
             LocalDateTime time = LocalDateTime.parse(times.get(i).asText());
-            LocalDate     date = time.toLocalDate();
+            LocalDate date = time.toLocalDate();
 
-            if (!targetDates.contains(date))   continue; // O(1) — Set
-            if (existingTimes.contains(time))  continue; // O(1) — Set
+            if (!targetDates.contains(date))
+                continue; // O(1) — Set
+            if (existingTimes.contains(time))
+                continue; // O(1) — Set
 
             toSave.add(buildWeatherData(area, hourly, i, time));
         }
@@ -296,7 +301,8 @@ public class WeatherDataInitializerService {
     // SAVE: Lưu current data — realtime
     // =========================================================================
     private void saveCurrentData(Area area, JsonNode current) {
-        if (current.isMissingNode() || current.path("time").isMissingNode()) return;
+        if (current.isMissingNode() || current.path("time").isMissingNode())
+            return;
 
         LocalDateTime time = LocalDateTime.parse(current.path("time").asText());
 
@@ -332,11 +338,11 @@ public class WeatherDataInitializerService {
             List<UUID> areaIds, LocalDateTime start, LocalDateTime end) {
         List<Object[]> rows = weatherDataRepository.findExistingTimesBatch(areaIds, start, end);
 
-        Map<UUID, Set<LocalDateTime>> result=new HashMap<>();
+        Map<UUID, Set<LocalDateTime>> result = new HashMap<>();
 
-        for(Object[] row:rows){
-            UUID areaId=(UUID) row[0];
-            LocalDateTime time=(LocalDateTime) row[1];
+        for (Object[] row : rows) {
+            UUID areaId = (UUID) row[0];
+            LocalDateTime time = (LocalDateTime) row[1];
             result.computeIfAbsent(areaId, k -> new HashSet<>()).add(time);
         }
         return result;
@@ -396,13 +402,15 @@ public class WeatherDataInitializerService {
     // =========================================================================
     private BigDecimal decimal(JsonNode node, String field) {
         JsonNode value = node.path(field);
-        if (value.isNull() || value.isMissingNode()) return null;
+        if (value.isNull() || value.isMissingNode())
+            return null;
         return BigDecimal.valueOf(value.asDouble());
     }
 
     private BigDecimal decimal(JsonNode node, String field, int index) {
         JsonNode values = node.path(field);
-        if (!values.isArray() || index >= values.size() || values.get(index).isNull()) return null;
+        if (!values.isArray() || index >= values.size() || values.get(index).isNull())
+            return null;
         return BigDecimal.valueOf(values.get(index).asDouble());
     }
 }

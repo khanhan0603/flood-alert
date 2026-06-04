@@ -1,19 +1,20 @@
 package com.example.flood_alert.repository;
 
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
 import com.example.flood_alert.entity.Area;
 
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 
 public interface AreaRepository extends JpaRepository<Area, UUID> {
     boolean existsByTenkhuvuc(String tenkhuvuc);
@@ -54,6 +55,7 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
                 )
             """)
     List<Area> findAreasWithoutWeather(Pageable pageable);
+
 
     List<Area> findByLevelAndLatIsNotNullAndLonIsNotNull(
             Integer level);
@@ -100,5 +102,25 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
+    
+    @Query(value="""
+        SELECT *
+        FROM areas 
+        WHERE unaccent(lower(tenkhuvuc))
+                LIKE CONCAT('%',unaccent(lower(:keyword)),'%')
+        ORDER BY
+            CASE
+                WHEN unaccent(lower(tenkhuvuc)) LIKE CONCAT(unaccent(lower(:keyword)),'%')
+                THEN 0
+                ELSE 1
+            END,
+            tenkhuvuc
+    """,countQuery="""
+        SELECT COUNT(*)
+        FROM areas
+        WHERE unaccent(lower(tenkhuvuc))
+            LIKE CONCAT('%',unaccent(lower(:keyword)),'%')
+    """,nativeQuery = true)
+    Page<Area> searchArea(@Param("keyword") String keyword,Pageable pageable);
 
 }
