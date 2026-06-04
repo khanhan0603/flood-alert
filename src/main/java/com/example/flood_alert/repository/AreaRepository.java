@@ -16,6 +16,8 @@ import com.example.flood_alert.entity.Area;
 
 import org.springframework.data.repository.query.Param;
 
+import com.example.flood_alert.dbo.response.AreaSimpleResponse;
+
 public interface AreaRepository extends JpaRepository<Area, UUID> {
     boolean existsByTenkhuvuc(String tenkhuvuc);
 
@@ -121,6 +123,6 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
         WHERE unaccent(lower(tenkhuvuc))
             LIKE CONCAT('%',unaccent(lower(:keyword)),'%')
     """,nativeQuery = true)
-    Page<Area> searchArea(@Param("keyword") String keyword,Pageable pageable);
+    Page<AreaSimpleResponse> searchArea(@Param("keyword") String keyword,Pageable pageable);
 
 }

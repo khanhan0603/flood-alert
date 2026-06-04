@@ -3,6 +3,9 @@ package com.example.flood_alert.controller;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,6 +46,13 @@ public class AreaController {
     @GetMapping("/polygon-by-id")
     public WardPolygonResponse findPolygonById(@RequestParam UUID id) throws Exception{
         return areaService.findPolygonById(id);
+    }
+    
+
+
+    @GetMapping("/search")
+    public Page<AreaSimpleResponse> searchArea(@RequestParam String keyword) {
+        return areaService.searchArea(keyword, PageRequest.of(0,10));
     }
     
     

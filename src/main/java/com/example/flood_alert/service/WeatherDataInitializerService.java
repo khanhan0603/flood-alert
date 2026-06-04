@@ -49,9 +49,9 @@ public class WeatherDataInitializerService {
     static final int KEEP_DAYS = 8;
     static final int HOURS_PER_DAY = 24;
 
-    static final int REQUEST_DELAY_MS = 250;
-    static final int RETRY_ATTEMPTS = 3;
-    static final int RETRY_BACKOFF_MS = 5_000;
+    static final int REQUEST_DELAY_MS = 2000;
+    static final int RETRY_ATTEMPTS = 5;
+    static final int RETRY_BACKOFF_MS = 15_000;
 
     WeatherDataRepository weatherDataRepository;
     AreaRepository areaRepository;
@@ -103,7 +103,7 @@ public class WeatherDataInitializerService {
     // =========================================================================
     // SCHEDULER 2: Realtime — mỗi giờ phút thứ 5
     // =========================================================================
-    @Scheduled(cron = "0 5 * * * *", zone = "Asia/Ho_Chi_Minh")
+    //@Scheduled(cron = "0 5 * * * *", zone = "Asia/Ho_Chi_Minh")
     public void fetchRealtime() {
         log.info("=== START REALTIME FETCH ===");
 
