@@ -1,5 +1,6 @@
 package com.example.flood_alert.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +19,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @Slf4j
 @RestController
@@ -45,4 +49,10 @@ public class WeatherDataController {
     public List<WDataResponse> findByAreaId(@RequestParam UUID area_id) {
         return weatherDataService.findByAreaId(area_id);
     }
+
+    @PostMapping("/find-area-id-time")
+    public List<WDataResponse> findByAreaIdAndTime(@RequestBody UUID areaId, LocalDate start, LocalDate end) {
+        return weatherDataService.findByAreaIdAndTime(areaId, start, end);
+    }
+    
 }
