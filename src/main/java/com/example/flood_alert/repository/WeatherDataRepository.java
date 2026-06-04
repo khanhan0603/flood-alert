@@ -127,4 +127,15 @@ public interface WeatherDataRepository
                         """)
         int deleteByTimeBefore(@Param("cutoff") LocalDateTime cutoff);
 
+        @Query(value="""
+                SELECT *
+                FROM weather_datas w
+                WHERE w.area_id = :area AND w.time >= :start
+                  AND w.time <= :end
+        """,nativeQuery=true)
+        List<WeatherData> findWeatherDataByAreaAndTime(
+                        @Param("area") UUID area,
+                        @Param("start") LocalDateTime start,
+                        @Param("end") LocalDateTime end);
+
 }
