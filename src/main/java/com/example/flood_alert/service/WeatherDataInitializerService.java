@@ -57,7 +57,7 @@ public class WeatherDataInitializerService {
     // SCHEDULER 1: Backfill — 00:05 mỗi ngày
     // Kiểm tra KEEP_DAYS ngày quá khứ có đủ 24h data không, nếu thiếu thì fetch bù
     // =========================================================================
-    @Scheduled(cron = "0 05 19 * * *")
+    @Scheduled(cron = "0 25 19 * * *")
     public void backfill() {
         log.info("=== START BACKFILL CHECK ===");
         List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
@@ -99,7 +99,7 @@ public class WeatherDataInitializerService {
     // SCHEDULER 2: Realtime — đầu mỗi giờ
     // Lấy data current cho hôm nay, 4 request cho 3321 areas
     // =========================================================================
-    @Scheduled(cron = "0 00 19 * * *")
+    @Scheduled(cron = "0 20 19 * * *")
     public void fetchRealtime() {
         log.info("=== START REALTIME FETCH ===");
         List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
