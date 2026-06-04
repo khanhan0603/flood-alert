@@ -43,7 +43,7 @@ public class WeatherDataInitializerService {
     static final String HOURLY_FIELDS  = "precipitation,temperature_2m,dew_point_2m,surface_pressure,"
                                        + "wind_speed_10m,wind_direction_10m,relative_humidity_2m,"
                                        + "et0_fao_evapotranspiration";
-    static final int    BATCH_SIZE     = 1000; // Open-Meteo tối đa 1000 locations/request
+    static final int    BATCH_SIZE     = 50; 
     static final int    KEEP_DAYS      = 8;    // days_back=8 trong Python
     static final int    HOURS_PER_DAY  = 24;
     static final int    BATCH_SLEEP_MS = 2000;
@@ -57,7 +57,7 @@ public class WeatherDataInitializerService {
     // SCHEDULER 1: Backfill — 00:05 mỗi ngày
     // Kiểm tra KEEP_DAYS ngày quá khứ có đủ 24h data không, nếu thiếu thì fetch bù
     // =========================================================================
-    @Scheduled(cron = "0 40 19 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 00 20 * * *", zone = "Asia/Ho_Chi_Minh")
     public void backfill() {
         log.info("=== START BACKFILL CHECK ===");
         List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
@@ -99,7 +99,7 @@ public class WeatherDataInitializerService {
     // SCHEDULER 2: Realtime — đầu mỗi giờ
     // Lấy data current cho hôm nay, 4 request cho 3321 areas
     // =========================================================================
-    @Scheduled(cron = "0 35 19 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 50 19 * * *", zone = "Asia/Ho_Chi_Minh")
     public void fetchRealtime() {
         log.info("=== START REALTIME FETCH ===");
         List<Area> areas = areaRepository.findByLevelAndLatIsNotNullAndLonIsNotNull(2);
