@@ -86,6 +86,6 @@ public class AreaService {
     }
     
     public Page<AreaSimpleResponse> searchArea(String keyword, Pageable pageable){
-        return areaRepository.searchArea(keyword, pageable);
+        return areaRepository.searchArea(keyword, pageable).map(areaMapper::toSimpleResponse);
     }
 }
