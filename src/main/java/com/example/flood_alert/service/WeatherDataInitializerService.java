@@ -221,6 +221,12 @@ public class WeatherDataInitializerService {
                 return;
             } catch (Exception e) {
                 log.error("ERROR BACKFILL BATCH {}/{}", batchNo, totalBatches, e);
+            } finally {
+                try {
+                    Thread.sleep(200); // nghỉ 200ms
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }
@@ -229,7 +235,7 @@ public class WeatherDataInitializerService {
     // CORE: Fetch current weather — realtime mỗi giờ
     // =========================================================================
     private void fetchAndSaveCurrent(List<Area> areas) {
-        ExecutorService executor = Executors.newFixedThreadPool(5);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
 
         for (Area area : areas) {
             executor.submit(() -> {
@@ -258,7 +264,7 @@ public class WeatherDataInitializerService {
 
                 } catch (Exception e) {
                     log.error("ERROR AREA {}", area.getId(), e);
-                }
+                } 
             });
         }
 
@@ -268,6 +274,12 @@ public class WeatherDataInitializerService {
             executor.awaitTermination(2, TimeUnit.HOURS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } finally {
+            try {
+                Thread.sleep(200); // nghỉ 200ms
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
