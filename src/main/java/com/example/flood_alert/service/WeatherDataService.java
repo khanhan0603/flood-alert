@@ -20,12 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
 public class WeatherDataService {
 
-    static final long TOTAL_AREA = 3321;
+    //long TOTAL_AREA = 3321;
 
-    final WeatherDataRepository weatherDataRepository;
+    WeatherDataRepository weatherDataRepository;
 
     boolean schedulerEnabled = true;
 

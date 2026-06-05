@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.web.bind.annotation.RequestBody;
 
-
 @Slf4j
 @RestController
 @RequestMapping("/weather-data")
@@ -43,16 +42,19 @@ public class WeatherDataController {
     public List<AreaWeatherResponse> findDistinctAreaIdAndTenKhuvuc() {
         return weatherDataService.findDistinctAreaIdAndTenKhuvuc();
     }
-    
 
     @GetMapping("/find-by-area-id")
     public List<WDataResponse> findByAreaId(@RequestParam UUID area_id) {
         return weatherDataService.findByAreaId(area_id);
     }
 
-    @PostMapping("/find-area-id-time")
-    public List<WDataResponse> findByAreaIdAndTime(@RequestBody UUID areaId, LocalDate start, LocalDate end) {
+    @GetMapping("/find-area-id-time")
+    public List<WDataResponse> findByAreaIdAndTime(
+            @RequestParam UUID areaId,
+            @RequestParam LocalDate start,
+            @RequestParam LocalDate end) {
+
         return weatherDataService.findByAreaIdAndTime(areaId, start, end);
     }
-    
+
 }
