@@ -35,15 +35,14 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WeatherDataInitializerService {
 
-    static final String FORECAST_URL  = "https://api.open-meteo.com/v1/forecast";
-    static final String TIMEZONE      = "Asia/Bangkok";
-    static final String HOURLY_FIELDS =
-            "precipitation,temperature_2m,dew_point_2m,surface_pressure,"
+    static final String FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+    static final String TIMEZONE = "Asia/Bangkok";
+    static final String HOURLY_FIELDS = "precipitation,temperature_2m,dew_point_2m,surface_pressure,"
             + "wind_speed_10m,wind_direction_10m,relative_humidity_2m,"
             + "et0_fao_evapotranspiration";
 
     /** Số ngày quá khứ lưu trong DB (phục vụ AI + biểu đồ 8 ngày) */
-    static final int PAST_DAYS     = 8;
+    static final int PAST_DAYS = 8;
     /** Số ngày forecast (phục vụ AI dự báo hôm nay + 2 ngày tới) */
     static final int FORECAST_DAYS = 3;
 
@@ -54,13 +53,13 @@ public class WeatherDataInitializerService {
      */
     static final int REQUEST_DELAY_MS = 1_000;
 
-    static final int RETRY_ATTEMPTS   = 5;
+    static final int RETRY_ATTEMPTS = 5;
     static final int RETRY_BACKOFF_MS = 5_000;
 
     WeatherDataRepository weatherDataRepository;
-    AreaRepository        areaRepository;
-    WeatherDataMapper     weatherDataMapper;
-    RestTemplateBuilder   restTemplateBuilder;
+    AreaRepository areaRepository;
+    WeatherDataMapper weatherDataMapper;
+    RestTemplateBuilder restTemplateBuilder;
 
     // =========================================================================
     // SCHEDULER 1: 00:30 VN — sau model 17h UTC hôm qua
@@ -114,7 +113,8 @@ public class WeatherDataInitializerService {
         try {
             JsonNode response = fetchJsonWithRetry(
                     restTemplate, buildForecastUrl(area), "ON-DEMAND", area.getId());
-            if (response == null) return false;
+            if (response == null)
+                return false;
             insertIgnoreDuplicate(area, response.path("hourly"));
             log.info("ON-DEMAND SUCCESS AREA {}", area.getId());
             return true;
@@ -137,9 +137,9 @@ public class WeatherDataInitializerService {
         }
 
         RestTemplate restTemplate = buildRestTemplate();
-        int total   = areas.size();
+        int total = areas.size();
         int success = 0;
-        int failed  = 0;
+        int failed = 0;
 
         for (int i = 0; i < total; i++) {
             Area area = areas.get(i);
@@ -174,12 +174,12 @@ public class WeatherDataInitializerService {
     private String buildForecastUrl(Area area) {
         return UriComponentsBuilder
                 .fromUriString(FORECAST_URL)
-                .queryParam("latitude",      area.getLat())
-                .queryParam("longitude",     area.getLon())
-                .queryParam("past_days",     PAST_DAYS)
+                .queryParam("latitude", area.getLat())
+                .queryParam("longitude", area.getLon())
+                .queryParam("past_days", PAST_DAYS)
                 .queryParam("forecast_days", FORECAST_DAYS)
-                .queryParam("hourly",        HOURLY_FIELDS)
-                .queryParam("timezone",      TIMEZONE)
+                .queryParam("hourly", HOURLY_FIELDS)
+                .queryParam("timezone", TIMEZONE)
                 .toUriString();
     }
 
@@ -221,14 +221,20 @@ public class WeatherDataInitializerService {
     // Helper: Retry với exponential backoff
     // =========================================================================
     private JsonNode fetchJsonWithRetry(RestTemplate restTemplate,
-                                        String url,
-                                        String scope,
-                                        UUID areaId) {
+            String url,
+            String scope,
+            UUID areaId) {
         for (int attempt = 1; attempt <= RETRY_ATTEMPTS; attempt++) {
             try {
                 return restTemplate.getForObject(url, JsonNode.class);
 
             } catch (HttpClientErrorException.TooManyRequests e) {
+                String body = e.getResponseBodyAsString();
+
+                if (body.contains("Daily API request limit exceeded")) {
+                    log.error("DAILY LIMIT REACHED - STOP SYNC");
+                    return null;
+                }
                 long wait = (long) RETRY_BACKOFF_MS * attempt;
                 log.warn("{} area={} → 429 attempt={}/{} wait={}ms",
                         scope, areaId, attempt, RETRY_ATTEMPTS, wait);
@@ -257,14 +263,14 @@ public class WeatherDataInitializerService {
     // =========================================================================
     private WeatherData buildWeatherData(Area area, JsonNode hourly, int i, LocalDateTime time) {
         WeatherDataCreationRequest req = WeatherDataCreationRequest.builder()
-                .precipitation(      decimal(hourly, "precipitation",             i))
-                .temperature2m(      decimal(hourly, "temperature_2m",            i))
-                .dewpoint2m(         decimal(hourly, "dew_point_2m",              i))
-                .surfacePressure(    decimal(hourly, "surface_pressure",          i))
-                .windspeed10m(       decimal(hourly, "wind_speed_10m",            i))
-                .winddirection10m(   decimal(hourly, "wind_direction_10m",        i))
-                .relativehumidity2m( decimal(hourly, "relative_humidity_2m",      i))
-                .evapotranspiration( decimal(hourly, "et0_fao_evapotranspiration",i))
+                .precipitation(decimal(hourly, "precipitation", i))
+                .temperature2m(decimal(hourly, "temperature_2m", i))
+                .dewpoint2m(decimal(hourly, "dew_point_2m", i))
+                .surfacePressure(decimal(hourly, "surface_pressure", i))
+                .windspeed10m(decimal(hourly, "wind_speed_10m", i))
+                .winddirection10m(decimal(hourly, "wind_direction_10m", i))
+                .relativehumidity2m(decimal(hourly, "relative_humidity_2m", i))
+                .evapotranspiration(decimal(hourly, "et0_fao_evapotranspiration", i))
                 .lat(area.getLat())
                 .lon(area.getLon())
                 .build();
