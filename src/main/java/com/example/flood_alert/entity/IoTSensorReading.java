@@ -2,9 +2,7 @@ package com.example.flood_alert.entity;
 
 import java.time.LocalDateTime;
 
-import com.example.flood_alert.enums.Condition;
-import com.example.flood_alert.enums.Priority;
-import com.example.flood_alert.enums.StatusSOS;
+import com.example.flood_alert.enums.WaterStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,51 +19,29 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+@Entity
+@Table(name = "iot_sensor_readings")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity
-@Table(name = "sos_requests")
-public class SosRequest extends BaseEntity {
+public class IoTSensorReading extends BaseEntity {
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    User user;
-
-    @ManyToOne
-    @JoinColumn(name = "area_id", nullable = false)
-    Area area;
-
-    @ManyToOne
-    @JoinColumn(name = "device_id")
-    IoTDevice device;
-
-    String sodt;
-
-    @Column(name = "ip_device")
-    String ipDevice;
-
-    String location;
-
-    @Column(columnDefinition = "TEXT")
-    String mota;
+    @JoinColumn(name = "device_id", nullable = false)
+    private IoTDevice device;
 
     @Column(nullable = false)
-    LocalDateTime createdAt;
+    private Double waterLevel;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    StatusSOS status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    Priority priority;
-
-    @Enumerated(EnumType.STRING)
-    Condition conditions;
+    private WaterStatus status;
 
     @Column(nullable = false)
-    LocalDateTime updatedAt;
+    private Boolean isValid;
+
+    @Column(nullable = false)
+    private LocalDateTime recordedAt;
 }

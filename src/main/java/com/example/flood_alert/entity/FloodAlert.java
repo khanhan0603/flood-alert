@@ -2,9 +2,9 @@ package com.example.flood_alert.entity;
 
 import java.time.LocalDateTime;
 
-import com.example.flood_alert.enums.Condition;
-import com.example.flood_alert.enums.Priority;
-import com.example.flood_alert.enums.StatusSOS;
+import com.example.flood_alert.enums.Channel;
+import com.example.flood_alert.enums.RiskLevel;
+import com.example.flood_alert.enums.StatusAlert;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,51 +21,48 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+@Entity
+@Table(name = "flood_alerts")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity
-@Table(name = "sos_requests")
-public class SosRequest extends BaseEntity {
+public class FloodAlert extends BaseEntity {
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    User user;
+    @JoinColumn(name = "sensor_reading_id")
+     IoTSensorReading sensorReading;
+
+    @ManyToOne
+    @JoinColumn(name = "madudoan")
+     FloodPrediction prediction;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+     User user;
 
     @ManyToOne
     @JoinColumn(name = "area_id", nullable = false)
-    Area area;
-
-    @ManyToOne
-    @JoinColumn(name = "device_id")
-    IoTDevice device;
-
-    String sodt;
-
-    @Column(name = "ip_device")
-    String ipDevice;
-
-    String location;
-
-    @Column(columnDefinition = "TEXT")
-    String mota;
-
-    @Column(nullable = false)
-    LocalDateTime createdAt;
+     Area area;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    StatusSOS status;
+     RiskLevel riskLevel;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+     String message;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    Priority priority;
+     Channel channel;
 
     @Enumerated(EnumType.STRING)
-    Condition conditions;
+    @Column(nullable = false)
+     StatusAlert status;
+
+     LocalDateTime sentAt;
 
     @Column(nullable = false)
-    LocalDateTime updatedAt;
+     LocalDateTime createdAt;
 }
