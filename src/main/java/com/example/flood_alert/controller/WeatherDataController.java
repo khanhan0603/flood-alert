@@ -20,8 +20,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.web.bind.annotation.RequestBody;
-
 @Slf4j
 @RestController
 @RequestMapping("/weather-data")
@@ -32,11 +30,11 @@ public class WeatherDataController {
     WeatherDataInitializerService weatherDataInitializerService;
     WeatherDataService weatherDataService;
 
-    @PostMapping("/backfill")
-    public String backfill() {
-        weatherDataInitializerService.backfill();
-        return "DONE";
-    }
+    // @PostMapping("/backfill")
+    // public String backfill() {
+    //     weatherDataInitializerService.backfill();
+    //     return "DONE";
+    // }
 
     @GetMapping("/list-area")
     public List<AreaWeatherResponse> findDistinctAreaIdAndTenKhuvuc() {
@@ -55,6 +53,13 @@ public class WeatherDataController {
             @RequestParam LocalDate end) {
 
         return weatherDataService.findByAreaIdAndTime(areaId, start, end);
+    }
+
+    // test trước khi 00:30 fill dữ liệu
+    @PostMapping("/sync-now")
+    public String syncNow() {
+        weatherDataInitializerService.triggerManualSync();
+        return "OK";
     }
 
 }
