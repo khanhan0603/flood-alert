@@ -1,8 +1,10 @@
 package com.example.flood_alert.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.AccessLevel;
@@ -11,6 +13,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -56,6 +60,33 @@ public class IoTDeviceController {
 
         return ApiResponse.<List<IoTDeviceCreationResponse>>builder()
                 .result(ioTDeviceService.getPendingDevices())
+                .build();
+    }
+
+    @PatchMapping("/{deviceId}/approve")
+    public ApiResponse<IoTDeviceCreationResponse> approveDevice(
+            @PathVariable UUID deviceId,
+            @RequestParam UUID adminId) {
+
+        IoTDevice device = ioTDeviceService.approveDevice(
+                deviceId,
+                adminId);
+
+        IoTDeviceCreationResponse response = IoTDeviceCreationResponse.builder()
+                .id(device.getId().toString())
+                .device_code(device.getDeviceCode())
+                .area_id(device.getArea().getId().toString())
+                .tenkhuvuc(device.getArea().getTenkhuvuc())
+                .ten_thietbi(device.getTenThietBi())
+                .lat(device.getLat())
+                .lon(device.getLon())
+                .trang_thai(device.getTrangThai().name())
+                .createdAt(device.getCreatedAt().toString())
+                .updatedAt(device.getUpdatedAt().toString())
+                .build();
+
+        return ApiResponse.<IoTDeviceCreationResponse>builder()
+                .result(response)
                 .build();
     }
 

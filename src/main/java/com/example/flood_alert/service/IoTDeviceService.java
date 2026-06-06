@@ -6,16 +6,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.IoTDeviceCreationRequest;
 import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.IoTDevice;
+import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.DeviceStatus;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.IoTDeviceRepository;
+import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,7 @@ import lombok.experimental.FieldDefaults;
 public class IoTDeviceService {
     IoTDeviceRepository ioTDeviceRepository;
     AreaRepository areaRepository;
+    UserRepository userRepository;
 
     public IoTDevice registerDevice(IoTDeviceCreationRequest request) {
         if (ioTDeviceRepository.findByDeviceCode(request.getDeviceCode()).isPresent())
@@ -72,5 +76,21 @@ public class IoTDeviceService {
                         .updatedAt(device.getUpdatedAt().toString())
                         .build())
                 .toList();
+    }
+
+    @Transactional
+    public IoTDevice approveDevice(UUID deviceId, UUID adminId) {
+
+        IoTDevice device = ioTDeviceRepository.findById(deviceId)
+                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
+
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        device.setTrangThai(DeviceStatus.ACTIVE);
+        device.setApprovedBy(admin);
+        device.setApprovedAt(LocalDateTime.now());
+
+        return device;
     }
 }

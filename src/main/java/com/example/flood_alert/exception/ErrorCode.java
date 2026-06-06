@@ -20,6 +20,9 @@ public enum ErrorCode {
     PHONE_EXISTED(1008,"Số điện thoại này đã được đăng ký! Vui số dùng số khác!"),
     AREA_NOT_FOUND(1011,"Không tìm thấy khu vực phù hợp!"),
     DEVICE_CODE_EXISTED(1012,"Mã thiết bị này đã tồn tại!"),
+    DEVICE_NOT_FOUND(1013,"Không tìm thấy thiết bị!"),
+    DEVICE_ALREADY_PROCESSED(1014,"Thiết bị này đã được xử lý!"),
+    USER_NOT_EXISTED(1015,"Không tìm thấy người dùng!"),
     ;
     int code;
     String message;
