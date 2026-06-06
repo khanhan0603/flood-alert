@@ -1,0 +1,51 @@
+package com.example.flood_alert.repository;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.example.flood_alert.dbo.response.FloodPredictionResponse;
+import com.example.flood_alert.entity.FloodPrediction;
+
+public interface PredictionRepository extends JpaRepository<FloodPrediction, UUID> {
+
+    @Query("""
+                SELECT new com.example.flood_alert.dbo.response.FloodPredictionResponse(
+                    fp.lead1,
+                    fp.lead1Probability,
+                    fp.lead2,
+                    fp.lead2Probability,
+                    fp.lead3,
+                    fp.lead3Probability,
+                    fp.predictedAt,
+                    fp.weatherFrom,
+                    fp.weatherTo,
+                    a.tenkhuvuc
+                )
+                FROM FloodPrediction fp
+                JOIN fp.area a
+            """)
+    List<FloodPredictionResponse> findAllPrediction();
+
+    @Query("""
+                SELECT new com.example.flood_alert.dbo.response.FloodPredictionResponse(
+                    fp.lead1,
+                    fp.lead1Probability,
+                    fp.lead2,
+                    fp.lead2Probability,
+                    fp.lead3,
+                    fp.lead3Probability,
+                    fp.predictedAt,
+                    fp.weatherFrom,
+                    fp.weatherTo,
+                    a.tenkhuvuc
+                )
+                FROM FloodPrediction fp
+                JOIN fp.area a
+                WHERE a.id = :areaId
+            """)
+    List<FloodPredictionResponse> findPredictionByArea(@Param("areaId") UUID areaId);
+}

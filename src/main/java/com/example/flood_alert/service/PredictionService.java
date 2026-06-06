@@ -1,18 +1,28 @@
 package com.example.flood_alert.service;
 
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.example.flood_alert.dbo.response.FloodPredictionResponse;
+import com.example.flood_alert.repository.PredictionRepository;
+
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class PredictionService {
 
-    private final RestTemplate restTemplate;
+    final RestTemplate restTemplate;
+    final PredictionRepository predictionReposiory;
 
     @Value("${fastapi.url}")
     private String fastApiUrl;
@@ -48,5 +58,13 @@ public class PredictionService {
                 String.class);
 
         log.info("PREDICTION RESPONSE={}", response);
+    }
+
+    public List<FloodPredictionResponse> getAllPrediction() {
+        return predictionReposiory.findAllPrediction();
+    }
+
+    public List<FloodPredictionResponse> findPredictionByArea(UUID areaId) {
+        return predictionReposiory.findPredictionByArea(areaId);
     }
 }

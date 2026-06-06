@@ -29,10 +29,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class FloodPrediction extends BaseEntity {
     @ManyToOne
-    @JoinColumn(name = "madulieu", nullable = false)
-    WeatherData weatherData;
-
-    @ManyToOne
     @JoinColumn(name = "sensor_reading_id")
     IoTSensorReading sensorReading;
 
@@ -59,4 +55,10 @@ public class FloodPrediction extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "area_id")
     Area area;
+
+    @JoinColumn(name = "weather_from")
+    LocalDateTime weatherFrom;
+
+    @JoinColumn(name = "weather_to")
+    LocalDateTime weatherTo;
 }
