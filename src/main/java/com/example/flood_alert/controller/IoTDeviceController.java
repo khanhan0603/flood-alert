@@ -90,4 +90,16 @@ public class IoTDeviceController {
                 .build();
     }
 
+    @PatchMapping("/{deviceId}/reject")
+    public ApiResponse<String> rejectDevice(
+            @PathVariable UUID deviceId,
+            @RequestParam UUID adminId) {
+
+        ioTDeviceService.rejectDevice(deviceId, adminId);
+
+        return ApiResponse.<String>builder()
+                .result("Device rejected successfully")
+                .build();
+    }
+
 }

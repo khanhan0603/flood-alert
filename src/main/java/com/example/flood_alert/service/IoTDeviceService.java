@@ -93,4 +93,22 @@ public class IoTDeviceService {
 
         return device;
     }
+
+    @Transactional
+    public void rejectDevice(UUID deviceId, UUID adminId) {
+
+        IoTDevice device = ioTDeviceRepository.findById(deviceId)
+                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
+
+        if (device.getTrangThai() != DeviceStatus.PENDING) {
+            throw new AppException(ErrorCode.DEVICE_ALREADY_PROCESSED);
+        }
+
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        device.setTrangThai(DeviceStatus.REJECTED);
+        device.setApprovedBy(admin);
+        device.setApprovedAt(LocalDateTime.now());
+    }
 }
