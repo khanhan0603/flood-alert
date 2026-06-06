@@ -1,6 +1,6 @@
-package com.example.flood_alert.dbo.response;
+package com.example.flood_alert.dbo.request;
 
-import java.util.UUID;
+import java.math.BigDecimal;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,9 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AreaDataByParentResponse {
-    UUID id;
-    String tenkhuvuc;
+public class IoTDeviceCreationRequest {
+    String deviceCode;
+    String tenThietBi;
+    BigDecimal lat;
+    BigDecimal lon;
 }

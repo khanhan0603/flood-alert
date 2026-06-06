@@ -26,6 +26,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 public class IoTDevice extends BaseEntity {
+    @Column(name="device_code")
+    private String deviceCode;
+
     @ManyToOne
     @JoinColumn(name = "area_id")
     private Area area;

@@ -7,23 +7,31 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.example.flood_alert.dbo.response.ApiResponse;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandle {
+
     @ExceptionHandler(value = RuntimeException.class)
-    public ResponseEntity<ApiResponse> handlingRuntimeExcetion(RuntimeException exception){
-        ApiResponse apiResponse=new ApiResponse();
+    public ResponseEntity<ApiResponse> handlingRuntimeException(RuntimeException exception) {
+
+        log.error("UNCAUGHT EXCEPTION", exception);
+
+        ApiResponse apiResponse = new ApiResponse();
 
         apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
-        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
+        apiResponse.setMessage(exception.getMessage());
 
         return ResponseEntity.badRequest().body(apiResponse);
     }
 
     @ExceptionHandler(value = AppException.class)
-    public ResponseEntity<ApiResponse> handlingAppException(AppException ex){
-        ErrorCode errorCode=ex.getErrorCode();
+    public ResponseEntity<ApiResponse> handlingAppException(AppException ex) {
 
-        ApiResponse apiResponse=new ApiResponse();
+        ErrorCode errorCode = ex.getErrorCode();
+
+        ApiResponse apiResponse = new ApiResponse();
 
         apiResponse.setCode(errorCode.getCode());
         apiResponse.setMessage(errorCode.getMessage());
@@ -32,18 +40,20 @@ public class GlobalExceptionHandle {
     }
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
-    ResponseEntity<ApiResponse> handlingValidation(MethodArgumentNotValidException exception){
-        String enumKey=exception.getFieldError().getDefaultMessage();
+    public ResponseEntity<ApiResponse> handlingValidation(
+            MethodArgumentNotValidException exception) {
 
-        ErrorCode errorCode=ErrorCode.INVALID_KEY;
+        String enumKey = exception.getFieldError().getDefaultMessage();
 
-        try{
-            errorCode=ErrorCode.valueOf(enumKey);
+        ErrorCode errorCode = ErrorCode.INVALID_KEY;
+
+        try {
+            errorCode = ErrorCode.valueOf(enumKey);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
+            log.error("VALIDATION ERROR", e);
         }
 
-        ApiResponse apiResponse=new ApiResponse();
+        ApiResponse apiResponse = new ApiResponse();
 
         apiResponse.setCode(errorCode.getCode());
         apiResponse.setMessage(errorCode.getMessage());
@@ -51,4 +61,3 @@ public class GlobalExceptionHandle {
         return ResponseEntity.badRequest().body(apiResponse);
     }
 }
-

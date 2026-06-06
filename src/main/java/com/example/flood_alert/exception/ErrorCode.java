@@ -19,6 +19,7 @@ public enum ErrorCode {
     EMAIL_EXISTED(1007,"Email này đã được đăng ký! Vui lòng dùng email khác!"),
     PHONE_EXISTED(1008,"Số điện thoại này đã được đăng ký! Vui số dùng số khác!"),
     AREA_NOT_FOUND(1011,"Không tìm thấy khu vực phù hợp!"),
+    DEVICE_CODE_EXISTED(1012,"Mã thiết bị này đã tồn tại!"),
     ;
     int code;
     String message;

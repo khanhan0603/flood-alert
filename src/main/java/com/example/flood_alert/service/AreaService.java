@@ -88,4 +88,12 @@ public class AreaService {
     public Page<AreaSimpleResponse> searchArea(String keyword, Pageable pageable){
         return areaRepository.searchArea(keyword, pageable).map(areaMapper::toSimpleResponse);
     }
+
+    public String getAreaName(UUID id){
+        Area area=areaRepository.findById(id).orElse(null);
+        if(area==null){
+            throw new AppException(ErrorCode.AREA_NOT_FOUND);
+        }
+        return area.getTenkhuvuc();
+    }
 }
