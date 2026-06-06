@@ -1,11 +1,14 @@
 package com.example.flood_alert.service;
+
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.example.flood_alert.dbo.request.IoTDeviceCreationRequest;
+import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.IoTDevice;
 import com.example.flood_alert.enums.DeviceStatus;
@@ -51,5 +54,23 @@ public class IoTDeviceService {
         device.setCreatedAt(LocalDateTime.now());
         device.setUpdatedAt(LocalDateTime.now());
         return ioTDeviceRepository.save(device);
+    }
+
+    public List<IoTDeviceCreationResponse> getPendingDevices() {
+        return ioTDeviceRepository.findByTrangThai(DeviceStatus.PENDING)
+                .stream()
+                .map(device -> IoTDeviceCreationResponse.builder()
+                        .id(device.getId().toString())
+                        .device_code(device.getDeviceCode())
+                        .area_id(device.getArea().getId().toString())
+                        .tenkhuvuc(device.getArea().getTenkhuvuc())
+                        .ten_thietbi(device.getTenThietBi())
+                        .lat(device.getLat())
+                        .lon(device.getLon())
+                        .trang_thai(device.getTrangThai().name())
+                        .createdAt(device.getCreatedAt().toString())
+                        .updatedAt(device.getUpdatedAt().toString())
+                        .build())
+                .toList();
     }
 }
