@@ -1,6 +1,8 @@
 package com.example.flood_alert.service;
 
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -8,6 +10,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -43,13 +47,43 @@ public class WeatherDataInitializerService {
 
     // 1000ms × 3321 area ≈ 55 phút/lần sync — an toàn free tier
     // Giảm xuống 500ms sau khi xác nhận không bị 429
-    static final int REQUEST_DELAY_MS = 1_000;
+    static final int REQUEST_DELAY_MS = 200;
     static final int RETRY_ATTEMPTS   = 5;
     static final int RETRY_BACKOFF_MS = 5_000;
 
     WeatherDataRepository weatherDataRepository;
     AreaRepository        areaRepository;
     RestTemplateBuilder   restTemplateBuilder;
+    JdbcTemplate jdbcTemplate;
+
+    static final String UPSERT_SQL="""
+        INSERT INTO weather_datas (
+            id,
+            area_id,
+            time,
+            rainfall,
+            temperature,
+            dewpoint,
+            pressure,
+            wind_speed,
+            wind_direction,
+            humidity,
+            evapotranspiration
+        )VALUES(
+            gen_random_uuid(),
+            ?,?,?,?,?,?,?,?,?,?
+            )
+            ON CONFLICT (area_id,time)
+            DO UPDATE SET
+            rainfall=EXCLUDED.rainfall,
+            temperature=EXCLUDED.temperature,
+            dewpoint=EXCLUDED.dewpoint,
+            pressure=EXCLUDED.pressure,
+            wind_speed=EXCLUDED.wind_speed,
+            wind_direction=EXCLUDED.wind_direction,
+            humidity=EXCLUDED.humidity,
+            evapotranspiration=EXCLUDED.evapotranspiration
+    """;
 
     // =========================================================================
     // SCHEDULER 1: 00:30 VN — sau model 17h UTC hôm qua
@@ -139,7 +173,9 @@ public class WeatherDataInitializerService {
                 if (response == null) {
                     failed++;
                 } else {
+                    long start=System.currentTimeMillis();
                     upsertHourly(area, response.path("hourly"));
+                    log.info("[{}] UPSERT area={} took {} ms", label, area.getId(), System.currentTimeMillis()-start);
                     success++;
                 }
             } catch (Exception e) {
@@ -158,33 +194,39 @@ public class WeatherDataInitializerService {
     // SAVE: Upsert 264 giờ/area bằng native SQL — không dùng JPA entity pipeline
     //       ON CONFLICT DO UPDATE → observed ghi đè forecast cũ đúng cách
     // =========================================================================
-    private void upsertHourly(Area area, JsonNode hourly) {
-        JsonNode times = hourly.path("time");
-        if (!times.isArray() || times.isEmpty()) {
-            log.warn("EMPTY HOURLY area={}", area.getId());
+    private void upsertHourly(Area area,JsonNode hourly){
+        JsonNode times=hourly.path("time");
+
+        if(!times.isArray()||times.isEmpty()){
             return;
         }
 
-        int count = times.size();
-        for (int i = 0; i < count; i++) {
-            LocalDateTime time = LocalDateTime.parse(times.get(i).asText());
-            weatherDataRepository.upsertOne(
-                    area.getId(),
-                    time,
-                    decimal(hourly, "precipitation",              i),
-                    decimal(hourly, "temperature_2m",             i),
-                    decimal(hourly, "dew_point_2m",               i),
-                    decimal(hourly, "surface_pressure",           i),
-                    decimal(hourly, "wind_speed_10m",             i),
-                    decimal(hourly, "wind_direction_10m",         i),
-                    decimal(hourly, "relative_humidity_2m",       i),
-                    decimal(hourly, "et0_fao_evapotranspiration", i)
-            );
-        }
+        int count=times.size();
 
-        log.info("UPSERTED {} records area={}", count, area.getId());
+        jdbcTemplate.batchUpdate(UPSERT_SQL, new BatchPreparedStatementSetter(){
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                LocalDateTime time=LocalDateTime.parse(times.get(i).asText());
+
+                ps.setObject(1, area.getId());
+                ps.setObject(2, time);
+                ps.setBigDecimal(3, decimal(hourly, "precipitation", i));
+                ps.setBigDecimal(4, decimal(hourly, "temperature_2m", i));
+                ps.setBigDecimal(5, decimal(hourly, "dew_point_2m", i));
+                ps.setBigDecimal(6, decimal(hourly, "surface_pressure", i));
+                ps.setBigDecimal(7, decimal(hourly, "wind_speed_10m", i));
+                ps.setBigDecimal(8, decimal(hourly, "wind_direction_10m", i));
+                ps.setBigDecimal(9, decimal(hourly, "relative_humidity_2m", i));
+                ps.setBigDecimal(10, decimal(hourly, "et0_fao_evapotranspiration", i));
+            }
+
+            @Override
+            public int getBatchSize() {
+                return count;
+            }
+            
+        });
     }
-
     // =========================================================================
     // Helper: Build URL forecast — past_days + forecast_days trong 1 request
     // =========================================================================

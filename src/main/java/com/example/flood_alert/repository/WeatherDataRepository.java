@@ -1,6 +1,5 @@
 package com.example.flood_alert.repository;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -96,66 +95,6 @@ public interface WeatherDataRepository extends JpaRepository<WeatherData, UUID> 
             @Param("start")  LocalDateTime start,
             @Param("end")    LocalDateTime end);
 
-    // =========================================================================
-    // UPSERT: Insert 1 record, nếu (area_id, time) đã tồn tại thì UPDATE
-    //         các field thời tiết — observed sẽ ghi đè forecast cũ đúng cách.
-    //
-    // Yêu cầu migration trước khi dùng:
-    //   CREATE UNIQUE INDEX IF NOT EXISTS uk_weather_area_time
-    //       ON weather_datas (area_id, time);
-    // =========================================================================
-    @Modifying
-    @Transactional
-    @Query(value = """
-            INSERT INTO weather_datas (
-                id,
-                area_id,
-                time,
-                rainfall,
-                temperature,
-                dewpoint,
-                pressure,
-                wind_speed,
-                wind_direction,
-                humidity,
-                evapotranspiration
-            )
-            VALUES (
-                gen_random_uuid(),
-                :areaId,
-                :time,
-                :rainfall,
-                :temperature,
-                :dewpoint,
-                :pressure,
-                :windSpeed,
-                :windDirection,
-                :humidity,
-                :evapotranspiration
-            )
-            ON CONFLICT (area_id, time)
-            DO UPDATE SET
-                rainfall           = EXCLUDED.rainfall,
-                temperature        = EXCLUDED.temperature,
-                dewpoint           = EXCLUDED.dewpoint,
-                pressure           = EXCLUDED.pressure,
-                wind_speed         = EXCLUDED.wind_speed,
-                wind_direction     = EXCLUDED.wind_direction,
-                humidity           = EXCLUDED.humidity,
-                evapotranspiration = EXCLUDED.evapotranspiration
-            """, nativeQuery = true)
-    void upsertOne(
-            @Param("areaId")             UUID          areaId,
-            @Param("time")               LocalDateTime time,
-            @Param("rainfall")           BigDecimal    rainfall,
-            @Param("temperature")        BigDecimal    temperature,
-            @Param("dewpoint")           BigDecimal    dewpoint,
-            @Param("pressure")           BigDecimal    pressure,
-            @Param("windSpeed")          BigDecimal    windSpeed,
-            @Param("windDirection")      BigDecimal    windDirection,
-            @Param("humidity")           BigDecimal    humidity,
-            @Param("evapotranspiration") BigDecimal    evapotranspiration
-    );
 
     // Xoá data quá khứ cũ hơn cutoff — forecast (time > now) giữ nguyên
     @Modifying
