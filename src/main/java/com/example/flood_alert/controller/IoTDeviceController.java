@@ -80,6 +80,7 @@ public class IoTDeviceController {
                 .ten_thietbi(device.getTenThietBi())
                 .lat(device.getLat())
                 .lon(device.getLon())
+                .nguong_canh_bao(device.getNguongCanhBao())
                 .trang_thai(device.getTrangThai().name())
                 .createdAt(device.getCreatedAt().toString())
                 .updatedAt(device.getUpdatedAt().toString())
@@ -91,14 +92,28 @@ public class IoTDeviceController {
     }
 
     @PatchMapping("/{deviceId}/reject")
-    public ApiResponse<String> rejectDevice(
+    public ApiResponse<IoTDeviceCreationResponse> rejectDevice(
             @PathVariable UUID deviceId,
             @RequestParam UUID adminId) {
 
-        ioTDeviceService.rejectDevice(deviceId, adminId);
+        IoTDevice device = ioTDeviceService.rejectDevice(deviceId, adminId);
 
-        return ApiResponse.<String>builder()
-                .result("Device rejected successfully")
+        IoTDeviceCreationResponse response = IoTDeviceCreationResponse.builder()
+                .id(device.getId().toString())
+                .device_code(device.getDeviceCode())
+                .area_id(device.getArea().getId().toString())
+                .tenkhuvuc(device.getArea().getTenkhuvuc())
+                .ten_thietbi(device.getTenThietBi())
+                .lat(device.getLat())
+                .lon(device.getLon())
+                .nguong_canh_bao(device.getNguongCanhBao())
+                .trang_thai(device.getTrangThai().name())
+                .createdAt(device.getCreatedAt().toString())
+                .updatedAt(device.getUpdatedAt().toString())
+                .build();
+
+        return ApiResponse.<IoTDeviceCreationResponse>builder()
+                .result(response)
                 .build();
     }
 

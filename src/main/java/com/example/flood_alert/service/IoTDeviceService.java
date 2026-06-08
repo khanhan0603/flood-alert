@@ -95,7 +95,7 @@ public class IoTDeviceService {
     }
 
     @Transactional
-    public void rejectDevice(UUID deviceId, UUID adminId) {
+    public IoTDevice rejectDevice(UUID deviceId, UUID adminId) {
 
         IoTDevice device = ioTDeviceRepository.findById(deviceId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
@@ -110,5 +110,7 @@ public class IoTDeviceService {
         device.setTrangThai(DeviceStatus.REJECTED);
         device.setApprovedBy(admin);
         device.setApprovedAt(LocalDateTime.now());
+
+        return device;
     }
 }
