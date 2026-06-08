@@ -17,6 +17,7 @@ import lombok.experimental.FieldDefaults;
 public class IoTDeviceCreationRequest {
     String deviceCode;
     String tenThietBi;
+    Double nguong_canh_bao;
     BigDecimal lat;
     BigDecimal lon;
 }

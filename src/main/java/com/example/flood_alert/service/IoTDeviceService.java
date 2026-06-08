@@ -50,7 +50,7 @@ public class IoTDeviceService {
         device.setTenThietBi(request.getTenThietBi());
         device.setLat(request.getLat());
         device.setLon(request.getLon());
-        device.setNguongCanhBao(0.0);
+        device.setNguongCanhBao(request.getNguong_canh_bao());
         device.setTrangThai(DeviceStatus.PENDING);
         device.setLastSeenAt(null);
         device.setApprovedBy(null);

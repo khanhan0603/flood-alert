@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 
 import lombok.Builder;
 import lombok.Data;
-
 @Data
 @Builder
 public class IoTDeviceCreationResponse {
@@ -13,6 +12,7 @@ public class IoTDeviceCreationResponse {
     String area_id;
     String tenkhuvuc;
     String ten_thietbi;
+    Double nguong_canh_bao;
     BigDecimal lat;
     BigDecimal lon;
     String trang_thai;
