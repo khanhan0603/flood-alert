@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IoTReadingCreation {
+public class IoTReadingCreationRequest {
     String deviceCode;
     Double waterLevel;
     WaterStatus status;

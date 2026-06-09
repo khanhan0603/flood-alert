@@ -19,8 +19,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.example.flood_alert.dbo.request.IoTDeviceCreationRequest;
+import com.example.flood_alert.dbo.request.IoTReadingCreationRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
+import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
 import com.example.flood_alert.entity.IoTDevice;
 import com.example.flood_alert.service.AreaService;
 import com.example.flood_alert.service.IoTDeviceService;
@@ -117,4 +119,8 @@ public class IoTDeviceController {
                 .build();
     }
 
+    public ApiResponse<IoTReadingSensorResponse> readSensorIoT(@RequestBody IoTReadingCreationRequest request) {
+        IoTReadingSensorResponse response = ioTDeviceService.readSensorIoT(request);
+        return ApiResponse.<IoTReadingSensorResponse>builder().result(response).build();
+    }
 }

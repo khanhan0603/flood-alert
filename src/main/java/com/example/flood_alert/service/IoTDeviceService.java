@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.IoTDeviceCreationRequest;
-import com.example.flood_alert.dbo.request.IoTReadingCreation;
+import com.example.flood_alert.dbo.request.IoTReadingCreationRequest;
 import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
 import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
 import com.example.flood_alert.entity.Area;
@@ -123,7 +123,7 @@ public class IoTDeviceService {
         return device;
     }
 
-    public IoTReadingSensorResponse readSensorIoT(IoTReadingCreation request) {
+    public IoTReadingSensorResponse readSensorIoT(IoTReadingCreationRequest request) {
         IoTDevice device = ioTDeviceRepository.findByDeviceCode(request.getDeviceCode())
                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
         IoTSensorReading reading = new IoTSensorReading();
