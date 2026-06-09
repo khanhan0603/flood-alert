@@ -1,7 +1,6 @@
-package com.example.flood_alert.dbo.request;
-import java.time.LocalDateTime;
+package com.example.flood_alert.dbo.response;
 
-import com.example.flood_alert.enums.WaterStatus;
+import java.time.LocalDateTime;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,10 +14,8 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IoTReadingCreation {
-    String deviceCode;
-    Double waterLevel;
-    WaterStatus status;
-    Boolean isValid;
-    LocalDateTime recordedAt;
+public class IoTReadingSensorResponse {
+    String device_code;
+    String device_id;
+    LocalDateTime recorded_at;
 }

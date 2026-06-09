@@ -28,23 +28,20 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class IoTSensorReading extends BaseEntity {
-    @Column(name="device_code",nullable=false)
-    String deviceCode;
-
     @ManyToOne
     @JoinColumn(name = "device_id", nullable = false)
-    private IoTDevice device;
+    IoTDevice device;
 
     @Column(nullable = false)
-    private Double waterLevel;
+    Double waterLevel;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private WaterStatus status;
+    WaterStatus status;
 
     @Column(nullable = false)
-    private Boolean isValid;
+    Boolean valid;
 
     @Column(nullable = false)
-    private LocalDateTime recordedAt;
+    LocalDateTime recordedAt;
 }

@@ -11,14 +11,17 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.flood_alert.dbo.request.IoTDeviceCreationRequest;
 import com.example.flood_alert.dbo.request.IoTReadingCreation;
 import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
+import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.IoTDevice;
+import com.example.flood_alert.entity.IoTSensorReading;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.DeviceStatus;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.IoTDeviceRepository;
+import com.example.flood_alert.repository.IoTReadingSensorRepository;
 import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
@@ -32,6 +35,7 @@ public class IoTDeviceService {
     IoTDeviceRepository ioTDeviceRepository;
     AreaRepository areaRepository;
     UserRepository userRepository;
+    IoTReadingSensorRepository ioTReadingSensorRepository;
 
     public IoTDevice registerDevice(IoTDeviceCreationRequest request) {
         if (ioTDeviceRepository.findByDeviceCode(request.getDeviceCode()).isPresent())
@@ -119,8 +123,25 @@ public class IoTDeviceService {
         return device;
     }
 
-    public void readSensorIoT(IoTReadingCreation request){
-        IoTDevice device=ioTDeviceRepository.findByDeviceCode(request.getDeviceCode())
-            .orElseThrow(()->new AppException(ErrorCode.DEVICE_NOT_FOUND));
+    public IoTReadingSensorResponse readSensorIoT(IoTReadingCreation request) {
+        IoTDevice device = ioTDeviceRepository.findByDeviceCode(request.getDeviceCode())
+                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
+        IoTSensorReading reading = new IoTSensorReading();
+        reading.setDevice(device);
+        reading.setWaterLevel(request.getWaterLevel());
+        reading.setStatus(request.getStatus());
+        reading.setValid(request.getIsValid());
+        reading.setRecordedAt(
+                Optional.ofNullable(request.getRecordedAt())
+                        .orElse(LocalDateTime.now()));
+
+        IoTSensorReading savedReading = ioTReadingSensorRepository.save(reading);
+
+        return IoTReadingSensorResponse.builder()
+                .device_code(savedReading.getDevice().getDeviceCode())
+                .device_id(savedReading.getDevice().getId().toString())
+                .recorded_at(savedReading.getRecordedAt())
+                .build();
     }
+
 }
