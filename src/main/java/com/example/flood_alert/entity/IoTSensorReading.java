@@ -28,6 +28,9 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class IoTSensorReading extends BaseEntity {
+    @Column(name="device_code",nullable=false)
+    String deviceCode;
+
     @ManyToOne
     @JoinColumn(name = "device_id", nullable = false)
     private IoTDevice device;

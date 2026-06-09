@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.IoTDeviceCreationRequest;
+import com.example.flood_alert.dbo.request.IoTReadingCreation;
 import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.IoTDevice;
@@ -84,6 +85,10 @@ public class IoTDeviceService {
         IoTDevice device = ioTDeviceRepository.findById(deviceId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
 
+        if (device.getTrangThai() != DeviceStatus.PENDING) {
+            throw new AppException(ErrorCode.DEVICE_ALREADY_PROCESSED);
+        }
+
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
@@ -112,5 +117,10 @@ public class IoTDeviceService {
         device.setApprovedAt(LocalDateTime.now());
 
         return device;
+    }
+
+    public void readSensorIoT(IoTReadingCreation request){
+        IoTDevice device=ioTDeviceRepository.findByDeviceCode(request.getDeviceCode())
+            .orElseThrow(()->new AppException(ErrorCode.DEVICE_NOT_FOUND));
     }
 }

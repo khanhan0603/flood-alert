@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PredictionSchedulerService {
     PredictionService predictionService;
 
-    @Scheduled(cron="0 30 6 * * *",zone="Asia/Ho_Chi_Minh")
+    @Scheduled(cron="0 05 10 * * *",zone="Asia/Ho_Chi_Minh")
     public void predictMorning(){
         log.info("START MORNING PREDICTION");
         predictionService.triggerPrediction();
