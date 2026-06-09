@@ -17,6 +17,7 @@ import com.example.flood_alert.entity.IoTDevice;
 import com.example.flood_alert.entity.IoTSensorReading;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.DeviceStatus;
+import com.example.flood_alert.enums.WaterStatus;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
@@ -32,116 +33,143 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class IoTDeviceService {
-    IoTDeviceRepository ioTDeviceRepository;
-    AreaRepository areaRepository;
-    UserRepository userRepository;
-    IoTReadingSensorRepository ioTReadingSensorRepository;
+        IoTDeviceRepository ioTDeviceRepository;
+        AreaRepository areaRepository;
+        UserRepository userRepository;
+        IoTReadingSensorRepository ioTReadingSensorRepository;
 
-    public IoTDevice registerDevice(IoTDeviceCreationRequest request) {
-        if (ioTDeviceRepository.findByDeviceCode(request.getDeviceCode()).isPresent())
-            throw new AppException(ErrorCode.DEVICE_CODE_EXISTED);
+        public IoTDevice registerDevice(IoTDeviceCreationRequest request) {
+                if (ioTDeviceRepository.findByDeviceCode(request.getDeviceCode()).isPresent())
+                        throw new AppException(ErrorCode.DEVICE_CODE_EXISTED);
 
-        IoTDevice device = new IoTDevice();
+                IoTDevice device = new IoTDevice();
 
-        UUID areaId = Optional.ofNullable(
-                areaRepository.findAreaIdByLatLon(
-                        request.getLat(),
-                        request.getLon()))
-                .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
-        Area area = areaRepository.getReferenceById(areaId);
+                UUID areaId = Optional.ofNullable(
+                                areaRepository.findAreaIdByLatLon(
+                                                request.getLat(),
+                                                request.getLon()))
+                                .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
+                Area area = areaRepository.getReferenceById(areaId);
 
-        device.setDeviceCode(request.getDeviceCode());
-        device.setArea(area);
-        device.setTenThietBi(request.getTenThietBi());
-        device.setLat(request.getLat());
-        device.setLon(request.getLon());
-        device.setNguongCanhBao(request.getNguong_canh_bao());
-        device.setTrangThai(DeviceStatus.PENDING);
-        device.setLastSeenAt(null);
-        device.setApprovedBy(null);
-        device.setApprovedAt(null);
-        device.setCreatedAt(LocalDateTime.now());
-        device.setUpdatedAt(LocalDateTime.now());
-        return ioTDeviceRepository.save(device);
-    }
-
-    public List<IoTDeviceCreationResponse> getPendingDevices() {
-        return ioTDeviceRepository.findByTrangThai(DeviceStatus.PENDING)
-                .stream()
-                .map(device -> IoTDeviceCreationResponse.builder()
-                        .id(device.getId().toString())
-                        .device_code(device.getDeviceCode())
-                        .area_id(device.getArea().getId().toString())
-                        .tenkhuvuc(device.getArea().getTenkhuvuc())
-                        .ten_thietbi(device.getTenThietBi())
-                        .lat(device.getLat())
-                        .lon(device.getLon())
-                        .trang_thai(device.getTrangThai().name())
-                        .createdAt(device.getCreatedAt().toString())
-                        .updatedAt(device.getUpdatedAt().toString())
-                        .build())
-                .toList();
-    }
-
-    @Transactional
-    public IoTDevice approveDevice(UUID deviceId, UUID adminId) {
-
-        IoTDevice device = ioTDeviceRepository.findById(deviceId)
-                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
-
-        if (device.getTrangThai() != DeviceStatus.PENDING) {
-            throw new AppException(ErrorCode.DEVICE_ALREADY_PROCESSED);
+                device.setDeviceCode(request.getDeviceCode());
+                device.setArea(area);
+                device.setTenThietBi(request.getTenThietBi());
+                device.setLat(request.getLat());
+                device.setLon(request.getLon());
+                device.setNguongCanhBao(request.getNguong_canh_bao());
+                device.setTrangThai(DeviceStatus.PENDING);
+                device.setLastSeenAt(null);
+                device.setApprovedBy(null);
+                device.setApprovedAt(null);
+                device.setCreatedAt(LocalDateTime.now());
+                device.setUpdatedAt(LocalDateTime.now());
+                return ioTDeviceRepository.save(device);
         }
 
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
-        device.setTrangThai(DeviceStatus.ACTIVE);
-        device.setApprovedBy(admin);
-        device.setApprovedAt(LocalDateTime.now());
-
-        return device;
-    }
-
-    @Transactional
-    public IoTDevice rejectDevice(UUID deviceId, UUID adminId) {
-
-        IoTDevice device = ioTDeviceRepository.findById(deviceId)
-                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
-
-        if (device.getTrangThai() != DeviceStatus.PENDING) {
-            throw new AppException(ErrorCode.DEVICE_ALREADY_PROCESSED);
+        public List<IoTDeviceCreationResponse> getPendingDevices() {
+                return ioTDeviceRepository.findByTrangThai(DeviceStatus.PENDING)
+                                .stream()
+                                .map(device -> IoTDeviceCreationResponse.builder()
+                                                .id(device.getId().toString())
+                                                .device_code(device.getDeviceCode())
+                                                .area_id(device.getArea().getId().toString())
+                                                .tenkhuvuc(device.getArea().getTenkhuvuc())
+                                                .ten_thietbi(device.getTenThietBi())
+                                                .lat(device.getLat())
+                                                .lon(device.getLon())
+                                                .trang_thai(device.getTrangThai().name())
+                                                .createdAt(device.getCreatedAt().toString())
+                                                .updatedAt(device.getUpdatedAt().toString())
+                                                .build())
+                                .toList();
         }
 
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        @Transactional
+        public IoTDevice approveDevice(UUID deviceId, UUID adminId) {
 
-        device.setTrangThai(DeviceStatus.REJECTED);
-        device.setApprovedBy(admin);
-        device.setApprovedAt(LocalDateTime.now());
+                IoTDevice device = ioTDeviceRepository.findById(deviceId)
+                                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
 
-        return device;
-    }
+                if (device.getTrangThai() != DeviceStatus.PENDING) {
+                        throw new AppException(ErrorCode.DEVICE_ALREADY_PROCESSED);
+                }
 
-    public IoTReadingSensorResponse readSensorIoT(IoTReadingCreationRequest request) {
-        IoTDevice device = ioTDeviceRepository.findByDeviceCode(request.getDeviceCode())
-                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
-        IoTSensorReading reading = new IoTSensorReading();
-        reading.setDevice(device);
-        reading.setWaterLevel(request.getWaterLevel());
-        reading.setStatus(request.getStatus());
-        reading.setValid(request.getIsValid());
-        reading.setRecordedAt(
-                Optional.ofNullable(request.getRecordedAt())
-                        .orElse(LocalDateTime.now()));
+                User admin = userRepository.findById(adminId)
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        IoTSensorReading savedReading = ioTReadingSensorRepository.save(reading);
+                device.setTrangThai(DeviceStatus.ACTIVE);
+                device.setApprovedBy(admin);
+                device.setApprovedAt(LocalDateTime.now());
 
-        return IoTReadingSensorResponse.builder()
-                .device_code(savedReading.getDevice().getDeviceCode())
-                .device_id(savedReading.getDevice().getId().toString())
-                .recorded_at(savedReading.getRecordedAt())
-                .build();
-    }
+                return device;
+        }
 
+        @Transactional
+        public IoTDevice rejectDevice(UUID deviceId, UUID adminId) {
+
+                IoTDevice device = ioTDeviceRepository.findById(deviceId)
+                                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
+
+                if (device.getTrangThai() != DeviceStatus.PENDING) {
+                        throw new AppException(ErrorCode.DEVICE_ALREADY_PROCESSED);
+                }
+
+                User admin = userRepository.findById(adminId)
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+                device.setTrangThai(DeviceStatus.REJECTED);
+                device.setApprovedBy(admin);
+                device.setApprovedAt(LocalDateTime.now());
+
+                return device;
+        }
+
+        public IoTReadingSensorResponse readSensorIoT(
+                        IoTReadingCreationRequest request) {
+
+                IoTDevice device = ioTDeviceRepository
+                                .findByDeviceCode(request.getDeviceCode())
+                                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
+
+                IoTSensorReading reading = new IoTSensorReading();
+
+                reading.setDevice(device);
+                reading.setWaterLevel(request.getWaterLevel());
+
+                // update last seen
+                device.setLastSeenAt(LocalDateTime.now());
+
+                Double waterLevel = request.getWaterLevel();
+
+                // validate dữ liệu
+                if (waterLevel == null || waterLevel < 0) {
+
+                        reading.setValid(false);
+                        reading.setStatus(WaterStatus.SAFE); // hoặc INVALID nếu có enum
+
+                } else {
+
+                        reading.setValid(true);
+
+                        Double threshold = device.getNguongCanhBao();
+
+                        if (threshold != null && waterLevel >= threshold) {
+                                reading.setStatus(WaterStatus.DANGER);
+                        } else {
+                                reading.setStatus(WaterStatus.SAFE);
+                        }
+                }
+
+                reading.setRecordedAt(
+                                Optional.ofNullable(request.getRecordedAt())
+                                                .orElse(LocalDateTime.now()));
+
+                IoTSensorReading savedReading = ioTReadingSensorRepository.save(reading);
+
+                return IoTReadingSensorResponse.builder()
+                                .device_code(savedReading.getDevice().getDeviceCode())
+                                .device_id(savedReading.getDevice().getId().toString())
+                                .recorded_at(savedReading.getRecordedAt())
+                                .build();
+        }
 }

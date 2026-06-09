@@ -1,8 +1,6 @@
 package com.example.flood_alert.dbo.request;
 import java.time.LocalDateTime;
 
-import com.example.flood_alert.enums.WaterStatus;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +16,5 @@ import lombok.experimental.FieldDefaults;
 public class IoTReadingCreationRequest {
     String deviceCode;
     Double waterLevel;
-    WaterStatus status;
-    Boolean isValid;
     LocalDateTime recordedAt;
 }
