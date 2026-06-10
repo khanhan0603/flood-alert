@@ -39,7 +39,7 @@ public class IoTSensorReading extends BaseEntity {
     @Column(nullable = false)
     WaterStatus status;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name="is_valid")
     Boolean valid;
 
     @Column(nullable = false)
