@@ -23,6 +23,9 @@ public enum ErrorCode {
     DEVICE_NOT_FOUND(1013,"Không tìm thấy thiết bị!"),
     DEVICE_ALREADY_PROCESSED(1014,"Thiết bị này đã được xử lý!"),
     USER_NOT_EXISTED(1015,"Không tìm thấy người dùng!"),
+    DEVICE_REJECTED(1016,"Thiết bị không hợp lệ!"),
+    DEVICE_DISABLED(1017,"Thiết bị đã bị khóa!"),
+    DEVICE_PENDING(1018,"Thiết bị trong trạng thái chờ admin phê duyệt!"),
     ;
     int code;
     String message;

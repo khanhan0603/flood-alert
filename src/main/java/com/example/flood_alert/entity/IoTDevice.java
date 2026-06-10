@@ -62,4 +62,7 @@ public class IoTDevice extends BaseEntity {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(nullable=false)
+    private Integer consecutiveInvalidCount;
 }

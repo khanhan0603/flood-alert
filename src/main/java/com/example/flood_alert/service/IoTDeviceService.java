@@ -13,6 +13,7 @@ import com.example.flood_alert.dbo.request.IoTReadingCreationRequest;
 import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
 import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
 import com.example.flood_alert.entity.Area;
+import com.example.flood_alert.entity.DeviceAlert;
 import com.example.flood_alert.entity.IoTDevice;
 import com.example.flood_alert.entity.IoTSensorReading;
 import com.example.flood_alert.entity.User;
@@ -21,6 +22,7 @@ import com.example.flood_alert.enums.WaterStatus;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
+import com.example.flood_alert.repository.DeviceAlertRepository;
 import com.example.flood_alert.repository.IoTDeviceRepository;
 import com.example.flood_alert.repository.IoTReadingSensorRepository;
 import com.example.flood_alert.repository.UserRepository;
@@ -28,15 +30,18 @@ import com.example.flood_alert.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class IoTDeviceService {
         IoTDeviceRepository ioTDeviceRepository;
         AreaRepository areaRepository;
         UserRepository userRepository;
         IoTReadingSensorRepository ioTReadingSensorRepository;
+        DeviceAlertRepository deviceAlertRepository;
 
         public IoTDevice registerDevice(IoTDeviceCreationRequest request) {
                 if (ioTDeviceRepository.findByDeviceCode(request.getDeviceCode()).isPresent())
@@ -63,6 +68,7 @@ public class IoTDeviceService {
                 device.setApprovedAt(null);
                 device.setCreatedAt(LocalDateTime.now());
                 device.setUpdatedAt(LocalDateTime.now());
+                device.setConsecutiveInvalidCount(0);
                 return ioTDeviceRepository.save(device);
         }
 
@@ -124,15 +130,20 @@ public class IoTDeviceService {
                 return device;
         }
 
+        @Transactional
         public IoTReadingSensorResponse readSensorIoT(
                         IoTReadingCreationRequest request) {
-
                 IoTDevice device = ioTDeviceRepository
                                 .findByDeviceCode(request.getDeviceCode())
                                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
 
                 IoTSensorReading reading = new IoTSensorReading();
-
+                if (device.getTrangThai() == DeviceStatus.PENDING) {
+                        throw new AppException(ErrorCode.DEVICE_PENDING);
+                }
+                if (device.getTrangThai() == DeviceStatus.REJECTED) {
+                        throw new AppException(ErrorCode.DEVICE_REJECTED);
+                }
                 reading.setDevice(device);
                 reading.setWaterLevel(request.getWaterLevel());
 
@@ -145,11 +156,17 @@ public class IoTDeviceService {
                 if (waterLevel == null || waterLevel < 0) {
 
                         reading.setValid(false);
-                        reading.setStatus(WaterStatus.SAFE); // hoặc INVALID nếu có enum
-
+                        reading.setStatus(WaterStatus.INVALID);
+                        device.setConsecutiveInvalidCount(device.getConsecutiveInvalidCount() + 1);
                 } else {
 
                         reading.setValid(true);
+
+                        device.setConsecutiveInvalidCount(0);
+
+                        if (device.getTrangThai() == DeviceStatus.ERROR || device.getTrangThai() == DeviceStatus.INACTIVE) {
+                                device.setTrangThai(DeviceStatus.ACTIVE);
+                        }
 
                         Double threshold = device.getNguongCanhBao();
 
@@ -158,6 +175,11 @@ public class IoTDeviceService {
                         } else {
                                 reading.setStatus(WaterStatus.SAFE);
                         }
+                }
+
+                if (device.getConsecutiveInvalidCount() >= 3 && device.getTrangThai() != DeviceStatus.ERROR) {
+                        device.setTrangThai(DeviceStatus.ERROR);
+                        sendAlert(device);
                 }
 
                 reading.setRecordedAt(
@@ -171,5 +193,20 @@ public class IoTDeviceService {
                                 .device_id(savedReading.getDevice().getId().toString())
                                 .recorded_at(savedReading.getRecordedAt())
                                 .build();
+        }
+
+        public void sendAlert(IoTDevice device) {
+                DeviceAlert alert = DeviceAlert.builder()
+                                .iotDevice(device)
+                                .message(
+                                                "Thiết bị " + device.getDeviceCode() +
+                                                                " gửi dữ liệu bất thường liên tiếp 3 lần")
+                                .resolved(false)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                log.warn(
+                                "DEVICE ERROR: {}",
+                                device.getDeviceCode());
+                deviceAlertRepository.save(alert);
         }
 }
