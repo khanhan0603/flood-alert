@@ -29,10 +29,6 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class FloodPrediction extends BaseEntity {
-    @ManyToOne
-    @JoinColumn(name = "sensor_reading_id")
-    IoTSensorReading sensorReading;
-
     @Column(name = "lead1_probability")
     Double lead1Probability;
 
