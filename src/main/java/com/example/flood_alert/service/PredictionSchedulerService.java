@@ -21,7 +21,7 @@ public class PredictionSchedulerService {
         predictionService.triggerPrediction();
     }
 
-    @Scheduled(cron="0 00 21 * * *",zone="Asia/Ho_Chi_Minh")
+    @Scheduled(cron="0 00 22 * * *",zone="Asia/Ho_Chi_Minh")
     public void predictEvening(){
         log.info("START EVENING PREDICTION");
         predictionService.triggerPrediction();
