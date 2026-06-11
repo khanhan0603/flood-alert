@@ -1,6 +1,7 @@
 package com.example.flood_alert.entity;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import com.example.flood_alert.enums.RiskLevel;
 
@@ -38,17 +39,26 @@ public class FloodPrediction extends BaseEntity {
     @Enumerated(EnumType.STRING)
     RiskLevel lead1;
 
+    @Column(name = "lead1_date")
+    Date lead1Date;
+
     @Column(name = "lead2_probability")
     Double lead2Probability;
 
     @Enumerated(EnumType.STRING)
     RiskLevel lead2;
 
+    @Column(name = "lead2_date")
+    Date lead2Date;
+
     @Column(name = "lead3_probability")
     Double lead3Probability;
 
     @Enumerated(EnumType.STRING)
     RiskLevel lead3;
+
+    @Column(name = "lead3_date")
+    Date lead3Date;
 
     LocalDateTime predictedAt;
 
