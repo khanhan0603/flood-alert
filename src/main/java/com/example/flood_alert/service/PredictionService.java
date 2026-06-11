@@ -52,12 +52,19 @@ public class PredictionService {
 
         log.info("START TRIGGER PREDICTION");
 
+        // Gọi async endpoint, FastAPI trả về ngay lập tức
+        // rồi tự chạy ngầm
         String response = restTemplate.postForObject(
-                fastApiUrl + "/predict-all",
+                fastApiUrl + "/predict-all/async", //endpoint mới
                 null,
                 String.class);
 
-        log.info("PREDICTION RESPONSE={}", response);
+        log.info("PREDICTION TRIGGERED RESPONSE={}", response);
+    }
+
+    //Thêm endpoint để Spring poll trạng thái nếu cần
+    public String getPredictionStatus() {
+        return restTemplate.getForObject(fastApiUrl + "/predict-all/status", String.class);
     }
 
     public List<FloodPredictionResponse> getAllPrediction() {
