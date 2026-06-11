@@ -73,7 +73,7 @@ public class IoTDeviceService {
         }
 
         public List<IoTDeviceCreationResponse> getPendingDevices() {
-                return ioTDeviceRepository.findByTrangThai(DeviceStatus.PENDING)
+                return ioTDeviceRepository.getListOrderByTrangThai()
                                 .stream()
                                 .map(device -> IoTDeviceCreationResponse.builder()
                                                 .id(device.getId().toString())
