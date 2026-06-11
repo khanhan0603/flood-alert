@@ -18,11 +18,12 @@ public interface IoTDeviceRepository extends JpaRepository<IoTDevice, UUID> {
                 JOIN FETCH d.area
                 ORDER BY
                     CASE 
-                        WHEN d.trangThai=com.example.flood_alert.entity.DeviceStatus.PENDING THEN 1
-                        WHEN d.trangThai=com.example.flood_alert.entity.DeviceStatus.ERROR THEN 2
-                        WHEN d.trangThai=com.example.flood_alert.entity.DeviceStatus.INACTIVE THEN 3
-                        WHEN d.trangThai=com.example.flood_alert.entity.DeviceStatus.ACTIVE THEN 4
-                        WHEN d.trangThai=com.example.flood_alert.entity.DeviceStatus.REJECTED THEN 5
+                        WHEN d.trangThai= 'PENDING' THEN 1
+                        WHEN d.trangThai= 'ERROR' THEN 2
+                        WHEN d.trangThai= 'INACTIVE' THEN 3
+                        WHEN d.trangThai= 'ACTIVE' THEN 4
+                        WHEN d.trangThai= 'REJECTED' THEN 5
+                        ELSE 6
                     END   
             """)
     List<IoTDevice> getListOrderByTrangThai();
