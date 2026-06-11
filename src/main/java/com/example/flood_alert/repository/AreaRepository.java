@@ -137,4 +137,11 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
     UUID findAreaIdByLatLon(
             @Param("lat") BigDecimal lat,
             @Param("lon") BigDecimal lon);
+
+    @Query("""
+        SELECT a.id
+        FROM Area a
+        WHERE a.level = 2    
+    """)
+    List<UUID> findAllAreaIds();
 }

@@ -44,25 +44,31 @@ public class PredictionService {
         }
     }
 
-    public void triggerPrediction() {
+    public void triggerPredictionBatch(int offset, int limit) {
+
         if (!isFastApiHealthy()) {
-            log.error("SKIP PREDICTION - FASTAPI DOWN");
+            log.error("SKIP BATCH offset={} limit={} - FASTAPI DOWN",
+                    offset, limit);
             return;
         }
 
-        log.info("START TRIGGER PREDICTION");
-
-        // Gọi async endpoint, FastAPI trả về ngay lập tức
-        // rồi tự chạy ngầm
         String response = restTemplate.postForObject(
-                fastApiUrl + "/predict-all/async", //endpoint mới
+                fastApiUrl +
+                        "/predict-batch?offset=" +
+                        offset +
+                        "&limit=" +
+                        limit,
                 null,
                 String.class);
 
-        log.info("PREDICTION TRIGGERED RESPONSE={}", response);
+        log.info(
+                "BATCH offset={} limit={} response={}",
+                offset,
+                limit,
+                response);
     }
 
-    //Thêm endpoint để Spring poll trạng thái nếu cần
+    // Thêm endpoint để Spring poll trạng thái nếu cần
     public String getPredictionStatus() {
         return restTemplate.getForObject(fastApiUrl + "/predict-all/status", String.class);
     }
