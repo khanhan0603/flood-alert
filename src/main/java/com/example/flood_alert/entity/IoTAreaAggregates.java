@@ -55,7 +55,7 @@ public class IoTAreaAggregates extends BaseEntity {
 
     @Column(name = "danger_duration_minutes")
     Integer dangerDurationMinutes;
-
+    
     @Column(name = "recorded_at")
     LocalDateTime recordedAt;
 
