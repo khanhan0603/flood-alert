@@ -4,11 +4,14 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.flood_alert.dbo.response.FloodPredictionResponse;
 import com.example.flood_alert.entity.FloodPrediction;
+
+import jakarta.transaction.Transactional;
 
 public interface PredictionRepository extends JpaRepository<FloodPrediction, UUID> {
 
@@ -48,4 +51,12 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
                 WHERE a.id = :areaId
             """)
     List<FloodPredictionResponse> findPredictionByArea(@Param("areaId") UUID areaId);
+
+    @Modifying
+    @Transactional
+    @Query(value="""
+        DELETE FROM flood_predictions
+        WHERE predicted_at < NOW() - INTERVAL '90 days'    
+    """,nativeQuery=true)
+    int deleteOldPredictions();
 }

@@ -3,6 +3,8 @@ package com.example.flood_alert.service;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import com.example.flood_alert.repository.PredictionRepository;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -15,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PredictionSchedulerService {
 
     PredictionService predictionService;
+    PredictionRepository predictionRepository;
 
     private static final int TOTAL_AREAS = 3321;
     private static final int BATCH_SIZE = 500;
@@ -27,7 +30,7 @@ public class PredictionSchedulerService {
         runBatchPrediction();
     }
 
-    @Scheduled(cron = "0 00 15 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 30 15 * * *", zone = "Asia/Ho_Chi_Minh")
     public void predictEvening() {
 
         log.info("START EVENING PREDICTION");
@@ -65,5 +68,11 @@ public class PredictionSchedulerService {
         }
 
         log.info("ALL BATCHES COMPLETED");
+    }
+
+    @Scheduled(cron="0 0 2 * * *",zone="Asia/Ho_Chi_Minh")
+    public void cleanup(){
+        int deleted=predictionRepository.deleteOldPredictions();
+        log.info("Deleted {} old predictions", deleted);
     }
 }

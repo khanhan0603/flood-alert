@@ -9,6 +9,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -21,7 +22,9 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(name = "flood_predictions")
+@Table(name = "flood_predictions",indexes = {
+    @Index(name="idx_predicted_at", columnList = "predicted_at")
+})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -56,6 +59,7 @@ public class FloodPrediction extends BaseEntity {
     @Column(name = "lead3_date")
     Date lead3Date;
 
+    @Column(name = "predicted_at")
     LocalDateTime predictedAt;
 
     @ManyToOne
