@@ -26,7 +26,7 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
                     ON fp.area_id = latest.area_id
                    AND fp.predicted_at = latest.max_predicted_at
             """, nativeQuery = true)
-    List<FloodPredictionResponse> findLatestPredictionsForAllAreas();
+    List<FloodPrediction> findLatestPredictionsForAllAreas();
 
     @Query("""
                 SELECT new com.example.flood_alert.dbo.response.FloodPredictionResponse(
