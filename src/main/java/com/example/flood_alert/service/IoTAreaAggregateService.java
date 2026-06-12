@@ -13,6 +13,7 @@ import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.IoTAreaAggregateRepository;
+import com.example.flood_alert.repository.IoTDeviceRepository;
 import com.example.flood_alert.repository.IoTReadingSensorRepository;
 
 import jakarta.transaction.Transactional;
@@ -29,6 +30,7 @@ public class IoTAreaAggregateService {
     AreaRepository areaRepository;
     IoTReadingSensorRepository ioTReadingSensorRepository;
     IoTAreaAggregateRepository ioTAreaAggregateRepository;
+    IoTDeviceRepository ioTDeviceRepository;
 
     @Transactional
     public void aggregateArea(UUID areaId) {
@@ -94,16 +96,18 @@ public class IoTAreaAggregateService {
     }
 
     public void aggregateAllAreas() {
-
-        List<UUID> areaIds = areaRepository.findAllAreaIds();
-
-        if (areaIds.isEmpty()) {
-            throw new AppException(ErrorCode.EMPTY_AREA);
-        }
-
         log.info("START IOT AGGREGATE");
 
-        log.info("TOTAL AREA={}", areaIds.size());
+        List<UUID> areaIds = ioTDeviceRepository.findAreaIdsHasActiveDevice();
+
+        log.info(
+                "TOTAL AREA HAS ACTIVE DEVICE={}",
+                areaIds.size());
+
+        if (areaIds.isEmpty()) {
+            log.info("NO ACTIVE DEVICE FOUND");
+            return;
+        }
 
         for (UUID areaId : areaIds) {
             try {
