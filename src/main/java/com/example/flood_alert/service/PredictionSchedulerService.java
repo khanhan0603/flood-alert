@@ -27,7 +27,7 @@ public class PredictionSchedulerService {
         runBatchPrediction();
     }
 
-    @Scheduled(cron = "0 50 01 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 00 15 * * *", zone = "Asia/Ho_Chi_Minh")
     public void predictEvening() {
 
         log.info("START EVENING PREDICTION");
