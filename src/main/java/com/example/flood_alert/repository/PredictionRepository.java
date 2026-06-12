@@ -16,6 +16,8 @@ import jakarta.transaction.Transactional;
 public interface PredictionRepository extends JpaRepository<FloodPrediction, UUID> {
     @Query("""
                 SELECT new com.example.flood_alert.dbo.response.FloodPredictionResponse(
+                    a.id,
+                    a.tenkhuvuc,
                     fp.lead1,
                     fp.lead1Probability,
                     fp.lead2,
@@ -24,8 +26,7 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
                     fp.lead3Probability,
                     fp.predictedAt,
                     fp.weatherFrom,
-                    fp.weatherTo,
-                    a.tenkhuvuc
+                    fp.weatherTo
                 )
                 FROM FloodPrediction fp
                 JOIN fp.area a
@@ -39,6 +40,8 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
 
     @Query("""
                 SELECT new com.example.flood_alert.dbo.response.FloodPredictionResponse(
+                    a.id,
+                    a.tenkhuvuc,
                     fp.lead1,
                     fp.lead1Probability,
                     fp.lead2,
@@ -47,8 +50,7 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
                     fp.lead3Probability,
                     fp.predictedAt,
                     fp.weatherFrom,
-                    fp.weatherTo,
-                    a.tenkhuvuc
+                    fp.weatherTo
                 )
                 FROM FloodPrediction fp
                 JOIN fp.area a

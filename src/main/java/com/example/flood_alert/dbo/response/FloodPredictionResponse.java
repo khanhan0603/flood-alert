@@ -1,6 +1,7 @@
 package com.example.flood_alert.dbo.response;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.example.flood_alert.enums.RiskLevel;
 
@@ -17,6 +18,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class FloodPredictionResponse {
+    UUID area_id;
+    String tenKhuVuc;
     RiskLevel lead1;
     Double lead1Probability;
     RiskLevel lead2;
@@ -26,5 +29,4 @@ public class FloodPredictionResponse {
     LocalDateTime predictedAt;
     LocalDateTime weatherFrom;
     LocalDateTime weatherTo;
-    String tenKhuVuc;
 }
