@@ -1,5 +1,6 @@
 package com.example.flood_alert.controller;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +19,10 @@ import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
 import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
 import com.example.flood_alert.entity.IoTDevice;
+import com.example.flood_alert.entity.IoTSensorReading;
+import com.example.flood_alert.enums.WaterStatus;
+import com.example.flood_alert.repository.IoTDeviceRepository;
+import com.example.flood_alert.repository.IoTReadingSensorRepository;
 import com.example.flood_alert.service.AreaService;
 import com.example.flood_alert.service.IoTAreaAggregateService;
 import com.example.flood_alert.service.IoTDeviceService;
@@ -36,6 +41,8 @@ public class IoTDeviceController {
         IoTDeviceService ioTDeviceService;
         AreaService areaService;
         IoTAreaAggregateService ioTAreaAggregateService;
+        IoTDeviceRepository ioTDeviceRepository;
+        IoTReadingSensorRepository ioTReadingSensorRepository;
 
         @PostMapping("/register-device")
         public ApiResponse<IoTDeviceCreationResponse> registerDevice(@RequestBody IoTDeviceCreationRequest request) {
@@ -126,10 +133,50 @@ public class IoTDeviceController {
                 return ApiResponse.<IoTReadingSensorResponse>builder().result(response).build();
         }
 
-        @PostMapping("/aggregate")
-        public String aggregate() {
+        @PostMapping("/{areaId}")
+        public String aggregate(@PathVariable UUID areaId) {
+                ioTAreaAggregateService.aggregateArea(areaId);
+                return "OK";
+        }
 
+        @PostMapping("/all")
+        public String aggregateAll() {
                 ioTAreaAggregateService.aggregateAllAreas();
+                return "OK";
+        }
+
+        // Bơm dữ liệu để test
+        @PostMapping("/generate/{deviceId}")
+        public String generateData(@PathVariable UUID deviceId) {
+
+                IoTDevice device = ioTDeviceRepository.findById(deviceId)
+                                .orElseThrow();
+
+                double threshold = device.getNguongCanhBao();
+
+                LocalDateTime now = LocalDateTime.now();
+
+                // Bắt đầu dưới ngưỡng 30%
+                double startWater = threshold * 0.7;
+
+                for (int i = 11; i >= 0; i--) {
+
+                        double waterLevel = startWater + (12 - i);
+
+                        WaterStatus status = waterLevel >= threshold
+                                        ? WaterStatus.DANGER
+                                        : WaterStatus.SAFE;
+
+                        IoTSensorReading reading = IoTSensorReading.builder()
+                                        .device(device)
+                                        .waterLevel(waterLevel)
+                                        .status(status)
+                                        .valid(true)
+                                        .recordedAt(now.minusSeconds(i * 10))
+                                        .build();
+
+                        ioTReadingSensorRepository.save(reading);
+                }
 
                 return "OK";
         }

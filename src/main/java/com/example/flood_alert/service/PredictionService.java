@@ -74,7 +74,7 @@ public class PredictionService {
     }
 
     public List<FloodPredictionResponse> getAllPrediction() {
-        return predictionReposiory.findAllPrediction();
+        return predictionReposiory.findLatestPredictionsForAllAreas();
     }
 
     public List<FloodPredictionResponse> findPredictionByArea(UUID areaId) {

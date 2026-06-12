@@ -42,20 +42,19 @@ public class IoTAreaAggregates extends BaseEntity {
     @Column(name = "max_water")
     Double maxWater;
 
+    @Column(name = "min_water")
+    Double minWater;
+
+    @Column(name="current_water")
+    double currentWater;
+
     @Column(name = "total_device_count")
     Integer totalDeviceCount;
 
-    @Column(name = "danger_device_count")
-    Integer dangerDeviceCount;
+    @Column(name="waterRiseRate_per_minute")
+    Double waterRiseRatePerMinute;
 
-    @Column(name = "safe_device_count")
-    Integer safeDeviceCount;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "iot_status", nullable = false)
-    WaterStatus iotStatus;
-
-    @Column(nullable = false)
+    @Column(name="danger_ratio")
     Double dangerRatio;
 
     @Column(name = "recorded_at")

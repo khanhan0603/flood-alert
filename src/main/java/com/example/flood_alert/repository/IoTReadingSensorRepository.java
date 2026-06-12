@@ -1,5 +1,6 @@
 package com.example.flood_alert.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,4 +24,15 @@ public interface IoTReadingSensorRepository extends JpaRepository<IoTSensorReadi
         AND r.device.trangThai = com.example.flood_alert.enums.DeviceStatus.ACTIVE
     """)
     List<IoTSensorReading> findLatestReadingsByAreaId(@Param("areaId") UUID areaId);
+
+     @Query("""
+        SELECT r
+        FROM IoTSensorReading r
+        WHERE r.device.area.id = :areaId
+            AND r.device.trangThai = com.example.flood_alert.enums.DeviceStatus.ACTIVE
+            AND r.recordedAt >= :startTime
+            AND r.recordedAt < :endTime
+            AND r.valid = true
+    """)
+    List<IoTSensorReading> findByAreaIdAndTimeRange(@Param("areaId") UUID areaId,LocalDateTime startTime, LocalDateTime endTime);
 }

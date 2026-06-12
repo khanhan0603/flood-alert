@@ -2,15 +2,14 @@ package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.example.flood_alert.entity.IoTAreaAggregates;
 import com.example.flood_alert.entity.IoTSensorReading;
-import com.example.flood_alert.enums.WaterStatus;
-import com.example.flood_alert.exception.AppException;
-import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.IoTAreaAggregateRepository;
 import com.example.flood_alert.repository.IoTDeviceRepository;
@@ -34,60 +33,123 @@ public class IoTAreaAggregateService {
 
     @Transactional
     public void aggregateArea(UUID areaId) {
+        LocalDateTime endTime = LocalDateTime.now()
+                .withSecond(0)
+                .withNano(0);
 
+        LocalDateTime startTime = endTime.minusMinutes(2);
+        // List reading trong 2 phút
         List<IoTSensorReading> readings = ioTReadingSensorRepository
-                .findLatestReadingsByAreaId(areaId);
+                .findByAreaIdAndTimeRange(
+                        areaId,
+                        startTime,
+                        endTime);
+
+        // List reading mới nhất
+        List<IoTSensorReading> latestReadings = ioTReadingSensorRepository.findLatestReadingsByAreaId(areaId);
+
+        if (latestReadings.isEmpty()) {
+            return;
+        }
+
+        log.info(
+                "AREA={} WINDOW_RECORDS={}",
+                areaId,
+                readings.size());
 
         if (readings.isEmpty()) {
             return;
         }
 
-        int totalDeviceCount = readings.size();
-
-        int safeDeviceCount = (int) readings.stream()
-                .filter(r -> r.getStatus() == WaterStatus.SAFE)
-                .count();
-
-        int dangerDeviceCount = (int) readings.stream()
-                .filter(r -> r.getStatus() == WaterStatus.DANGER)
-                .count();
-        ;
+        double minWater = readings.stream()
+                .mapToDouble(IoTSensorReading::getWaterLevel)
+                .min()
+                .orElse(0.0);
 
         // avgWater (trung bình mực nước mới nhất)
         double avgWater = readings.stream()
-                .filter(IoTSensorReading::getValid)
                 .mapToDouble(IoTSensorReading::getWaterLevel)
                 .average()
                 .orElse(0.0);
 
         // maxWater
         double maxWater = readings.stream()
-                .filter(IoTSensorReading::getValid)
                 .mapToDouble(IoTSensorReading::getWaterLevel)
                 .max()
                 .orElse(0.0);
 
-        double dangerRatio = totalDeviceCount == 0 ? 0 : (double) dangerDeviceCount / totalDeviceCount;
+        double currentWater = latestReadings.stream()
+                .mapToDouble(IoTSensorReading::getWaterLevel)
+                .average()
+                .orElse(0.0);
 
-        WaterStatus iotStatus;
+        int totalDeviceCount = latestReadings.size();
 
-        // Ví dụ 10 device mà có 3 device danger thì danger
-        if (dangerRatio >= 0.3) {
-            iotStatus = WaterStatus.DANGER;
-        } else if (safeDeviceCount > 0) {
-            iotStatus = WaterStatus.SAFE;
-        } else {
-            iotStatus = WaterStatus.INVALID;
-        }
+        log.info(
+                "AREA={} min={} avg={} max={} current={} devices={}",
+                areaId,
+                minWater,
+                avgWater,
+                maxWater,
+                currentWater,
+                totalDeviceCount);
+
+        // Đếm số device vượt ngưỡng
+        long dangerDeviceCount = latestReadings.stream()
+                .filter(r -> r.getDevice().getNguongCanhBao() != null
+                        && r.getWaterLevel() >= r.getDevice().getNguongCanhBao())
+                .count();
+
+        // dangerReadingCount/totalDeviceCount
+        double dangerRatio = totalDeviceCount == 0
+                ? 0.0
+                : (double) dangerDeviceCount / totalDeviceCount;
+
+        log.info(
+                "AREA={} dangerRatio={} dangerDeviceCount={} totalDeviceCount={}",
+                areaId,
+                dangerRatio,
+                dangerDeviceCount,
+                totalDeviceCount);
+
+        Map<UUID, List<IoTSensorReading>> readingsByDevice = readings.stream()
+                .collect(Collectors.groupingBy(
+                        r -> r.getDevice().getId()));
+
+        double waterRiseRatePerMinute = readingsByDevice.values().stream()
+                .mapToDouble(deviceReadings -> {
+
+                    List<IoTSensorReading> sorted = deviceReadings.stream()
+                            .sorted((r1, r2) -> r1.getRecordedAt().compareTo(r2.getRecordedAt()))
+                            .toList();
+
+                    if (sorted.size() < 2) {
+                        return 0.0;
+                    }
+
+                    double firstWater = sorted.get(0).getWaterLevel();
+
+                    double lastWater = sorted.get(sorted.size() - 1)
+                            .getWaterLevel();
+
+                    return (lastWater - firstWater) / 2.0;
+                })
+                .average()
+                .orElse(0.0);
+
+        log.info(
+                "AREA={} waterRiseRatePerMinute={}",
+                areaId,
+                waterRiseRatePerMinute);
 
         IoTAreaAggregates aggregate = IoTAreaAggregates.builder()
                 .area(areaRepository.getReferenceById(areaId))
                 .avgWater(avgWater)
                 .maxWater(maxWater)
                 .totalDeviceCount(totalDeviceCount)
-                .dangerDeviceCount(dangerDeviceCount)
-                .safeDeviceCount(safeDeviceCount)
-                .iotStatus(iotStatus)
+                .minWater(minWater)
+                .currentWater(currentWater)
+                .waterRiseRatePerMinute(waterRiseRatePerMinute)
                 .dangerRatio(dangerRatio)
                 .recordedAt(LocalDateTime.now())
                 .build();
