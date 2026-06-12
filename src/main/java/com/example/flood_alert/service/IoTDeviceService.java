@@ -72,7 +72,7 @@ public class IoTDeviceService {
                 return ioTDeviceRepository.save(device);
         }
 
-        public List<IoTDeviceCreationResponse> getPendingDevices() {
+        public List<IoTDeviceCreationResponse> getListDevices() {
                 return ioTDeviceRepository.getListOrderByTrangThai()
                                 .stream()
                                 .map(device -> IoTDeviceCreationResponse.builder()
@@ -83,6 +83,7 @@ public class IoTDeviceService {
                                                 .ten_thietbi(device.getTenThietBi())
                                                 .lat(device.getLat())
                                                 .lon(device.getLon())
+                                                .nguong_canh_bao(device.getNguongCanhBao())
                                                 .trang_thai(device.getTrangThai().name())
                                                 .createdAt(device.getCreatedAt().toString())
                                                 .updatedAt(device.getUpdatedAt().toString())

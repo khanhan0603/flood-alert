@@ -56,6 +56,7 @@ public class IoTDeviceController {
                                 .ten_thietbi(device.getTenThietBi())
                                 .lat(device.getLat())
                                 .lon(device.getLon())
+                                .nguong_canh_bao(device.getNguongCanhBao())
                                 .trang_thai(device.getTrangThai().name())
                                 .createdAt(device.getCreatedAt().toString())
                                 .updatedAt(device.getUpdatedAt().toString())
@@ -65,11 +66,11 @@ public class IoTDeviceController {
                                 .result(response).build();
         }
 
-        @GetMapping("/pending")
+        @GetMapping("/list-device")
         public ApiResponse<List<IoTDeviceCreationResponse>> getPendingDevices() {
 
                 return ApiResponse.<List<IoTDeviceCreationResponse>>builder()
-                                .result(ioTDeviceService.getPendingDevices())
+                                .result(ioTDeviceService.getListDevices())
                                 .build();
         }
 
