@@ -51,9 +51,6 @@ public class IoTAreaAggregates extends BaseEntity {
     @Column(name = "safe_device_count")
     Integer safeDeviceCount;
 
-    @Column(name = "invalid_device_count")
-    Integer invalidDeviceCount;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "iot_status", nullable = false)
     WaterStatus iotStatus;

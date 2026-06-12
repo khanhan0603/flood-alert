@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@FieldDefaults(level=AccessLevel.PRIVATE,makeFinal=true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class IoTAreaAggregateService {
     AreaRepository areaRepository;
     IoTReadingSensorRepository ioTReadingSensorRepository;
@@ -49,12 +49,9 @@ public class IoTAreaAggregateService {
         int dangerDeviceCount = (int) readings.stream()
                 .filter(r -> r.getStatus() == WaterStatus.DANGER)
                 .count();
+        ;
 
-        int invalidDeviceCount = (int) readings.stream()
-                .filter(r -> r.getStatus() == WaterStatus.INVALID)
-                .count();
-
-        // avgWater
+        // avgWater (trung bình mực nước mới nhất)
         double avgWater = readings.stream()
                 .filter(IoTSensorReading::getValid)
                 .mapToDouble(IoTSensorReading::getWaterLevel)
@@ -73,22 +70,21 @@ public class IoTAreaAggregateService {
         WaterStatus iotStatus;
 
         // Ví dụ 10 device mà có 3 device danger thì danger
-        if (dangerRatio > 0.3) {
+        if (dangerRatio >= 0.3) {
             iotStatus = WaterStatus.DANGER;
-        } else if (dangerRatio > 0) {
+        } else if (safeDeviceCount > 0) {
             iotStatus = WaterStatus.SAFE;
         } else {
             iotStatus = WaterStatus.INVALID;
         }
 
         IoTAreaAggregates aggregate = IoTAreaAggregates.builder()
-                .area(areaRepository.findById(areaId).get())
+                .area(areaRepository.getReferenceById(areaId))
                 .avgWater(avgWater)
                 .maxWater(maxWater)
                 .totalDeviceCount(totalDeviceCount)
                 .dangerDeviceCount(dangerDeviceCount)
                 .safeDeviceCount(safeDeviceCount)
-                .invalidDeviceCount(invalidDeviceCount)
                 .iotStatus(iotStatus)
                 .dangerRatio(dangerRatio)
                 .recordedAt(LocalDateTime.now())
@@ -97,14 +93,17 @@ public class IoTAreaAggregateService {
         ioTAreaAggregateRepository.save(aggregate);
     }
 
-    @Transactional
     public void aggregateAllAreas() {
 
         List<UUID> areaIds = areaRepository.findAllAreaIds();
 
-        if (areaIds==null || areaIds.isEmpty()) {
+        if (areaIds.isEmpty()) {
             throw new AppException(ErrorCode.EMPTY_AREA);
         }
+
+        log.info("START IOT AGGREGATE");
+
+        log.info("TOTAL AREA={}", areaIds.size());
 
         for (UUID areaId : areaIds) {
             try {
@@ -116,5 +115,6 @@ public class IoTAreaAggregateService {
                         e);
             }
         }
+        log.info("FINISH IOT AGGREGATE");
     }
 }
