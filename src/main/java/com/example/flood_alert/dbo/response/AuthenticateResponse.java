@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import java.util.UUID;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
@@ -14,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 public class AuthenticateResponse {
     String token;
-    String id;
+    UUID id;
     String hoten;
     String role;
     boolean authenticated;
