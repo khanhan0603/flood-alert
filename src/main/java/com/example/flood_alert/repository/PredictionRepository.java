@@ -14,19 +14,28 @@ import com.example.flood_alert.entity.FloodPrediction;
 import jakarta.transaction.Transactional;
 
 public interface PredictionRepository extends JpaRepository<FloodPrediction, UUID> {
-
-    @Query(value = """
-                SELECT fp.*
-                FROM flood_predictions fp
-                INNER JOIN (
-                    SELECT area_id, MAX(predicted_at) AS max_predicted_at
-                    FROM flood_predictions
-                    GROUP BY area_id
-                ) latest
-                    ON fp.area_id = latest.area_id
-                   AND fp.predicted_at = latest.max_predicted_at
-            """, nativeQuery = true)
-    List<FloodPrediction> findLatestPredictionsForAllAreas();
+    @Query("""
+                SELECT new com.example.flood_alert.dbo.response.FloodPredictionResponse(
+                    fp.lead1,
+                    fp.lead1Probability,
+                    fp.lead2,
+                    fp.lead2Probability,
+                    fp.lead3,
+                    fp.lead3Probability,
+                    fp.predictedAt,
+                    fp.weatherFrom,
+                    fp.weatherTo,
+                    a.tenkhuvuc
+                )
+                FROM FloodPrediction fp
+                JOIN fp.area a
+                WHERE fp.predictedAt = (
+                    SELECT MAX(fp2.predictedAt)
+                    FROM FloodPrediction fp2
+                    WHERE fp2.area.id = fp.area.id
+                )
+            """)
+    List<FloodPredictionResponse> findLatestPredictionsForAllAreas();
 
     @Query("""
                 SELECT new com.example.flood_alert.dbo.response.FloodPredictionResponse(

@@ -74,21 +74,7 @@ public class PredictionService {
     }
 
     public List<FloodPredictionResponse> getAllPrediction() {
-        return predictionReposiory.findLatestPredictionsForAllAreas()
-                .stream()
-                .map(fp -> FloodPredictionResponse.builder()
-                        .lead1(fp.getLead1())
-                        .lead1Probability(fp.getLead1Probability())
-                        .lead2(fp.getLead2())
-                        .lead2Probability(fp.getLead2Probability())
-                        .lead3(fp.getLead3())
-                        .lead3Probability(fp.getLead3Probability())
-                        .predictedAt(fp.getPredictedAt())
-                        .weatherFrom(fp.getWeatherFrom())
-                        .weatherTo(fp.getWeatherTo())
-                        .tenKhuVuc(fp.getArea().getTenkhuvuc())
-                        .build())
-                .toList();
+        return predictionReposiory.findLatestPredictionsForAllAreas();
     }
 
     public List<FloodPredictionResponse> findPredictionByArea(UUID areaId) {

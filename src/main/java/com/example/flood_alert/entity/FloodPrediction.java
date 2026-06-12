@@ -22,9 +22,13 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(name = "flood_predictions",indexes = {
-    @Index(name="idx_predicted_at", columnList = "predicted_at")
-})
+@Table(name = "flood_predictions",
+   indexes = {
+        @Index(
+            name = "idx_area_predicted",
+            columnList = "area_id,predicted_at"
+        )
+    })
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -66,9 +70,9 @@ public class FloodPrediction extends BaseEntity {
     @JoinColumn(name = "area_id")
     Area area;
 
-    @JoinColumn(name = "weather_from")
+    @Column(name = "weather_from")
     LocalDateTime weatherFrom;
 
-    @JoinColumn(name = "weather_to")
+    @Column(name = "weather_to")
     LocalDateTime weatherTo;
 }
