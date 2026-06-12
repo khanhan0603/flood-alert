@@ -2,12 +2,8 @@ package com.example.flood_alert.entity;
 
 import java.time.LocalDateTime;
 
-import com.example.flood_alert.enums.WaterStatus;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -45,17 +41,20 @@ public class IoTAreaAggregates extends BaseEntity {
     @Column(name = "min_water")
     Double minWater;
 
-    @Column(name="current_water")
+    @Column(name = "current_water")
     double currentWater;
 
     @Column(name = "total_device_count")
     Integer totalDeviceCount;
 
-    @Column(name="waterRiseRate_per_minute")
+    @Column(name = "waterRiseRate_per_minute")
     Double waterRiseRatePerMinute;
 
-    @Column(name="danger_ratio")
+    @Column(name = "danger_ratio")
     Double dangerRatio;
+
+    @Column(name = "danger_duration_minutes")
+    Integer dangerDurationMinutes;
 
     @Column(name = "recorded_at")
     LocalDateTime recordedAt;
