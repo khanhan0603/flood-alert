@@ -210,4 +210,23 @@ public class IoTDeviceService {
                                 device.getDeviceCode());
                 deviceAlertRepository.save(alert);
         }
+
+        public List<IoTDeviceCreationResponse> getListByTrangThai(DeviceStatus trangThai){
+                return ioTDeviceRepository.getListByTrangThai(trangThai)
+                                .stream()
+                                .map(device -> IoTDeviceCreationResponse.builder()
+                                                .id(device.getId().toString())
+                                                .device_code(device.getDeviceCode())
+                                                .area_id(device.getArea().getId().toString())
+                                                .tenkhuvuc(device.getArea().getTenkhuvuc())
+                                                .ten_thietbi(device.getTenThietBi())
+                                                .lat(device.getLat())
+                                                .lon(device.getLon())
+                                                .nguong_canh_bao(device.getNguongCanhBao())
+                                                .trang_thai(device.getTrangThai().name())
+                                                .createdAt(device.getCreatedAt().toString())
+                                                .updatedAt(device.getUpdatedAt().toString())
+                                                .build())
+                                .toList();
+        }
 }
