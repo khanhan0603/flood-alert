@@ -80,6 +80,7 @@ public class SnapshotController {
                 .result(response).build();
     }
 
+    // Lấy danh sách snapshot theo areaId trong 1 ngày
     @GetMapping("/list-snapshot-by-areaId/{areaId}")
     public ApiResponse<Page<AreaRiskSnapshotResponse>> getAreaRiskSnapshot(@PathVariable UUID areaId,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {

@@ -37,6 +37,7 @@ public class SnapshotService {
     PredictionRepository floodPredictionRepository;
     AreaRepository areaRepository;
     RiskScoreCalculator riskScoreCalculator;
+    AlertService alertService;
 
     @Transactional
     public void generateSnapshot(UUID areaId) {
@@ -66,7 +67,7 @@ public class SnapshotService {
         // Số Aggregate nguy hiểm (>= 0.5) trong 30 phút gần nhất
         int dangerAggregateCount = (int) riskScoreCalculator.countDangerAggregates(aggregates);
         // Tỷ lệ Aggregate nguy hiểm trên tổng số Aggregate
-        double dangerPercent = (double) dangerAggregateCount / aggregates.size();
+        double dangerPercent = ((double) dangerAggregateCount / aggregates.size())*100;
 
         // Lấy aggregate mới nhất của khu vực
         IoTAreaAggregates latestAggregate = aggregates.get(0);
@@ -105,7 +106,8 @@ public class SnapshotService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        areaRiskSnapshotRepository.save(snapshot);
+        AreaRiskSnapshot savedSnapshot=areaRiskSnapshotRepository.save(snapshot);
+        alertService.processSnapshot(savedSnapshot);
     }
 
     @Transactional

@@ -31,38 +31,37 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class FloodAlert extends BaseEntity {
     @ManyToOne
-    @JoinColumn(name = "sensor_reading_id")
-     IoTSensorReading sensorReading;
-
-    @ManyToOne
-    @JoinColumn(name = "madudoan")
-     FloodPrediction prediction;
+    @JoinColumn(name = "snapshot_id", nullable = false)
+    AreaRiskSnapshot snapshot;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-     User user;
+    User user;
 
     @ManyToOne
     @JoinColumn(name = "area_id", nullable = false)
-     Area area;
+    Area area;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-     RiskLevel riskLevel;
+    RiskLevel riskLevel;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-     String message;
+    String message;
+
+    @Column(nullable = false)
+    String title;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-     Channel channel;
+    Channel channel;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-     StatusAlert status;
+    StatusAlert status;
 
-     LocalDateTime sentAt;
+    LocalDateTime sentAt;
 
-    @Column(nullable = false)
-     LocalDateTime createdAt;
+    @Column(nullable = false,updatable = false)
+    LocalDateTime createdAt;
 }

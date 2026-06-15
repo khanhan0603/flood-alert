@@ -47,7 +47,7 @@ public class IoTAreaAggregates extends BaseEntity {
     @Column(name = "total_device_count")
     Integer totalDeviceCount;
 
-    @Column(name = "waterRiseRate_per_minute")
+    @Column(name = "water_rise_rate_per_minute")
     Double waterRiseRatePerMinute;
 
     @Column(name = "danger_ratio")
