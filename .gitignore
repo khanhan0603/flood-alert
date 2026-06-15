@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+src/main/resources/data/province_boundary_wkt.csv
+src/main/resources/data/ward_boundary_wkt_full_34.csv
