@@ -79,6 +79,7 @@ public class AuthenticationService {
         return AuthenticateResponse.builder()
                 .token(token)
                 .id(user.getId())
+                .areaId(user.getArea().getId())
                 .hoten(user.getHoten())
                 .authenticated(true)
                 .role(user.getRole().name())

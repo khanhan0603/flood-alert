@@ -16,6 +16,7 @@ import lombok.experimental.FieldDefaults;
 public class AuthenticateResponse {
     String token;
     UUID id;
+    UUID areaId;
     String hoten;
     String role;
     boolean authenticated;
