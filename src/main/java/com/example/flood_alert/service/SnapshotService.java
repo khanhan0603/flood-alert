@@ -6,9 +6,9 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.AreaRiskSnapshotResponse;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.FloodPrediction;
@@ -139,5 +139,27 @@ public class SnapshotService {
                 .orElseThrow(()->new AppException(ErrorCode.SNAPSHOT_NOT_FOUND));
 
         return areaRiskSnapshot; 
+    }
+
+    public Page<AreaRiskSnapshotResponse> getListSnapshotByAreaId(UUID areaId, LocalDateTime snapBegin, LocalDateTime snapEnd, Pageable pageable) {
+            Page<AreaRiskSnapshot> areaRiskSnapshots = areaRiskSnapshotRepository.findLatestSnapshotsByAreaIdBySnapshotAt(areaId, snapBegin, snapEnd, pageable);
+            if(areaRiskSnapshots.isEmpty()){
+                throw new AppException(ErrorCode.SNAPSHOT_NOT_FOUND);
+            }
+            return areaRiskSnapshots.map(areaSnapshot -> AreaRiskSnapshotResponse.builder()
+                                        .areaId(areaSnapshot.getArea().getId())
+                                        .tenkhuvuc(areaSnapshot.getArea().getTenkhuvuc())
+                                        .riskLevel(areaSnapshot.getRiskLevel())
+                                        .iotRiskScore(areaSnapshot.getIotRiskScore())
+                                        .predictionProbability(areaSnapshot.getPredictionProbability())
+                                        .dangerRatio(areaSnapshot.getDangerRatio())
+                                        .dangerDurationMinutes(areaSnapshot.getDangerDurationMinutes())
+                                        .waterRiseRatePerMinute(areaSnapshot.getWaterRiseRatePerMinute())
+                                        .dangerAggregateCount(areaSnapshot.getDangerAggregateCount())
+                                        .dangerPercent(areaSnapshot.getDangerPercent())
+                                        .predictionRiskLevel(areaSnapshot.getPredictionRiskLevel())
+                                        .snapshotAt(areaSnapshot.getSnapshotAt())
+                                        .createdAt(areaSnapshot.getCreatedAt())
+                                        .build());
     }
 }

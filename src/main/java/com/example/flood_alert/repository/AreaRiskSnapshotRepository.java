@@ -1,5 +1,6 @@
 package com.example.flood_alert.repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,4 +41,15 @@ public interface AreaRiskSnapshotRepository
                 )
         """)
         Optional<AreaRiskSnapshot> findLatestSnapshotByAreaId(@Param("areaId") UUID areaId);
+        
+        @Query("""
+            SELECT ars
+            FROM AreaRiskSnapshot ars
+            JOIN FETCH ars.area
+            WHERE ars.area.id = :areaId
+                    AND ars.snapshotAt >= :snapBegin 
+                    AND ars.snapshotAt < :snapEnd
+            ORDER BY ars.snapshotAt DESC
+        """)
+        Page<AreaRiskSnapshot> findLatestSnapshotsByAreaIdBySnapshotAt(@Param("areaId") UUID areaId,LocalDateTime snapBegin, LocalDateTime snapEnd, Pageable pageable);
 }
