@@ -40,4 +40,27 @@ public interface IoTAreaAggregateRepository extends JpaRepository<IoTAreaAggrega
     Page<IoTAreaAggregates> findByAreaId(
             @Param("areaId") UUID areaId,
             Pageable pageable);
+
+    // 15 aggregate gần nhất
+    @Query("""
+                SELECT ia
+                FROM IoTAreaAggregates ia
+                WHERE ia.area.id = :areaId
+                ORDER BY ia.recordedAt DESC
+            """)
+    List<IoTAreaAggregates> findRecentAggregates(
+            @Param("areaId") UUID areaId,
+            Pageable pageable);
+
+    // Các khu vực có IoT
+    @Query("""
+                SELECT DISTINCT ia.area.id
+                FROM IoTAreaAggregates ia
+                WHERE ia.recordedAt = (
+                    SELECT MAX(sub.recordedAt)
+                    FROM IoTAreaAggregates sub
+                    WHERE sub.area.id = ia.area.id
+                )
+            """)
+    List<UUID> findAreasHasLatestAggregate();
 }

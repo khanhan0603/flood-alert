@@ -1,6 +1,7 @@
 package com.example.flood_alert.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,6 +38,8 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
                 )
             """)
     List<FloodPredictionResponse> findLatestPredictionsForAllAreas();
+
+    Optional<FloodPrediction> findTopByAreaIdOrderByPredictedAtDesc(UUID areaId);
 
     @Query("""
                 SELECT new com.example.flood_alert.dbo.response.FloodPredictionResponse(

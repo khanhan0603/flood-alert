@@ -20,7 +20,6 @@ import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
 import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
 import com.example.flood_alert.entity.IoTDevice;
 import com.example.flood_alert.entity.IoTSensorReading;
-import com.example.flood_alert.enums.DeviceStatus;
 import com.example.flood_alert.enums.WaterStatus;
 import com.example.flood_alert.repository.IoTDeviceRepository;
 import com.example.flood_alert.repository.IoTReadingSensorRepository;
@@ -68,46 +67,10 @@ public class IoTDeviceController {
         }
 
         @GetMapping("/list-device")
-        public ApiResponse<List<IoTDeviceCreationResponse>> getPendingDevices() {
+        public ApiResponse<List<IoTDeviceCreationResponse>> getListDevices() {
 
                 return ApiResponse.<List<IoTDeviceCreationResponse>>builder()
                                 .result(ioTDeviceService.getListDevices())
-                                .build();
-        }
-
-        @GetMapping("/list-active")
-        public ApiResponse<List<IoTDeviceCreationResponse>> getListActive() {
-                return ApiResponse.<List<IoTDeviceCreationResponse>>builder()
-                                .result(ioTDeviceService.getListByTrangThai(DeviceStatus.ACTIVE))
-                                .build();
-        }
-
-        @GetMapping("/list-pending")
-        public ApiResponse<List<IoTDeviceCreationResponse>> getListPending() {
-                return ApiResponse.<List<IoTDeviceCreationResponse>>builder()
-                                .result(ioTDeviceService.getListByTrangThai(DeviceStatus.PENDING))
-                                .build();
-        }
-
-        @GetMapping("/list-error")
-        public ApiResponse<List<IoTDeviceCreationResponse>> getListError() {
-                return ApiResponse.<List<IoTDeviceCreationResponse>>builder()
-                                .result(ioTDeviceService.getListByTrangThai(DeviceStatus.ERROR))
-                                .build();
-        }
-        
-        @GetMapping("/list-inactive")
-        public ApiResponse<List<IoTDeviceCreationResponse>> getListInActive() {
-                return ApiResponse.<List<IoTDeviceCreationResponse>>builder()
-                                .result(ioTDeviceService.getListByTrangThai(DeviceStatus.INACTIVE))
-                                .build();
-        }
-
-
-        @GetMapping("/list-rejected")
-        public ApiResponse<List<IoTDeviceCreationResponse>> getListRejected() {
-                return ApiResponse.<List<IoTDeviceCreationResponse>>builder()
-                                .result(ioTDeviceService.getListByTrangThai(DeviceStatus.REJECTED))
                                 .build();
         }
 
