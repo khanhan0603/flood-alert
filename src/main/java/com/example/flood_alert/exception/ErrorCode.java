@@ -27,6 +27,7 @@ public enum ErrorCode {
     DEVICE_DISABLED(1017,"Thiết bị đã bị khóa!"),
     DEVICE_PENDING(1018,"Thiết bị trong trạng thái chờ admin phê duyệt!"),
     EMPTY_AREA(1019,"Không tìm thấy bất kỳ khu vực nào phù hợp!"),
+    SNAPSHOT_NOT_FOUND(1020,"Chưa có dữ liệu tổng hợp mới nhất cho khu vực này!"),
     ;
     int code;
     String message;

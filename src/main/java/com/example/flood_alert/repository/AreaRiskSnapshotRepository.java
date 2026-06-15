@@ -27,4 +27,17 @@ public interface AreaRiskSnapshotRepository
 
         Optional<AreaRiskSnapshot> findTopByAreaIdOrderBySnapshotAtDesc(
                         UUID areaId);
+
+        @Query("""
+            SELECT as
+            FROM AreaRiskSnapshot as
+            JOIN FETCH as.area
+            WHERE as.area.id = :areaId
+                AND as.snapshotAt = (
+                    SELECT MAX(sub.snapshotAt)
+                    FROM AreaRiskSnapshot sub
+                    WHERE sub.area.id = as.area.id
+                )
+        """)
+        Optional<AreaRiskSnapshot> findLatestSnapshotByAreaId(@Param("areaId") UUID areaId);
 }

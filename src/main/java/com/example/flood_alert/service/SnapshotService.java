@@ -4,13 +4,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.AreaRiskSnapshotResponse;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.FloodPrediction;
 import com.example.flood_alert.entity.IoTAreaAggregates;
 import com.example.flood_alert.enums.RiskLevel;
+import com.example.flood_alert.exception.AppException;
+import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.AreaRiskSnapshotRepository;
 import com.example.flood_alert.repository.IoTAreaAggregateRepository;
@@ -129,5 +134,10 @@ public class SnapshotService {
         log.info("FINISH GENERATE SNAPSHOTS");
     }
 
-    
+    public AreaRiskSnapshot getAreaRiskSnapshots(UUID areaId) {
+        AreaRiskSnapshot areaRiskSnapshot=areaRiskSnapshotRepository.findLatestSnapshotByAreaId(areaId)
+                .orElseThrow(()->new AppException(ErrorCode.SNAPSHOT_NOT_FOUND));
+
+        return areaRiskSnapshot; 
+    }
 }
