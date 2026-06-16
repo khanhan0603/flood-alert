@@ -30,16 +30,17 @@ public class UserService {
     PasswordEncoder passwordEncoder;
     AreaRepository areaRepository;
     UserMapper userMapper;
-    public User createUser(UserCreationRequest request){
-        if(userRepository.existsByEmail(request.getEmail()))
+
+    public User createUser(UserCreationRequest request) {
+        if (userRepository.existsByEmail(request.getEmail()))
             throw new AppException(ErrorCode.EMAIL_EXISTED);
-        if(userRepository.existsBySodt(request.getSodt()))
+        if (userRepository.existsBySodt(request.getSodt()))
             throw new AppException(ErrorCode.PHONE_EXISTED);
-        User user=userMapper.toUser(request);
+        User user = userMapper.toUser(request);
 
         UUID areaId = UUID.fromString(request.getArea_id());
 
-        Area area=areaRepository.findById(areaId).orElseThrow(()->new AppException(ErrorCode.AREA_NOT_FOUND));
+        Area area = areaRepository.findById(areaId).orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
 
         user.setArea(area);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -50,7 +51,8 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public List<User> getUsers(){
+    public List<User> getUsers() {
         return userRepository.findAll();
-    } 
+    }
+
 }

@@ -30,6 +30,8 @@ public enum ErrorCode {
     SNAPSHOT_NOT_FOUND(1020,"Chưa có dữ liệu tổng hợp mới nhất cho khu vực này!"),
     EMPTY_ACTIVE_USERS(1021,"Danh sách người dùng đang hoạt động trống!"),
     RESCUE_TEAM_EXISTED(1022,"Tên đội cứu hộ này đã tồn tại!"),
+    RESCUE_TEAM_NOT_FOUND(1023,"Không tìm thấy tên đội cứu hộ phù hợp!"),
+    INVALID_EXCEL_FILE(1024,"File excel không hợp lệ!"),
     ;
     int code;
     String message;

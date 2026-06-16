@@ -1,15 +1,39 @@
 package com.example.flood_alert.service;
 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
+import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
+import com.example.flood_alert.dbo.response.RowError;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.RescueTeam;
+import com.example.flood_alert.entity.User;
+import com.example.flood_alert.enums.Role;
+import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
+import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 public class RescueTeamService {
     RescueTeamRepository rescueTeamRepository;
     AreaRepository areaRepository;
+    UserRepository userRepository;
+    PasswordEncoder passwordEncoder;
 
     public RescueTeamResponse create(CreateRescueTeamRequest request) {
 
@@ -47,5 +73,225 @@ public class RescueTeamService {
                 .areaId(area.getId())
                 .areaName(area.getTenkhuvuc())
                 .build();
+    }
+
+    // Import rescue từ excel
+    public ImportRescuerResponse importRescuers(UUID teamId, MultipartFile file) {
+        Set<String> existingEmails = userRepository.findAllEmails();
+        Set<String> existingPhones = userRepository.findAllPhones();
+        String defaultPassword = passwordEncoder.encode("123456");
+        RescueTeam team = rescueTeamRepository.findById(teamId)
+                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+        int success = 0;
+        int failed = 0;
+
+        List<RowError> errors = new ArrayList<>();
+
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+
+            int headerRowIndex = findHeaderRow(sheet);
+
+            Row headerRow = sheet.getRow(headerRowIndex);
+
+            Map<String, Integer> columns = buildColumnMap(headerRow);
+            List<User> usersToSave = new ArrayList<>();
+            for (int i = headerRowIndex + 1; i <= sheet.getLastRowNum(); i++) {
+
+                Row row = sheet.getRow(i);
+
+                if (row == null || isEmptyRow(row)) {
+                    continue;
+                }
+
+                try {
+
+                    String fullName = getStringCell(
+                            row.getCell(columns.get("Họ tên")));
+
+                    String genderText = getStringCell(
+                            row.getCell(columns.get("Giới tính")));
+
+                    String email = getStringCell(
+                            row.getCell(columns.get("Email")));
+
+                    String address = getStringCell(
+                            row.getCell(columns.get("Địa chỉ")));
+
+                    String phone = getStringCell(
+                            row.getCell(columns.get("Số điện thoại")));
+
+                    LocalDate birthDate = getDateCell(
+                            row.getCell(columns.get("Ngày sinh")));
+
+                    if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                        throw new RuntimeException("Email không hợp lệ");
+                    }
+
+                    if (birthDate != null && birthDate.isAfter(LocalDate.now())) {
+                        throw new RuntimeException("Ngày sinh không hợp lệ");
+                    }
+
+                    validateRow(fullName, email, phone, existingEmails, existingPhones);
+
+                    existingEmails.add(email);
+                    existingPhones.add(phone);
+
+                    boolean gender = "Nam".equalsIgnoreCase(genderText);
+
+                    User user = User.builder()
+                            .hoten(fullName)
+                            .gioitinh(gender)
+                            .email(email)
+                            .diachi(address)
+                            .sodt(phone)
+                            .ngaysinh(birthDate)
+                            .role(Role.RESCUER)
+                            .trangthai(Status.ACTIVE)
+                            .team(team)
+                            .password(defaultPassword)
+                            .area(team.getArea())
+                            .build();
+
+                    usersToSave.add(user);
+
+                    success++;
+
+                } catch (Exception ex) {
+
+                    failed++;
+
+                    errors.add(
+                            RowError.builder()
+                                    .row(i + 1)
+                                    .message(ex.getMessage())
+                                    .build());
+                }
+            }
+            if (!usersToSave.isEmpty()) {
+                userRepository.saveAll(usersToSave);
+            }
+
+        } catch (IOException ex) {
+            throw new AppException(ErrorCode.INVALID_EXCEL_FILE);
+        }
+
+        return ImportRescuerResponse.builder()
+                .success(success)
+                .failed(failed)
+                .errors(errors)
+                .build();
+    }
+
+    private int findHeaderRow(Sheet sheet) {
+
+        for (Row row : sheet) {
+
+            for (Cell cell : row) {
+
+                String value = getStringCell(cell);
+
+                if ("Họ tên".equalsIgnoreCase(value)) {
+                    return row.getRowNum();
+                }
+            }
+        }
+
+        throw new AppException(ErrorCode.INVALID_EXCEL_FILE);
+    }
+
+    private Map<String, Integer> buildColumnMap(Row headerRow) {
+
+        Map<String, Integer> columns = new HashMap<>();
+
+        for (Cell cell : headerRow) {
+
+            columns.put(
+                    getStringCell(cell),
+                    cell.getColumnIndex());
+        }
+
+        return columns;
+    }
+
+    private void validateRow(
+            String fullName,
+            String email,
+            String phone,
+            Set<String> existingEmails,
+            Set<String> existingPhones) {
+
+        if (fullName == null || fullName.isBlank()) {
+            throw new RuntimeException("Họ tên không được để trống");
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new RuntimeException("Email không được để trống");
+        }
+
+        if (phone == null || phone.isBlank()) {
+            throw new RuntimeException("Số điện thoại không được để trống");
+        }
+
+        if (existingEmails.contains(email)) {
+            throw new RuntimeException("Email đã tồn tại");
+        }
+
+        if (existingPhones.contains(phone)) {
+            throw new RuntimeException("Số điện thoại đã tồn tại");
+        }
+    }
+
+    // Xử lý cả sdt Excel lưu dạng numeric
+    private String getStringCell(Cell cell) {
+
+        if (cell == null) {
+            return "";
+        }
+
+        return switch (cell.getCellType()) {
+
+            case STRING ->
+                cell.getStringCellValue().trim();
+
+            case NUMERIC ->
+                BigDecimal.valueOf(cell.getNumericCellValue())
+                        .toPlainString()
+                        .replace(".0", "");
+
+            case BOOLEAN ->
+                String.valueOf(cell.getBooleanCellValue());
+
+            default -> "";
+        };
+    }
+
+    private LocalDate getDateCell(Cell cell) {
+
+        if (cell == null) {
+            return null;
+        }
+
+        if (DateUtil.isCellDateFormatted(cell)) {
+
+            return cell.getLocalDateTimeCellValue()
+                    .toLocalDate();
+        }
+
+        throw new RuntimeException("Ngày sinh không hợp lệ");
+    }
+
+    private boolean isEmptyRow(Row row) {
+
+        for (Cell cell : row) {
+
+            if (!getStringCell(cell).isBlank()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
