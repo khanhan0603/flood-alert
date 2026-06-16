@@ -31,47 +31,47 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Getter
 @Setter
-@FieldDefaults(level= AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(
-    name = "users",
-    uniqueConstraints={
-        @UniqueConstraint(name="uk_email",columnNames="email"),
-        @UniqueConstraint(name="uk_sodt",columnNames="sodt")
-    }
-)
-public class User extends BaseEntity{
+@Table(name = "users", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_email", columnNames = "email"),
+        @UniqueConstraint(name = "uk_sodt", columnNames = "sodt")
+})
+public class User extends BaseEntity {
     String hoten;
     boolean gioitinh;
     LocalDate ngaysinh;
-    @Column(nullable=false)
+    @Column(nullable = false)
     String sodt;
     String diachi;
-    @Column(nullable=false)
+    @Column(nullable = false)
     String email;
-    @Column(nullable=false)
+    @Column(nullable = false)
     String password;
 
-    @Builder.Default //giữ giá trị mặc định cho role
+    @Builder.Default // giữ giá trị mặc định cho role
     @Enumerated(EnumType.STRING)
-    Role role= Role.CITIZEN;
+    Role role = Role.CITIZEN;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    Status trangthai=Status.ACTIVE;
+    Status trangthai = Status.ACTIVE;
 
-    @Column(columnDefinition="TEXT")
+    @Column(columnDefinition = "TEXT")
     String ghichu;
 
-    @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="area_id",nullable=false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "area_id", nullable = false)
     Area area;
 
     LocalDateTime created_at;
     LocalDateTime updated_at;
 
     @JsonIgnore
-    @OneToMany(mappedBy="user")
+    @OneToMany(mappedBy = "user")
     List<SosRequest> sosList;
-    
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    RescueTeam team;
 }
