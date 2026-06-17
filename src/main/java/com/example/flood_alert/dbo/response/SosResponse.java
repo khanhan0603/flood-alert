@@ -1,7 +1,9 @@
 package com.example.flood_alert.dbo.response;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
+import com.example.flood_alert.enums.EnvironmentRisk;
 import com.example.flood_alert.enums.Priority;
 import com.example.flood_alert.enums.StatusSOS;
 
@@ -17,11 +19,19 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SosResponse {
 
-    String id;
-
-    StatusSOS status;
+    UUID id;
 
     Priority priority;
+
+    StatusSOS status;
+    Integer baseSeverityScore;
+    EnvironmentRisk environmentRisk;
+
+    Integer victimCount;
+
+    String priorityReason;
+
+    String mota;
 
     LocalDateTime createdAt;
 }

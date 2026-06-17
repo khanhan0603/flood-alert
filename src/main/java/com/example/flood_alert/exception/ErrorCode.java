@@ -36,6 +36,7 @@ public enum ErrorCode {
     USER_IS_NOT_RESCUER(1026, "Người dùng không phải là lực lượng cứu hộ"),
     RESCUE_GROUP_EXISTED(1027,"Nhóm cứu hộ đã tồn tại!"),
     RESCUE_GROUP_NOT_FOUND(1028,"Không tìm thấy nhóm cứu hộ!"),
+    AREA_RISK_NOT_FOUND(1029,"Không tìm thấy dữ liệu tổng hợp mới nhất!"),
     ;
 
     int code;
