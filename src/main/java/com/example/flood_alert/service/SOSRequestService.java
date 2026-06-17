@@ -4,11 +4,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.flood_alert.dbo.request.AnonymousSosListRequest;
 import com.example.flood_alert.dbo.request.CreateSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateSosRequest;
@@ -332,6 +335,12 @@ public class SOSRequestService {
                                                 request.getClientDeviceId())
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.UNAUTHORIZED_UPDATE_SOS));
+                if (sos.getStatus() != StatusSOS.PENDING
+                                && sos.getStatus() != StatusSOS.PROCESSING) {
+
+                        throw new AppException(
+                                        ErrorCode.SOS_CANNOT_UPDATE);
+                }
                 sos.setVictimCount(request.getVictimCount());
 
                 sos.setLat(request.getLat());
@@ -360,5 +369,40 @@ public class SOSRequestService {
                 response.setAlreadyExists(false);
 
                 return response;
+        }
+
+        // List sos request xếp theo status
+        @Transactional(readOnly = true)
+        public Page<SosResponse> getMySos(Pageable pageable) {
+
+                User currentUser = getCurrentUser();
+
+                if (currentUser == null) {
+                        throw new AppException(
+                                        ErrorCode.UNAUTHENTICATED);
+                }
+
+                return sosRequestRepository
+                                .findMySos(currentUser.getId(), pageable)
+                                .map(sosRequestMapper::toResponse);
+        }
+
+        // List yêu cầu cho người lạ
+        @Transactional(readOnly = true)
+        public Page<SosResponse> getAnonymousActiveSos(
+                        AnonymousSosListRequest request,
+                        Pageable pageable) {
+
+                Page<SosRequest> page = sosRequestRepository
+                                .findAnonymousActiveSos(
+                                                request.getSodt(),
+                                                request.getClientDeviceId(),
+                                                pageable);
+                if (page.isEmpty()) {
+                        throw new AppException(
+                                        ErrorCode.ACTIVED_SOS_NOT_FOUND);
+                }
+
+                return page.map(sosRequestMapper::toResponse);
         }
 }
