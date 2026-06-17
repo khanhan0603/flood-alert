@@ -5,24 +5,22 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
+import com.example.flood_alert.dbo.response.AreaDetailResponse;
+import com.example.flood_alert.dbo.response.AreaSimpleResponse;
+import com.example.flood_alert.dbo.response.WardPolygonResponse;
 import com.example.flood_alert.service.AreaService;
 
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.GetMapping;
-
-import com.example.flood_alert.dbo.response.AreaSimpleResponse;
-
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-
-import org.springframework.web.bind.annotation.RequestParam;
-
-import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
-import com.example.flood_alert.dbo.response.WardPolygonResponse;
 
 
 
@@ -54,5 +52,11 @@ public class AreaController {
         return areaService.searchArea(keyword, PageRequest.of(0,10));
     }
     
+    @GetMapping("/detail/{areaId}")
+    public ApiResponse<AreaDetailResponse> getDetailArea(@PathVariable UUID areaId) {
+        return ApiResponse.<AreaDetailResponse>builder()
+                            .result(areaService.getDetailArea(areaId))
+                            .build();
+    }
     
 }

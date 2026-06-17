@@ -36,4 +36,18 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                 from User u
             """)
     Set<String> findAllPhones();
+
+    //List các rescuer có team nhưng chưa thuộc group nào
+    @Query("""
+                SELECT u
+                FROM User u
+                WHERE u.role = com.example.flood_alert.enums.Role.RESCUER
+                  AND u.team.id = :teamId
+                  AND NOT EXISTS (
+                        SELECT rgm
+                        FROM RescueGroupMember rgm
+                        WHERE rgm.user.id = u.id
+                  )
+            """)
+    List<User> findAvailableMembers(UUID teamId);
 }

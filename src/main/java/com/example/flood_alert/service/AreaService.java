@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
+import com.example.flood_alert.dbo.response.AreaDetailResponse;
 import com.example.flood_alert.dbo.response.AreaSimpleResponse;
 import com.example.flood_alert.dbo.response.WardPolygonResponse;
 import com.example.flood_alert.entity.Area;
@@ -95,5 +96,13 @@ public class AreaService {
             throw new AppException(ErrorCode.AREA_NOT_FOUND);
         }
         return area.getTenkhuvuc();
+    }
+
+    public AreaDetailResponse getDetailArea(UUID id){
+        AreaDetailResponse area=areaRepository.findDetailArea(id);
+        if(area==null){
+            throw new AppException(ErrorCode.AREA_NOT_FOUND);
+        }
+        return area;
     }
 }

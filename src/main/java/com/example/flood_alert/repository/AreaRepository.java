@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
+import com.example.flood_alert.dbo.response.AreaDetailResponse;
 import com.example.flood_alert.entity.Area;
 
 public interface AreaRepository extends JpaRepository<Area, UUID> {
@@ -139,9 +140,22 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
             @Param("lon") BigDecimal lon);
 
     @Query("""
-        SELECT a.id
-        FROM Area a
-        WHERE a.level = 2    
-    """)
+                SELECT a.id
+                FROM Area a
+                WHERE a.level = 2
+            """)
     List<UUID> findAllAreaIds();
+
+    // Detail area
+    @Query("""
+                SELECT new com.example.flood_alert.dbo.response.AreaDetailResponse(
+                    a.tenkhuvuc,
+                    a.mota,
+                    p.tenkhuvuc
+                )
+                FROM Area a
+                LEFT JOIN a.parent p
+                WHERE a.id = :areaId
+            """)
+    AreaDetailResponse findDetailArea(@Param("areaId") UUID areaId);
 }

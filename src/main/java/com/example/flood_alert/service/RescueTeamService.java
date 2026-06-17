@@ -20,10 +20,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
 import com.example.flood_alert.dbo.response.RowError;
+import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
+import com.example.flood_alert.dbo.response.TeamLeaderResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.User;
@@ -35,6 +38,7 @@ import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.UserRepository;
 
+import org.springframework.transaction.annotation.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -293,5 +297,59 @@ public class RescueTeamService {
         }
 
         return true;
+    }
+
+    // Chọn leader của team
+    public TeamLeaderResponse assignLeader(
+            UUID teamId,
+            AssignTeamLeaderRequest request) {
+
+        RescueTeam team = rescueTeamRepository.findById(teamId)
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.USER_NOT_EXISTED));
+
+        if (user.getRole() != Role.RESCUER) {
+            throw new AppException(
+                    ErrorCode.USER_IS_NOT_RESCUER);
+        }
+
+        if (user.getTeam() == null
+                || !user.getTeam().getId().equals(teamId)) {
+            throw new AppException(
+                    ErrorCode.RESCUER_NOT_IN_TEAM);
+        }
+
+        team.setLeader(user);
+
+        team = rescueTeamRepository.save(team);
+
+        return TeamLeaderResponse.builder()
+                .teamId(team.getId())
+                .teamName(team.getName())
+                .leaderId(user.getId())
+                .leaderName(user.getHoten())
+                .build();
+    }
+
+    // Danh sách leader theo khu vực
+    @Transactional(readOnly = true)  // readOnly = true vì chỉ đọc data
+    public List<TeamLeaderItemResponse> getLeadersByArea(
+            UUID areaId) {
+
+        return rescueTeamRepository.findByAreaId(areaId)
+                .stream()
+                .filter(team -> team.getLeader() != null)
+                .map(team -> TeamLeaderItemResponse.builder()
+                        .teamId(team.getId())
+                        .teamName(team.getName())
+                        .leaderId(team.getLeader().getId())
+                        .leaderName(team.getLeader().getHoten())
+                        .phone(team.getLeader().getSodt())
+                        .build())
+                .toList();
     }
 }
