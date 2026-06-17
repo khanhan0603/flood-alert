@@ -37,6 +37,12 @@ public enum ErrorCode {
     RESCUE_GROUP_EXISTED(1027,"Nhóm cứu hộ đã tồn tại!"),
     RESCUE_GROUP_NOT_FOUND(1028,"Không tìm thấy nhóm cứu hộ!"),
     AREA_RISK_NOT_FOUND(1029,"Không tìm thấy dữ liệu tổng hợp mới nhất!"),
+    CLIENT_DEVICE_REQUIRED(1030,"Không tìm thấy ID máy chủ!"),
+    SODT_REQUIRED(1031,"Số điện thoại không được để trống!"),
+    ACTIVE_SOS_ALREADY_EXISTS(1032,"Bạn đang có yêu cầu cứu hộ đang được xử lý!"),
+    UNAUTHORIZED_UPDATE_SOS(1033,"Bạn không có quyền cập nhật yêu cầu cứu hộ!"),
+    SOS_NOT_FOUND(1034,"Không tìm thấy yêu cầu cứu hộ!"),
+    SOS_CANNOT_UPDATE(1035,"Yêu cầu cứu hộ không thể cập nhật!"),
     ;
 
     int code;

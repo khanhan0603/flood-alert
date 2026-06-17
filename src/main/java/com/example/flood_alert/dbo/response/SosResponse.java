@@ -21,6 +21,8 @@ public class SosResponse {
 
     UUID id;
 
+    Boolean alreadyExists;
+
     Priority priority;
 
     StatusSOS status;

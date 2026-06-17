@@ -151,7 +151,7 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
                 SELECT new com.example.flood_alert.dbo.response.AreaDetailResponse(
                     a.tenkhuvuc,
                     a.mota,
-                    p.tenkhuvuc
+                    p.id
                 )
                 FROM Area a
                 LEFT JOIN a.parent p

@@ -2,9 +2,9 @@ package com.example.flood_alert.dbo.request;
 
 import java.math.BigDecimal;
 
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,13 +13,7 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreateSosRequest {
-
-    // Chỉ dùng cho Anonymous
-    String sodt;
-
-    // Chỉ dùng cho Anonymous
-    String clientDeviceId;
+public class UpdateSosRequest {
 
     @NotNull
     @Min(1)
@@ -45,6 +39,6 @@ public class CreateSosRequest {
     @NotNull
     Boolean vulnerable;
 
-    @Max(1000)
+    @Size(max = 1000)
     String mota;
 }
