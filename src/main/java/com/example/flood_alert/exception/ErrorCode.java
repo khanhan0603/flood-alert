@@ -44,6 +44,7 @@ public enum ErrorCode {
     SOS_NOT_FOUND(1034,"Không tìm thấy yêu cầu cứu hộ!"),
     SOS_CANNOT_UPDATE(1035,"Yêu cầu cứu hộ không thể cập nhật!"),
     ACTIVED_SOS_NOT_FOUND(1036,"Danh sách yêu cầu trống!"),
+    LIST_GROUP_NOT_FOUND(1037,"Danh sách nhóm cứu hộ thuộc đội này đang trống!"),
     ;
 
     int code;

@@ -1,5 +1,4 @@
 package com.example.flood_alert.dbo.response;
-
 import java.util.UUID;
 
 import lombok.AccessLevel;
@@ -12,12 +11,12 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class GroupMemberResponse {
-
+public class ListMemberOfGroupResponse {
     UUID userId;
 
     String fullName;
 
     String phone;
 
+    Boolean isLeader;
 }

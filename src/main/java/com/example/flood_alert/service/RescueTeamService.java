@@ -16,6 +16,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,9 +38,13 @@ import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
+import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.UserRepository;
 
 import org.springframework.transaction.annotation.Transactional;
+
+import com.example.flood_alert.dbo.response.RescueGroupResponse;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -50,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class RescueTeamService {
     RescueTeamRepository rescueTeamRepository;
+    RescueGroupRepository rescueGroupRepository;
     AreaRepository areaRepository;
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
@@ -351,5 +358,14 @@ public class RescueTeamService {
                         .phone(team.getLeader().getSodt())
                         .build())
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<RescueGroupResponse> getListGroupOfTeam(UUID teamId,Pageable pageable) {
+        Page<RescueGroupResponse> page=rescueGroupRepository.findGroupByTeamId(teamId,pageable);
+        if(page.isEmpty()){
+            throw new AppException(ErrorCode.LIST_GROUP_NOT_FOUND);
+        }
+        return page;
     }
 }

@@ -2,6 +2,8 @@ package com.example.flood_alert.dbo.response;
 
 import java.util.UUID;
 
+import com.example.flood_alert.enums.RescueGroupStatus;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +28,7 @@ public class RescueGroupResponse {
 
     String teamName;
 
-    String status;
+    RescueGroupStatus status;
 
     Boolean hasBoat;
 

@@ -3,6 +3,9 @@ package com.example.flood_alert.controller;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +21,7 @@ import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
+import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderResponse;
@@ -76,6 +80,19 @@ public class RescueTeamController {
                 return ApiResponse
                                 .<List<TeamLeaderItemResponse>>builder()
                                 .result(rescueTeamService.getLeadersByArea(areaId))
+                                .build();
+        }
+
+        // Danh sách các group của team
+        @GetMapping("{teamId}/group")
+        public ApiResponse<Page<RescueGroupResponse>> getListGroupOfTeam(
+                        @PathVariable UUID teamId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) 
+        {
+                Pageable pageable = PageRequest.of(page, size);
+                return ApiResponse.<Page<RescueGroupResponse>>builder()
+                                .result(rescueTeamService.getListGroupOfTeam(teamId, pageable))
                                 .build();
         }
 
