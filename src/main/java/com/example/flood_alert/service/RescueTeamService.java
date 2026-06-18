@@ -20,11 +20,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
+import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
 import com.example.flood_alert.dbo.response.RowError;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
@@ -37,13 +39,9 @@ import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
-import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
+import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.UserRepository;
-
-import org.springframework.transaction.annotation.Transactional;
-
-import com.example.flood_alert.dbo.response.RescueGroupResponse;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -367,5 +365,13 @@ public class RescueTeamService {
             throw new AppException(ErrorCode.LIST_GROUP_NOT_FOUND);
         }
         return page;
+    }
+    
+    public RescueTeamResponse getDetailTeam(UUID teamId) {
+        RescueTeamResponse team = rescueTeamRepository.findDetail(teamId);
+        if(team==null){
+            throw new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND);
+        }
+        return team;
     }
 }

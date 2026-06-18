@@ -96,4 +96,11 @@ public class RescueTeamController {
                                 .build();
         }
 
+        @GetMapping("/detail/{teamId}")
+        public ApiResponse<RescueTeamResponse> getDetailTem(@PathVariable UUID teamId) {
+            return ApiResponse.<RescueTeamResponse>builder()
+                            .result(rescueTeamService.getDetailTeam(teamId))
+                            .build();
+        }
+        
 }

@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
+import com.example.flood_alert.dbo.response.RescueTeamResponse;
 import com.example.flood_alert.entity.RescueTeam;
 
 public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
@@ -12,4 +14,20 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
     boolean existsByName(String name);
 
     List<RescueTeam> findByAreaId(UUID areaId);
+
+    //Detail a team
+    @Query("""
+        SELECT new com.example.flood_alert.dbo.response.RescueTeamResponse(
+            rt.id,
+            rt.name,
+            rt.description,
+            rt.area.id,
+            rt.area.tenkhuvuc,
+            rt.leader.id,
+            rt.leader.hoten
+        )   
+        FROM RescueTeam rt
+        WHERE rt.id = :teamId
+    """)
+    RescueTeamResponse findDetail(UUID teamId);
 }
