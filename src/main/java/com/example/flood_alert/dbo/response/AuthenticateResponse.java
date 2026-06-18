@@ -20,4 +20,5 @@ public class AuthenticateResponse {
     String hoten;
     String role;
     boolean authenticated;
+    UUID teamId;
 }
