@@ -150,7 +150,7 @@ public class IoTDeviceController {
         public String generateDemo() {
 
                 LocalDateTime from = LocalDate.now()
-                                .minusDays(2)
+                                .minusDays(1)
                                 .atStartOfDay();
 
                 LocalDateTime to = LocalDateTime.now();
