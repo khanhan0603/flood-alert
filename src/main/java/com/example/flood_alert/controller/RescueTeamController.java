@@ -102,5 +102,17 @@ public class RescueTeamController {
                             .result(rescueTeamService.getDetailTeam(teamId))
                             .build();
         }
+
+        //List team by area level 1
+        @GetMapping("/area/{areaId}")
+        public ApiResponse<Page<RescueTeamResponse>> getListTeamByArea(
+                        @PathVariable UUID areaId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
+                Pageable pageable = PageRequest.of(page, size);
+                return ApiResponse.<Page<RescueTeamResponse>>builder()
+                                .result(rescueTeamService.getListTeamByArea(areaId, pageable))
+                                .build();
+        }
         
 }

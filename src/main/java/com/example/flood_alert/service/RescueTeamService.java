@@ -374,4 +374,13 @@ public class RescueTeamService {
         }
         return team;
     }
+
+    //List team by area level 1
+    public Page<RescueTeamResponse> getListTeamByArea(UUID areaId,Pageable pageable) {
+        Page<RescueTeamResponse> page=rescueTeamRepository.findByAreaId(areaId,pageable);
+        if(page.isEmpty()){
+            throw new AppException(ErrorCode.LIST_TEAM_NOT_FOUND);
+        }
+        return page;
+    }
 }

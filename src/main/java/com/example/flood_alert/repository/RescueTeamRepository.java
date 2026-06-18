@@ -3,6 +3,8 @@ package com.example.flood_alert.repository;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -30,4 +32,20 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
         WHERE rt.id = :teamId
     """)
     RescueTeamResponse findDetail(UUID teamId);
+
+    //List team by area level 1
+    @Query("""
+        SELECT new com.example.flood_alert.dbo.response.RescueTeamResponse(
+            rt.id,
+            rt.name,
+            rt.description,
+            rt.area.id,
+            rt.area.tenkhuvuc,
+            rt.leader.id,
+            rt.leader.hoten
+        )   
+        FROM RescueTeam rt
+        WHERE rt.area.parent.id = :areaId
+    """)
+    Page<RescueTeamResponse> findByAreaId(UUID areaId,Pageable pageable);
 }
