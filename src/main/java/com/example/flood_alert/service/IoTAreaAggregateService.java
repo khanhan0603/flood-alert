@@ -1,6 +1,7 @@
 package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -251,4 +252,162 @@ public class IoTAreaAggregateService {
                                 .build());
         }
 
+        // Hàm tổng dự liệu demo
+        @Transactional
+        public void aggregateAreaAt(
+                        UUID areaId,
+                        LocalDateTime aggregateTime) {
+
+                LocalDateTime endTime = aggregateTime;
+                LocalDateTime startTime = endTime.minusMinutes(2);
+
+                List<IoTSensorReading> readings = ioTReadingSensorRepository
+                                .findByAreaIdAndTimeRange(areaId, startTime, endTime);
+
+                // Guard clause đúng thứ tự — check trước khi dùng stream
+                if (readings.isEmpty()) {
+                        log.warn("SKIP areaId={} aggregateTime={} — no readings in window", areaId, aggregateTime);
+                        return;
+                }
+
+                log.info("AREA={} WINDOW_RECORDS={}", areaId, readings.size());
+
+                // --- Thống kê trong window ---
+                double minWater = readings.stream()
+                                .mapToDouble(IoTSensorReading::getWaterLevel)
+                                .min()
+                                .orElse(0.0);
+
+                double avgWater = readings.stream()
+                                .mapToDouble(IoTSensorReading::getWaterLevel)
+                                .average()
+                                .orElse(0.0);
+
+                double maxWater = readings.stream()
+                                .mapToDouble(IoTSensorReading::getWaterLevel)
+                                .max()
+                                .orElse(0.0);
+
+                // --- currentWater: trung bình reading MỚI NHẤT của mỗi device trong window ---
+                // Không cần query thêm, đúng nghiệp vụ point-in-time
+                double currentWater = readings.stream()
+                                .collect(Collectors.groupingBy(
+                                                r -> r.getDevice().getId(),
+                                                Collectors.maxBy(
+                                                                Comparator.comparing(IoTSensorReading::getRecordedAt))))
+                                .values().stream()
+                                .filter(Optional::isPresent)
+                                .mapToDouble(opt -> opt.get().getWaterLevel())
+                                .average()
+                                .orElse(0.0);
+
+                // totalDeviceCount = số device có data trong window này
+                int totalDeviceCount = (int) readings.stream()
+                                .map(r -> r.getDevice().getId())
+                                .distinct()
+                                .count();
+
+                log.info(
+                                "AREA={} min={} avg={} max={} current={} devices={}",
+                                areaId, minWater, avgWater, maxWater, currentWater, totalDeviceCount);
+
+                // --- dangerRatio: dùng reading mới nhất của mỗi device trong window ---
+                Map<UUID, IoTSensorReading> latestByDevice = readings.stream()
+                                .collect(Collectors.toMap(
+                                                r -> r.getDevice().getId(),
+                                                r -> r,
+                                                (r1, r2) -> r1.getRecordedAt().isAfter(r2.getRecordedAt()) ? r1 : r2));
+
+                long dangerDeviceCount = latestByDevice.values().stream()
+                                .filter(r -> r.getDevice().getNguongCanhBao() != null
+                                                && r.getWaterLevel() >= r.getDevice().getNguongCanhBao())
+                                .count();
+
+                double dangerRatio = totalDeviceCount == 0
+                                ? 0.0
+                                : (double) dangerDeviceCount / totalDeviceCount;
+
+                log.info(
+                                "AREA={} dangerRatio={} dangerDeviceCount={} totalDeviceCount={}",
+                                areaId, dangerRatio, dangerDeviceCount, totalDeviceCount);
+
+                // --- dangerDurationMinutes ---
+                int dangerDurationMinutes = 0;
+
+                if (dangerRatio >= 0.5) {
+
+                        Optional<IoTAreaAggregates> previousAggregate = ioTAreaAggregateRepository
+                                        .findTopByAreaIdOrderByRecordedAtDesc(areaId);
+
+                        if (previousAggregate.isPresent()
+                                        && previousAggregate.get().getDangerRatio() != null
+                                        && previousAggregate.get().getDangerRatio() >= 0.5) {
+
+                                dangerDurationMinutes = Optional.ofNullable(
+                                                previousAggregate.get().getDangerDurationMinutes())
+                                                .orElse(0) + 2;
+
+                        } else {
+                                dangerDurationMinutes = 2;
+                        }
+                }
+
+                // --- waterRiseRatePerMinute ---
+                Map<UUID, List<IoTSensorReading>> readingsByDevice = readings.stream()
+                                .collect(Collectors.groupingBy(r -> r.getDevice().getId()));
+
+                double waterRiseRatePerMinute = readingsByDevice.values().stream()
+                                .mapToDouble(deviceReadings -> {
+
+                                        List<IoTSensorReading> sorted = deviceReadings.stream()
+                                                        .sorted(Comparator.comparing(IoTSensorReading::getRecordedAt))
+                                                        .toList();
+
+                                        if (sorted.size() < 2) {
+                                                return 0.0;
+                                        }
+
+                                        double firstWater = sorted.get(0).getWaterLevel();
+                                        double lastWater = sorted.get(sorted.size() - 1).getWaterLevel();
+                                        return (lastWater - firstWater) / 2.0;
+                                })
+                                .average()
+                                .orElse(0.0);
+
+                log.info("AREA={} waterRiseRatePerMinute={}", areaId, waterRiseRatePerMinute);
+
+                // --- Lưu aggregate ---
+                IoTAreaAggregates aggregate = IoTAreaAggregates.builder()
+                                .area(areaRepository.getReferenceById(areaId))
+                                .avgWater(avgWater)
+                                .maxWater(maxWater)
+                                .minWater(minWater)
+                                .currentWater(currentWater)
+                                .totalDeviceCount(totalDeviceCount)
+                                .waterRiseRatePerMinute(waterRiseRatePerMinute)
+                                .dangerRatio(dangerRatio)
+                                .dangerDurationMinutes(dangerDurationMinutes)
+                                .recordedAt(aggregateTime)
+                                .build();
+
+                ioTAreaAggregateRepository.save(aggregate);
+        }
+
+        @Transactional
+        public void generateAggregateData(
+                        UUID areaId,
+                        LocalDateTime from,
+                        LocalDateTime to) {
+
+                log.info("START generateAggregateData areaId={} from={} to={}", areaId, from, to);
+
+                LocalDateTime current = from.plusMinutes(2);
+
+                while (!current.isAfter(to)) {
+                        aggregateAreaAt(areaId, current);
+                        current = current.plusMinutes(2);
+                }
+
+                log.info("END generateAggregateData areaId={}", areaId);
+        }
 }

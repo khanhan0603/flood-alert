@@ -30,18 +30,24 @@ public interface IoTAreaAggregateRepository extends JpaRepository<IoTAreaAggrega
             """)
     List<IoTAreaAggregates> findLatestAggregateOfEachArea();
 
-    @Query("""
+    @Transactional(readOnly = true)
+    @Query(value = """
                 SELECT ia
                 FROM IoTAreaAggregates ia
+                JOIN FETCH ia.area
                 WHERE ia.area.id = :areaId
                 ORDER BY ia.recordedAt DESC
+            """, countQuery = """
+                SELECT COUNT(ia)
+                FROM IoTAreaAggregates ia
+                WHERE ia.area.id = :areaId
             """)
-    @EntityGraph(attributePaths = { "area" })
     Page<IoTAreaAggregates> findByAreaId(
             @Param("areaId") UUID areaId,
             Pageable pageable);
 
     // 15 aggregate gần nhất
+    @Transactional(readOnly = true)
     @Query("""
                 SELECT ia
                 FROM IoTAreaAggregates ia

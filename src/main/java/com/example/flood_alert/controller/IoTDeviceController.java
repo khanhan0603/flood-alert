@@ -1,5 +1,6 @@
 package com.example.flood_alert.controller;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -41,8 +42,6 @@ public class IoTDeviceController {
         IoTDeviceService ioTDeviceService;
         AreaService areaService;
         IoTAreaAggregateService ioTAreaAggregateService;
-        IoTDeviceRepository ioTDeviceRepository;
-        IoTReadingSensorRepository ioTReadingSensorRepository;
 
         @PostMapping("/register-device")
         public ApiResponse<IoTDeviceCreationResponse> registerDevice(@RequestBody IoTDeviceCreationRequest request) {
@@ -147,38 +146,19 @@ public class IoTDeviceController {
         }
 
         // Bơm dữ liệu để test
-        @PostMapping("/generate/{deviceId}")
-        public String generateData(@PathVariable UUID deviceId) {
+        @PostMapping("/generate-demo")
+        public String generateDemo() {
 
-                IoTDevice device = ioTDeviceRepository.findById(deviceId)
-                                .orElseThrow();
+                LocalDateTime from = LocalDate.now()
+                                .minusDays(2)
+                                .atStartOfDay();
 
-                double threshold = device.getNguongCanhBao();
+                LocalDateTime to = LocalDateTime.now();
 
-                LocalDateTime now = LocalDateTime.now();
-
-                // Bắt đầu dưới ngưỡng 30%
-                double startWater = threshold * 0.7;
-
-                for (int i = 11; i >= 0; i--) {
-
-                        double waterLevel = startWater + (12 - i);
-
-                        WaterStatus status = waterLevel >= threshold
-                                        ? WaterStatus.DANGER
-                                        : WaterStatus.SAFE;
-
-                        IoTSensorReading reading = IoTSensorReading.builder()
-                                        .device(device)
-                                        .waterLevel(waterLevel)
-                                        .status(status)
-                                        .valid(true)
-                                        .recordedAt(now.minusSeconds(i * 10))
-                                        .build();
-
-                        ioTReadingSensorRepository.save(reading);
-                }
-
+                ioTDeviceService.generateDemoData(
+                                "ESP32_001",
+                                from,
+                                to);
                 return "OK";
         }
 }

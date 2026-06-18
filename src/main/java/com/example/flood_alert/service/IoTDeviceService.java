@@ -1,9 +1,11 @@
 package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +44,8 @@ public class IoTDeviceService {
         UserRepository userRepository;
         IoTReadingSensorRepository ioTReadingSensorRepository;
         DeviceAlertRepository deviceAlertRepository;
+        IoTAreaAggregateService ioTAreaAggregateService;
+        IoTReadingGeneratorService ioTReadingGeneratorService;
 
         public IoTDevice registerDevice(IoTDeviceCreationRequest request) {
                 if (ioTDeviceRepository.findByDeviceCode(request.getDeviceCode()).isPresent())
@@ -165,7 +169,8 @@ public class IoTDeviceService {
 
                         device.setConsecutiveInvalidCount(0);
 
-                        if (device.getTrangThai() == DeviceStatus.ERROR || device.getTrangThai() == DeviceStatus.INACTIVE) {
+                        if (device.getTrangThai() == DeviceStatus.ERROR
+                                        || device.getTrangThai() == DeviceStatus.INACTIVE) {
                                 device.setTrangThai(DeviceStatus.ACTIVE);
                         }
 
@@ -196,6 +201,33 @@ public class IoTDeviceService {
                                 .build();
         }
 
+        // Sinh dữ liệu IoT để demo
+        public void generateDemoData(
+                        String deviceCode,
+                        LocalDateTime from,
+                        LocalDateTime to) {
+
+                IoTDevice device = ioTDeviceRepository
+                                .findByDeviceCode(deviceCode)
+                                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
+
+                if (device.getArea() == null) {
+                        throw new AppException(ErrorCode.AREA_NOT_FOUND);
+                }
+
+                log.info("=== BEFORE saveReadings ===");
+                ioTReadingGeneratorService.saveReadings(device, from, to);
+                log.info("=== AFTER saveReadings ===");
+
+                log.info("=== BEFORE generateAggregateData ===");
+                ioTAreaAggregateService.generateAggregateData(
+                                device.getArea().getId(),
+                                from,
+                                to);
+                log.info("=== AFTER generateAggregateData ===");
+        }
+
+        // Cảnh báo dữ liệu bất thường
         public void sendAlert(IoTDevice device) {
                 DeviceAlert alert = DeviceAlert.builder()
                                 .iotDevice(device)
@@ -210,4 +242,5 @@ public class IoTDeviceService {
                                 device.getDeviceCode());
                 deviceAlertRepository.save(alert);
         }
+
 }
