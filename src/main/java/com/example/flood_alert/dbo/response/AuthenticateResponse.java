@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
@@ -21,4 +24,7 @@ public class AuthenticateResponse {
     String role;
     boolean authenticated;
     UUID teamId;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    Boolean isLeader;
 }

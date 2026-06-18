@@ -10,6 +10,7 @@ import com.example.flood_alert.dbo.response.IntrospectResponse;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.AuthenticateRequest;
 import com.example.flood_alert.dbo.request.IntrospectRequest;
@@ -63,9 +64,17 @@ public class AuthenticationService {
                 .build();
     }
 
+    @Transactional
     public AuthenticateResponse authenticate(AuthenticateRequest request) {
         var user = userRepository.findByEmailOrSodt(request.getLoginInfo(), request.getLoginInfo())
                 .orElseThrow(() -> new AppException(ErrorCode.LOGIN_INFO_EXISTED));
+
+        Boolean isLeader = null;
+
+        if (user.getTeam() != null) {
+            isLeader = user.getTeam().getLeader() != null
+                    && user.getTeam().getLeader().getId().equals(user.getId());
+        }
 
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 
@@ -86,6 +95,7 @@ public class AuthenticationService {
                 .teamId(user.getTeam() != null
                         ? user.getTeam().getId()
                         : null)
+                .isLeader(isLeader)
                 .build();
 
     }
