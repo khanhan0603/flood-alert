@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.AssignGroupRequest;
+import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
+import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
@@ -37,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class SosAssignmentService {
+    private final AlertService alertService;
     SosAssignmentRepository sosAssignmentRepository;
     SosRequestRepository sosRequestRepository;
     RescueTeamRepository rescueTeamRepository;
@@ -113,8 +116,10 @@ public class SosAssignmentService {
                         || a.getStatus() == AssignmentStatus.MOVING
                         || a.getStatus() == AssignmentStatus.ARRIVED
                         || a.getStatus() == AssignmentStatus.RESCUING);
-        boolean allCompleted = assignments.stream()
-                .allMatch(a -> a.getStatus() == AssignmentStatus.COMPLETED);
+        boolean allCompleted = !assignments.isEmpty()
+                &&
+                assignments.stream()
+                        .allMatch(a -> a.getStatus() == AssignmentStatus.COMPLETED);
 
         SosRequest sos = sosRequestRepository.findById(sosId)
                 .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
@@ -187,30 +192,68 @@ public class SosAssignmentService {
 
     private User getCurrentUser() {
 
-                Authentication authentication = SecurityContextHolder
-                                .getContext()
-                                .getAuthentication();
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-                // log.info("Authentication={}", authentication);
+        // log.info("Authentication={}", authentication);
 
-                // if (authentication != null) {
-                // log.info("Principal={}", authentication.getPrincipal());
-                // log.info("Name={}", authentication.getName());
-                // log.info("Authenticated={}", authentication.isAuthenticated());
-                // }
+        // if (authentication != null) {
+        // log.info("Principal={}", authentication.getPrincipal());
+        // log.info("Name={}", authentication.getName());
+        // log.info("Authenticated={}", authentication.isAuthenticated());
+        // }
 
-                if (authentication == null
-                                || !authentication.isAuthenticated()
-                                || "anonymousUser".equals(
-                                                authentication.getPrincipal())) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || "anonymousUser".equals(
+                        authentication.getPrincipal())) {
 
-                        return null;
-                }
+            return null;
+        }
 
-                UUID userId = UUID.fromString(
-                                authentication.getName());
+        UUID userId = UUID.fromString(
+                authentication.getName());
 
-                return userRepository.findById(userId)
-                                .orElse(null);
+        return userRepository.findById(userId)
+                .orElse(null);
+    }
+
+    // Group leader nhận nhiệm vụ và cập nhật status
+    @Transactional
+    public void updateStatus(UUID assignmentId, UpdateAssignmentStatusRequest request) {
+        User currentUser = getCurrentUser();
+
+        // Không tìm thấy nhiệm vụ
+        SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+        // Không phải group leader
+        if (!assignment.getGroup().getLeader().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.NO_PERMISSION);
+        }
+
+        AssignmentStatus newStatus = request.getStatus();
+
+        assignment.setStatus(newStatus);
+
+        assignment.setNote(request.getNote());
+
+        switch (newStatus) {
+            case ACKNOWLEDGED -> assignment.setAcknowledgedAt(LocalDateTime.now());
+            case ARRIVED -> assignment.setArrivedAt(LocalDateTime.now());
+            case COMPLETED -> {
+                assignment.setCompletedAt(LocalDateTime.now());
+
+                RescueGroup group = assignment.getGroup();
+                group.setStatus(RescueGroupStatus.AVAILABLE);
+
+                rescueGroupRepository.save(group);
+            }
+            default -> {
+            }
+        }
+        sosAssignmentRepository.save(assignment);
+        updateSosStatus(assignment.getSos().getId());
     }
 }
