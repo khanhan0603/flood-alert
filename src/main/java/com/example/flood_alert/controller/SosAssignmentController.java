@@ -1,8 +1,10 @@
 package com.example.flood_alert.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.flood_alert.dbo.request.AssignGroupRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
 import com.example.flood_alert.service.SosAssignmentService;
 
 import jakarta.validation.Valid;
@@ -39,12 +42,24 @@ public class SosAssignmentController {
                 .build();
     }
 
-    //Group leader cập nhật trạng thái nhiệm vụ
+    // Group leader xem các trạng thái nhiệm vụ
+    @GetMapping("/{id}/available-statuses")
+    public ApiResponse<List<AssignmentStatusOptionResponse>> getAvailableStatuses(
+            @PathVariable UUID id) {
+
+        return ApiResponse
+                .<List<AssignmentStatusOptionResponse>>builder()
+                .result(sosAssignmentService.getAvailableStatuses(id))
+                .build();
+    }
+
+    // Group leader cập nhật trạng thái nhiệm vụ
     @PatchMapping("/{assignmentId}/status")
     @PreAuthorize("hasRole('RESCUER')")
-    public ApiResponse<Void> updateStatus(@PathVariable UUID assignmentId, @RequestBody @Valid UpdateAssignmentStatusRequest request){
+    public ApiResponse<Void> updateStatus(@PathVariable UUID assignmentId,
+            @RequestBody @Valid UpdateAssignmentStatusRequest request) {
         sosAssignmentService.updateStatus(assignmentId, request);
         return ApiResponse.<Void>builder()
-                    .build();
+                .build();
     }
 }

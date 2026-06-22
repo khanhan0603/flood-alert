@@ -1,6 +1,7 @@
 package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,8 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.AssignGroupRequest;
-import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
+import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
@@ -48,7 +49,7 @@ public class SosAssignmentService {
     UserRepository userRepository;
 
     // Giao nhiệm vụ cho group từ team leader
-    @CacheEvict(value="team-dashboard",allEntries=true)
+    @CacheEvict(value = "team-dashboard", allEntries = true)
     @Transactional
     public UUID assignGroup(UUID sosId, UUID groupId, AssignmentRole role, String note, UUID leaderId) {
         // Tìm yêu cầu sos theo id
@@ -220,6 +221,85 @@ public class SosAssignmentService {
 
         return userRepository.findById(userId)
                 .orElse(null);
+    }
+
+    // Trả về danh sách các status assignment
+    @Transactional(readOnly = true)
+    public List<AssignmentStatusOptionResponse> getAvailableStatuses(UUID assignmentId) {
+        User currentUser = getCurrentUser();
+
+        SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+        // Không phải group leader
+        if (!assignment.getGroup().getLeader().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.NO_PERMISSION);
+        }
+
+        List<AssignmentStatus> nextStatus = getNextStatuses(assignment.getStatus());
+
+        return nextStatus.stream()
+                .map(status -> AssignmentStatusOptionResponse.builder()
+                        .code(status.name())
+                        .name(getDisplayName(status))
+                        .build())
+                .toList();
+    }
+
+    // Rule chuyển trạng thái
+    private List<AssignmentStatus> getNextStatuses(
+            AssignmentStatus currentStatus) {
+
+        return switch (currentStatus) {
+
+            case ASSIGNED ->
+                List.of(AssignmentStatus.ACKNOWLEDGED);
+
+            case ACKNOWLEDGED ->
+                List.of(
+                        AssignmentStatus.MOVING,
+                        AssignmentStatus.FAILED);
+
+            case MOVING ->
+                List.of(
+                        AssignmentStatus.ARRIVED,
+                        AssignmentStatus.FAILED);
+
+            case ARRIVED ->
+                List.of(
+                        AssignmentStatus.RESCUING,
+                        AssignmentStatus.FAILED);
+
+            case RESCUING ->
+                List.of(
+                        AssignmentStatus.COMPLETED,
+                        AssignmentStatus.FAILED);
+
+            case COMPLETED, FAILED ->
+                Collections.emptyList();
+        };
+    }
+
+    // Tên hiển thị trạng thái
+    private String getDisplayName(
+            AssignmentStatus status) {
+
+        return switch (status) {
+
+            case ASSIGNED -> "Đã giao nhiệm vụ";
+
+            case ACKNOWLEDGED -> "Đã xác nhận";
+
+            case MOVING -> "Đang di chuyển";
+
+            case ARRIVED -> "Đã đến hiện trường";
+
+            case RESCUING -> "Đang cứu hộ";
+
+            case COMPLETED -> "Hoàn thành";
+
+            case FAILED -> "Thất bại";
+        };
     }
 
     // Group leader nhận nhiệm vụ và cập nhật status
