@@ -46,6 +46,11 @@ public enum ErrorCode {
     ACTIVED_SOS_NOT_FOUND(1036,"Danh sách yêu cầu trống!"),
     LIST_GROUP_NOT_FOUND(1037,"Danh sách nhóm cứu hộ thuộc đội này đang trống!"),
     LIST_TEAM_NOT_FOUND(1038,"Khu vực chưa có đội cứu hộ nào!"),
+    NO_PERMISSION(1039,"Không có quyền hạn trong thao tác này!"),
+    ASSIGNMENT_NOT_FOUND(1040,"Không tìm thấy nhiệm vụ!"),
+    SUPPORT_REQUEST_NOT_FOUND(1041,"Không tìm thấy yêu cầu hỗ trợ phù hợp!"),
+    GROUP_NOT_AVAILABLE(1042,"Nhóm cứu hộ hiện tại không sẵn sàng nhận nhiệm vụ!"),
+    GROUP_NOT_FOUND(1043,"Không tìm thấy nhóm cứu hộ!"),
     ;
 
     int code;

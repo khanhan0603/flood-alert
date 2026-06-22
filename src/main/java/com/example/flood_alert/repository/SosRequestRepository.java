@@ -76,4 +76,13 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
             @Param("sodt") String sodt,
             @Param("clientDeviceId") String clientDeviceId,
             Pageable pageable);
+
+   //Tìm các yêu cầu theo đội cứu hộ
+   Page<SosRequest> findByTeamId(UUID teamId,Pageable pageable);
+   
+   //Các yêu cầu theo team và trạng thái
+   Page<SosRequest> findByTeamIdAndStatus(UUID teamId, StatusSOS status,Pageable pageable);
+
+   //Tìm các yêu cầu theo trạng thái
+   Page<SosRequest> findByStatus(StatusSOS status,Pageable pageable);
 }

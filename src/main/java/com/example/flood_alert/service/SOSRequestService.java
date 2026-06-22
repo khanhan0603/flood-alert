@@ -15,9 +15,13 @@ import com.example.flood_alert.dbo.request.AnonymousSosListRequest;
 import com.example.flood_alert.dbo.request.CreateSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateSosRequest;
+import com.example.flood_alert.dbo.response.SosAssignmentResponse;
+import com.example.flood_alert.dbo.response.SosDetailResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
+import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
+import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.EnvironmentRisk;
@@ -25,10 +29,15 @@ import com.example.flood_alert.enums.Priority;
 import com.example.flood_alert.enums.StatusSOS;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
+import com.example.flood_alert.mapper.SosAssignmentMapper;
 import com.example.flood_alert.mapper.SosRequestMapper;
+import com.example.flood_alert.mapper.SupportRequestMapper;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.AreaRiskSnapshotRepository;
+import com.example.flood_alert.repository.RescueTeamRepository;
+import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
+import com.example.flood_alert.repository.SupportRequestRepository;
 import com.example.flood_alert.repository.UserRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,6 +57,12 @@ public class SOSRequestService {
 
         SosRequestRepository sosRequestRepository;
 
+        RescueTeamRepository rescueTeamRepository;
+
+        SosAssignmentRepository sosAssignmentRepository;
+
+        SupportRequestRepository supportRequestRepository;
+
         EnvironmentRiskEvaluator environmentRiskEvaluator;
 
         SosPriorityCalculator sosPriorityCalculator;
@@ -59,6 +74,10 @@ public class SOSRequestService {
         UserRepository userRepository;
 
         SosRequestMapper sosRequestMapper;
+
+        SosAssignmentMapper sosAssignmentMapper;
+
+        SupportRequestMapper supportRequestMapper;
 
         List<StatusSOS> ACTIVE_STATUSES = List.of(
                         StatusSOS.PENDING,
@@ -147,6 +166,10 @@ public class SOSRequestService {
                 Area area = areaRepository.findById(areaId)
                                 .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
 
+                // Lấy team theo khu vực
+                RescueTeam team = rescueTeamRepository.findByArea_Id(areaId)
+                                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
                 // 2. Lấy snapshot mới nhất của khu vực
                 AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
                                 .findLatestSnapshotByAreaId(areaId)
@@ -223,6 +246,8 @@ public class SOSRequestService {
                                 .locationConfirmed(false)
 
                                 .status(StatusSOS.PENDING)
+
+                                .team(team)
 
                                 .build();
 
@@ -404,5 +429,74 @@ public class SOSRequestService {
                 }
 
                 return page.map(sosRequestMapper::toResponse);
+        }
+
+        // Lấy danh sách SOS của team mình
+        @Transactional(readOnly = true)
+        public Page<SosResponse> getMyTeamSos(Pageable pageable) {
+
+                User currentUser = getCurrentUser();
+
+                RescueTeam team = rescueTeamRepository
+                                .findByLeaderId(currentUser.getId())
+                                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
+
+                return sosRequestRepository.findByTeamId(team.getId(), pageable)
+                                .map(sosRequestMapper::toResponse);
+        }
+
+        // Xem chi tiết sos
+        @Transactional(readOnly = true)
+        public SosDetailResponse getDetail(UUID sosId) {
+
+                SosRequest sos = sosRequestRepository.findById(sosId)
+                                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
+
+                List<SosAssignmentResponse> assignments = sosAssignmentRepository.findBySosId(sosId)
+                                .stream()
+                                .map(sosAssignmentMapper::toResponse)
+                                .toList();
+
+                List<SupportRequestResponse> supportRequests = supportRequestRepository.findBySosId(sosId)
+                                .stream()
+                                .map(supportRequestMapper::toResponse)
+                                .toList();
+
+                return SosDetailResponse.builder()
+                                .id(sos.getId())
+
+                                .teamId(sos.getTeam().getId())
+                                .teamName(sos.getTeam().getName())
+
+                                .phoneNumber(sos.getSodt())
+
+                                .victimCount(sos.getVictimCount())
+
+                                .injured(sos.getInjured())
+                                .trapped(sos.getTrapped())
+                                .vulnerable(sos.getVulnerable())
+
+                                .description(sos.getMota())
+
+                                .priority(sos.getPriority())
+                                .baseSeverityScore(sos.getBaseSeverityScore())
+                                .priorityReason(sos.getPriorityReason())
+
+                                .environmentRisk(sos.getEnvironmentRisk())
+
+                                .lat(sos.getLat())
+                                .lon(sos.getLon())
+
+                                .address(sos.getDiachi())
+
+                                .status(sos.getStatus())
+
+                                .createdAt(sos.getCreatedAt())
+
+                                .assignments(assignments)
+
+                                .supportRequests(supportRequests)
+
+                                .build();
         }
 }

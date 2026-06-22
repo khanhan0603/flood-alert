@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +20,7 @@ import com.example.flood_alert.dbo.request.CreateSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateSosRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.SosDetailResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
 import com.example.flood_alert.service.SOSRequestService;
 
@@ -93,8 +95,7 @@ public class SosRequestController {
                                 .build();
         }
 
-
-// List danh sách yêu cầu đang hoạt động cho người lạ
+        // List danh sách yêu cầu đang hoạt động cho người lạ
         @PostMapping("/my-active-anonymous")
         public ApiResponse<Page<SosResponse>> getAnonymousActiveSos(
 
@@ -111,6 +112,17 @@ public class SosRequestController {
                                                 sosRequestService.getAnonymousActiveSos(
                                                                 request,
                                                                 pageable))
+                                .build();
+        }
+
+        // Danh sách các sos của team
+        @GetMapping("/team")
+        public ApiResponse<Page<SosResponse>> getMyTeamSos(
+                        @PageableDefault(size = 20) Pageable pageable) {
+
+                return ApiResponse.<Page<SosResponse>>builder()
+                                .result(
+                                                sosRequestService.getMyTeamSos(pageable))
                                 .build();
         }
 }

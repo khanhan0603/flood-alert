@@ -22,6 +22,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmailOrSodt(String email, String sodt);
 
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findBySodt(String sodt);
+
     List<User> findByAreaAndTrangthai(Area area, Status status);
 
     // Load toàn bộ email, sdt trong table

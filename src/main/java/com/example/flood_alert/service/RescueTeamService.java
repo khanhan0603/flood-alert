@@ -129,8 +129,8 @@ public class RescueTeamService {
                     String address = getStringCell(
                             row.getCell(columns.get("Địa chỉ")));
 
-                    String phone = getStringCell(
-                            row.getCell(columns.get("Số điện thoại")));
+                    String phone = normalizePhone(getStringCell(
+                            row.getCell(columns.get("Số điện thoại"))));
 
                     LocalDate birthDate = getDateCell(
                             row.getCell(columns.get("Ngày sinh")));
@@ -192,6 +192,22 @@ public class RescueTeamService {
                 .failed(failed)
                 .errors(errors)
                 .build();
+    }
+
+    private String normalizePhone(String phone) {
+
+        if (phone == null) {
+            return null;
+        }
+
+        phone = phone.replace(".0", "")
+                .replaceAll("\\s+", "");
+
+        if (!phone.startsWith("0")) {
+            phone = "0" + phone;
+        }
+
+        return phone;
     }
 
     private int findHeaderRow(Sheet sheet) {

@@ -3,6 +3,9 @@ package com.example.flood_alert.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.example.flood_alert.enums.RescueGroupStatus;
 
 import jakarta.persistence.Column;
@@ -29,7 +32,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RescueGroup {
+public class RescueGroup extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -57,9 +60,12 @@ public class RescueGroup {
 
     boolean hasMedical;
 
+    @Column(columnDefinition ="TEXT")
     String notes;
 
+    @CreationTimestamp
     LocalDateTime createdAt;
 
+    @UpdateTimestamp
     LocalDateTime updatedAt;
 }

@@ -1,0 +1,29 @@
+package com.example.flood_alert.repository;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import com.example.flood_alert.entity.SosAssignment;
+import com.example.flood_alert.enums.AssignmentStatus;
+
+public interface SosAssignmentRepository extends JpaRepository<SosAssignment, UUID>{
+    //Tìm kiếm danh sách nhiệm vụ theo id sos
+    List<SosAssignment> findBySosId(UUID sosId);
+
+    //Tìm kiếm danh sách nhiệm vuy theo id group
+    List<SosAssignment> findByGroupId(UUID groupId);
+
+    //Tìm kiếm danh sách nhiệm vụ theo id group leader
+    @Query("""
+        SELECT sa
+        FROM SosAssignment sa
+        WHERE sa.group.leader.id= :leaderId    
+    """)
+    List<SosAssignment> findByGroupLeaderId(UUID leaderId);
+
+    //Danh sách nhiệm vụ theo trạng thái 
+    List<SosAssignment> findByStatus(AssignmentStatus status);
+}

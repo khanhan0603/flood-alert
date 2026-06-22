@@ -1,6 +1,7 @@
 package com.example.flood_alert.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -15,7 +16,13 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
     //Kiểm tra tồn tại tên đội cứu hộ
     boolean existsByName(String name);
 
+    //Tìm team theo id leader
+    Optional<RescueTeam> findByLeaderId(UUID leaderId);
+
     List<RescueTeam> findByAreaId(UUID areaId);
+
+    //Thông tin của team theo id khuvuc
+    Optional<RescueTeam>findByArea_Id(UUID areaId);
 
     //Detail a team
     @Query("""
