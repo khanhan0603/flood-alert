@@ -128,7 +128,7 @@ public class SosRequestController {
                                 .build();
         }
 
-        //Danh sách các sos thuộc từng trạng thái của team
+        // Danh sách các sos thuộc từng trạng thái của team
         @GetMapping("/team/{status}")
         public ApiResponse<Page<SosResponse>> getMyTeamSosByStatus(
                         @PathVariable StatusSOS status,
@@ -147,6 +147,17 @@ public class SosRequestController {
                 return ApiResponse.<Page<SosResponse>>builder()
                                 .result(
                                                 sosRequestService.getMyTeamSos(pageable))
+                                .build();
+        }
+
+        // Chi tiết sos
+        @GetMapping("/{id}")
+        public ApiResponse<SosDetailResponse> getDetail(
+                        @PathVariable UUID id) {
+
+                return ApiResponse.<SosDetailResponse>builder()
+                                .result(
+                                                sosRequestService.getDetail(id))
                                 .build();
         }
 }
