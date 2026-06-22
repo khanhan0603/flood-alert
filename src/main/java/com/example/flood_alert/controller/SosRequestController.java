@@ -22,6 +22,7 @@ import com.example.flood_alert.dbo.request.UpdateSosRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.SosDetailResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
+import com.example.flood_alert.dbo.response.TeamDashboardResponse;
 import com.example.flood_alert.service.SOSRequestService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -112,6 +113,17 @@ public class SosRequestController {
                                                 sosRequestService.getAnonymousActiveSos(
                                                                 request,
                                                                 pageable))
+                                .build();
+        }
+
+        // Dashboard cho team leader
+        @GetMapping("/{teamId}/team/summary")
+        public ApiResponse<TeamDashboardResponse> getMyDashboard(@PathVariable UUID teamId) {
+
+                return ApiResponse
+                                .<TeamDashboardResponse>builder()
+                                .result(
+                                                sosRequestService.getTeamDashboard(teamId))
                                 .build();
         }
 

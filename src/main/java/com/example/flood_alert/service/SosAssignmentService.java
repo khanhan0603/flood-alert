@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,8 @@ public class SosAssignmentService {
     UserRepository userRepository;
 
     // Giao nhiệm vụ cho group từ team leader
+    @CacheEvict(value="team-dashboard",allEntries=true)
+    @Transactional
     public UUID assignGroup(UUID sosId, UUID groupId, AssignmentRole role, String note, UUID leaderId) {
         // Tìm yêu cầu sos theo id
         SosRequest sos = sosRequestRepository.findById(sosId)

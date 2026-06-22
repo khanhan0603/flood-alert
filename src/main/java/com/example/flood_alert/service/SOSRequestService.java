@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -19,6 +21,7 @@ import com.example.flood_alert.dbo.response.SosAssignmentResponse;
 import com.example.flood_alert.dbo.response.SosDetailResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
+import com.example.flood_alert.dbo.response.TeamDashboardResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.RescueTeam;
@@ -84,6 +87,7 @@ public class SOSRequestService {
                         StatusSOS.PROCESSING);
 
         @Transactional
+        @CacheEvict(value="team-dashboard", allEntries=true)
         public SosResponse create(CreateSosRequest request, HttpServletRequest httpRequest) {
 
                 User currentUser = getCurrentUser();
@@ -429,6 +433,54 @@ public class SOSRequestService {
                 }
 
                 return page.map(sosRequestMapper::toResponse);
+        }
+
+        // Dashboard cho team leader
+        @Cacheable(value = "team-dashboard", key = "#teamId")
+        @Transactional(readOnly = true)
+        public TeamDashboardResponse getTeamDashboard(UUID teamId) 
+        {
+                //Test Redis
+                log.info("LOAD DASHBOARD FROM DB");
+                
+                long pending = sosRequestRepository
+                                .countByTeamIdAndStatus(
+                                                teamId,
+                                                StatusSOS.PENDING);
+
+                long assigned = sosRequestRepository
+                                .countByTeamIdAndStatus(
+                                                teamId,
+                                                StatusSOS.ASSIGNED);
+
+                long processing = sosRequestRepository
+                                .countByTeamIdAndStatus(
+                                                teamId,
+                                                StatusSOS.PROCESSING);
+
+                long done = sosRequestRepository
+                                .countByTeamIdAndStatus(
+                                                teamId,
+                                                StatusSOS.DONE);
+
+                long canceled = sosRequestRepository
+                                .countByTeamIdAndStatus(
+                                                teamId,
+                                                StatusSOS.CANCELED);
+
+                return TeamDashboardResponse.builder()
+                                .pendingCount(pending)
+                                .assignedCount(assigned)
+                                .processingCount(processing)
+                                .doneCount(done)
+                                .canceledCount(canceled)
+                                .totalCount(
+                                                pending
+                                                                + assigned
+                                                                + processing
+                                                                + done
+                                                                + canceled)
+                                .build();
         }
 
         // Lấy danh sách SOS của team mình

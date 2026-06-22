@@ -85,4 +85,7 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
 
    //Tìm các yêu cầu theo trạng thái
    Page<SosRequest> findByStatus(StatusSOS status,Pageable pageable);
+
+   //Đếm số sos request của team theo status
+   long countByTeamIdAndStatus(UUID teamId, StatusSOS status);
 }
