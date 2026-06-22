@@ -442,7 +442,13 @@ public class SOSRequestService {
         {
                 //Test Redis
                 log.info("LOAD DASHBOARD FROM DB");
-                
+
+                User currentUser = getCurrentUser();
+
+                RescueTeam team = rescueTeamRepository
+                                .findByLeaderId(currentUser.getId())
+                                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
+
                 long pending = sosRequestRepository
                                 .countByTeamIdAndStatus(
                                                 teamId,
