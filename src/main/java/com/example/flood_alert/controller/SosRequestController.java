@@ -23,6 +23,7 @@ import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.SosDetailResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
 import com.example.flood_alert.dbo.response.TeamDashboardResponse;
+import com.example.flood_alert.enums.StatusSOS;
 import com.example.flood_alert.service.SOSRequestService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -124,6 +125,17 @@ public class SosRequestController {
                                 .<TeamDashboardResponse>builder()
                                 .result(
                                                 sosRequestService.getTeamDashboard(teamId))
+                                .build();
+        }
+
+        //Danh sách các sos thuộc từng trạng thái của team
+        @GetMapping("/team/{status}")
+        public ApiResponse<Page<SosResponse>> getMyTeamSosByStatus(
+                        @PathVariable StatusSOS status,
+                        @PageableDefault(size = 20) Pageable pageable) {
+
+                return ApiResponse.<Page<SosResponse>>builder()
+                                .result(sosRequestService.getMyTeamSosByStatus(status, pageable))
                                 .build();
         }
 

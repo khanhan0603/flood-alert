@@ -453,6 +453,7 @@ public class SOSRequestService {
                                 .countByTeamIdAndStatus(
                                                 teamId,
                                                 StatusSOS.PENDING);
+                
 
                 long assigned = sosRequestRepository
                                 .countByTeamIdAndStatus(
@@ -475,10 +476,15 @@ public class SOSRequestService {
                                                 StatusSOS.CANCELED);
 
                 return TeamDashboardResponse.builder()
+                                .pendingStatus(StatusSOS.PENDING)
                                 .pendingCount(pending)
+                                .assignedStatus(StatusSOS.ASSIGNED)
                                 .assignedCount(assigned)
+                                .processingStatus(StatusSOS.PROCESSING)
                                 .processingCount(processing)
+                                .doneStatus(StatusSOS.DONE)
                                 .doneCount(done)
+                                .canceledStatus(StatusSOS.CANCELED)
                                 .canceledCount(canceled)
                                 .totalCount(
                                                 pending
@@ -556,5 +562,18 @@ public class SOSRequestService {
                                 .supportRequests(supportRequests)
 
                                 .build();
+        }
+
+        public Page<SosResponse> getMyTeamSosByStatus(StatusSOS status, Pageable pageable) {
+
+                User currentUser = getCurrentUser();
+
+                RescueTeam team = rescueTeamRepository
+                                .findByLeaderId(currentUser.getId())
+                                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
+
+                return sosRequestRepository.findByTeamIdAndStatus(team.getId(), status, pageable)
+                                .map(sosRequestMapper::toResponse);
+
         }
 }
