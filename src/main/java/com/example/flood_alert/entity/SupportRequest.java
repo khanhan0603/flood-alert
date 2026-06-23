@@ -73,8 +73,12 @@ public class SupportRequest extends BaseEntity {
     @JoinColumn(name = "suggested_group_id")
     RescueGroup suggestedGroup;
 
-    // Nhóm cứu hộ đc giao chi viện
+    // Đội cứu hộ đc giao chi viện
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_group_id")
-    RescueGroup assignedGroup;
+    @JoinColumn(name = "assigned_team_id")
+    RescueTeam assignedTeam;
+
+    //Phản hồi của đội chi viện
+    @Column(columnDefinition = "TEXT")
+    String teamResponse;
 }

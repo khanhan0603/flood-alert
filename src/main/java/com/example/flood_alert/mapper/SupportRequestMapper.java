@@ -11,8 +11,8 @@ public interface SupportRequestMapper {
     @Mapping(target = "sosId", source = "sos.id")
     @Mapping(target = "requestedById", source = "requestedBy.id")
     @Mapping(target = "requestedByName", source = "requestedBy.hoten")
-    @Mapping(target = "suggestedGroupId", source = "suggestedGroup.id")
-    @Mapping(target = "suggestedGroupName", source = "suggestedGroup.name")
+    @Mapping(target = "assignedTeamId", source = "assignedTeam.id")
+    @Mapping(target = "assignedTeamName", source = "assignedTeam.name")
     @Mapping(target = "approvedById", source = "approvedBy.id")
     @Mapping(target = "approvedByName", source = "approvedBy.hoten")
     SupportRequestResponse toResponse(SupportRequest supportRequest);

@@ -74,7 +74,7 @@ public class ProvinceDispatchService {
         sosAssignmentRepository.save(assignment);
 
         supportRequest.setStatus(SupportRequestStatus.APPROVED);
-        supportRequest.setAssignedGroup(group);
+        //supportRequest.setAssignedGroup(group);
         supportRequest.setApprovedBy(provinceUser);
         supportRequest.setReviewedAt(LocalDateTime.now());
         supportRequest.setProvinceResponse(provinceResponse);

@@ -4,5 +4,6 @@ public enum SupportRequestStatus {
     PENDING,
     APPROVED,
     REJECTED,
+    TEAM_REJECTED,
     COMPLETED
 }

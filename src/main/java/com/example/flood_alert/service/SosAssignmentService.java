@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.flood_alert.dbo.request.AssignGroupRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
+import com.example.flood_alert.dbo.response.GroupAssignmentResponse;
+import com.example.flood_alert.dbo.response.SupportGroupResponse;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
@@ -338,5 +340,71 @@ public class SosAssignmentService {
         }
         sosAssignmentRepository.save(assignment);
         updateSosStatus(assignment.getSos().getId());
+    }
+
+    // Danh sách nhiệm vụ của group
+    @Transactional(readOnly = true)
+    public List<GroupAssignmentResponse> getMyAssignments() {
+
+        User currentUser = getCurrentUser();
+
+        return sosAssignmentRepository
+                .findMyAssignments(
+                        currentUser.getId())
+                .stream()
+                .map(this::toGroupResponse)
+                .toList();
+    }
+
+    private GroupAssignmentResponse toGroupResponse(
+            SosAssignment assignment) {
+
+        GroupAssignmentResponse.GroupAssignmentResponseBuilder builder = GroupAssignmentResponse.builder()
+                .assignmentId(assignment.getId())
+                .sosId(assignment.getSos().getId())
+                .role(assignment.getRole())
+                .status(assignment.getStatus())
+                .priority(assignment.getSos().getPriority())
+                .lat(assignment.getSos().getLat())
+                .lon(assignment.getSos().getLon());
+
+        // Nếu group đang xem danh sách là group hỗ trợ
+        if (assignment.getRole() == AssignmentRole.SUPPORT) {
+
+            sosAssignmentRepository
+                    .findPrimaryAssignment(
+                            assignment.getSos().getId())
+                    .ifPresent(primary -> {
+
+                        builder.primaryGroupId(
+                                primary.getGroup().getId());
+
+                        builder.primaryGroupName(
+                                primary.getGroup().getName());
+                    });
+        }
+
+        // Nếu group đang xem danh sách là group chính
+        if (assignment.getRole() == AssignmentRole.PRIMARY) {
+
+            List<SupportGroupResponse> supportGroups = sosAssignmentRepository
+                    .findSupportAssignments(
+                            assignment.getSos().getId())
+                    .stream()
+                    .map(sa -> SupportGroupResponse
+                            .builder()
+                            .groupId(
+                                    sa.getGroup().getId())
+                            .groupName(
+                                    sa.getGroup().getName())
+                            .status(
+                                    sa.getStatus())
+                            .build())
+                    .toList();
+
+            builder.supportGroups(supportGroups);
+        }
+
+        return builder.build();
     }
 }

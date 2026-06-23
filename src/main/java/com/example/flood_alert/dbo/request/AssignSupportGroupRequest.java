@@ -6,11 +6,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-//Province duyệt support request
+//Team leader giao nhiệm vụ hỗ trợ cho group
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ApproveSupportRequest {
-    UUID assignedTeamId;
-    String provinceResponse;
+public class AssignSupportGroupRequest {
+    UUID groupId;
+    String note;
 }

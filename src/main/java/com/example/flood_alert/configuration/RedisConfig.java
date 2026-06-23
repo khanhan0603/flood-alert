@@ -14,19 +14,35 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 @Configuration
 @EnableCaching
 public class RedisConfig {
-    @Bean
-    public RedisCacheManager cacheManager(
-            RedisConnectionFactory factory) {
+        @Bean
+        public RedisCacheManager cacheManager(
+                        RedisConnectionFactory factory) {
 
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofSeconds(30))
-                .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair
-                                .fromSerializer(
-                                        new GenericJackson2JsonRedisSerializer()));
+                RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+                                .entryTtl(Duration.ofSeconds(30))
+                                .serializeValuesWith(
+                                                RedisSerializationContext.SerializationPair
+                                                                .fromSerializer(
+                                                                                new GenericJackson2JsonRedisSerializer()));
 
-        return RedisCacheManager.builder(factory)
-                .cacheDefaults(config)
-                .build();
-    }
+                return RedisCacheManager.builder(factory)
+                                .cacheDefaults(config)
+                                .build();
+        }
+
+        // Test redis
+        // @Bean
+        // CommandLineRunner cacheTest(
+        //                 CacheManager cacheManager) {
+
+        //         return args -> {
+        //                 Cache cache = cacheManager.getCache(
+        //                                 "team-dashboard");
+
+        //                 cache.put("test", "hello");
+
+        //                 System.out.println(
+        //                                 cache.get("test").get());
+        //         };
+        // }
 }

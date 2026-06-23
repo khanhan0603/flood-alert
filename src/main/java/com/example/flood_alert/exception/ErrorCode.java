@@ -10,7 +10,7 @@ public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error"),
     INVALID_KEY(1005, "Invalid message key"),
     LOGIN_INFO_EXISTED(1009, "Thông tin đăng nhập không chính xác"),
-    UNAUTHENTICATED(1010, "Xác thực không hợp lệ"),
+    UNAUTHENTICATED(1010, "Xác thực không hợp lệ!!!"),
     EMPTY_AREA_BY_PARENT_ID(1004, "Không tìm thấy danh sách phường/xã hợp lệ!"),
     EMPTY_POLYGIN_BY_ID(1003, "Không tìm thấy ranh giới hợp lệ!"),
     INVALID_PASSWORD(1002, "Mật khẩu phải ít nhất 6 ký tự!"),
@@ -51,6 +51,12 @@ public enum ErrorCode {
     SUPPORT_REQUEST_NOT_FOUND(1041,"Không tìm thấy yêu cầu hỗ trợ phù hợp!"),
     GROUP_NOT_AVAILABLE(1042,"Nhóm cứu hộ hiện tại không sẵn sàng nhận nhiệm vụ!"),
     GROUP_NOT_FOUND(1043,"Không tìm thấy nhóm cứu hộ!"),
+    SUPPORT_REQUEST_ALREADY_EXISTS(1044,"Đơn yêu cầu hỗ trợ đã tồn tại!"),
+    SUPPORT_REQUEST_ALREADY_REVIEWED(1045,"Yêu cầu hỗ trợ này đã được phê duyệt!"),
+    SUPPORT_REQUEST_NOT_APPROVED(1046,"Yêu cầu hỗ trợ chưa được phê duyệt!"),
+    SUPPORT_REQUEST_ALREADY_DISPATCHED(1047,"Yêu cầu hỗ trợ đã được giao!"),
+    SOS_ALREADY_ASSIGNED(1048,"Yêu cầu cứu hộ đã được giao!"),
+    INVALID_SUPPORT_REQUEST_STATUS(1049,"Trang thái yêu cầu hỗ trợ không hợp lệ!"),
     ;
 
     int code;

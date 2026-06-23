@@ -47,7 +47,7 @@ public class WeatherDataInitializerService {
 
     // 1000ms × 3321 area ≈ 55 phút/lần sync — an toàn free tier
     // Giảm xuống 500ms sau khi xác nhận không bị 429
-    static final int REQUEST_DELAY_MS = 200;
+    static final int REQUEST_DELAY_MS = 700;
     static final int RETRY_ATTEMPTS   = 5;
     static final int RETRY_BACKOFF_MS = 5_000;
 

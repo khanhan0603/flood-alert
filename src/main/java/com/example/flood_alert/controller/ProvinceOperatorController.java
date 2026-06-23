@@ -2,21 +2,20 @@ package com.example.flood_alert.controller;
 
 import java.io.IOException;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.ImportProvinceOperatorResponse;
 import com.example.flood_alert.service.ProvinceOperatorImportService;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 
 @RestController
@@ -26,7 +25,7 @@ import com.example.flood_alert.service.ProvinceOperatorImportService;
 public class ProvinceOperatorController {
     ProvinceOperatorImportService provinceOperatorImportService;
     @PostMapping("/import")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public ApiResponse<ImportProvinceOperatorResponse> importProvinceOperator(@RequestParam("file") MultipartFile file) 
                 throws IOException
     {

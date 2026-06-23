@@ -16,6 +16,7 @@ import com.example.flood_alert.dbo.request.AssignGroupRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
+import com.example.flood_alert.dbo.response.GroupAssignmentResponse;
 import com.example.flood_alert.service.SosAssignmentService;
 
 import jakarta.validation.Valid;
@@ -30,36 +31,49 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SosAssignmentController {
-    SosAssignmentService sosAssignmentService;
+        SosAssignmentService sosAssignmentService;
 
-    // Giao nhiệm vụ cho group
-    @PostMapping
-    public ApiResponse<UUID> assignGroup(
-            @RequestBody AssignGroupRequest request) {
+        // Giao nhiệm vụ cho group
+        @PostMapping
+        public ApiResponse<UUID> assignGroup(
+                        @RequestBody AssignGroupRequest request) {
 
-        return ApiResponse.<UUID>builder()
-                .result(sosAssignmentService.assignGroup(request))
-                .build();
-    }
+                return ApiResponse.<UUID>builder()
+                                .result(sosAssignmentService.assignGroup(request))
+                                .build();
+        }
 
-    // Group leader xem các trạng thái nhiệm vụ
-    @GetMapping("/{id}/available-statuses")
-    public ApiResponse<List<AssignmentStatusOptionResponse>> getAvailableStatuses(
-            @PathVariable UUID id) {
+        // Group leader xem các trạng thái nhiệm vụ
+        @GetMapping("/{id}/available-statuses")
+        public ApiResponse<List<AssignmentStatusOptionResponse>> getAvailableStatuses(
+                        @PathVariable UUID id) {
 
-        return ApiResponse
-                .<List<AssignmentStatusOptionResponse>>builder()
-                .result(sosAssignmentService.getAvailableStatuses(id))
-                .build();
-    }
+                return ApiResponse
+                                .<List<AssignmentStatusOptionResponse>>builder()
+                                .result(sosAssignmentService.getAvailableStatuses(id))
+                                .build();
+        }
 
-    // Group leader cập nhật trạng thái nhiệm vụ
-    @PatchMapping("/{assignmentId}/status")
-    @PreAuthorize("hasRole('RESCUER')")
-    public ApiResponse<Void> updateStatus(@PathVariable UUID assignmentId,
-            @RequestBody @Valid UpdateAssignmentStatusRequest request) {
-        sosAssignmentService.updateStatus(assignmentId, request);
-        return ApiResponse.<Void>builder()
-                .build();
-    }
+        // Group leader cập nhật trạng thái nhiệm vụ
+        @PatchMapping("/{assignmentId}/status")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
+        public ApiResponse<Void> updateStatus(@PathVariable UUID assignmentId,
+                        @RequestBody @Valid UpdateAssignmentStatusRequest request) {
+                sosAssignmentService.updateStatus(assignmentId, request);
+                return ApiResponse.<Void>builder()
+                                .build();
+        }
+
+        //Danh sách nhiệm vụ của group
+        @GetMapping("/my-group")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
+        public ApiResponse<List<GroupAssignmentResponse>> getMyAssignments() {
+
+                return ApiResponse
+                                .<List<GroupAssignmentResponse>>builder()
+                                .result(
+                                                sosAssignmentService
+                                                                .getMyAssignments())
+                                .build();
+        }
 }
