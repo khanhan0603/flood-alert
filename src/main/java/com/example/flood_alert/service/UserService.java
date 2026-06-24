@@ -4,14 +4,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.UserCreationRequest;
-import com.example.flood_alert.dbo.response.ProvinceOperatorResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.Role;
@@ -20,6 +16,7 @@ import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.mapper.UserMapper;
 import com.example.flood_alert.repository.AreaRepository;
+import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
@@ -31,6 +28,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserService {
     UserRepository userRepository;
+    RescueTeamRepository rescueTeamRepository;
     PasswordEncoder passwordEncoder;
     AreaRepository areaRepository;
     UserMapper userMapper;
@@ -59,22 +57,5 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    // Danh sách các province
-    @Transactional(readOnly = true)
-    public Page<ProvinceOperatorResponse> getAll(
-            Pageable pageable) {
-
-        return userRepository
-                .findByRole(
-                        Role.PROVINCE_OPERATOR,
-                        pageable)
-                .map(user -> ProvinceOperatorResponse
-                        .builder()
-                        .id(user.getId())
-                        .hoten(user.getHoten())
-                        .tenkhuvuc_phutrach(
-                                user.getArea()
-                                        .getTenkhuvuc())
-                        .build());
-    }
+   
 }

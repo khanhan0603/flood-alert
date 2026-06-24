@@ -36,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AlertService {
     UserRepository userRepository;
     FloodAlertRepository floodAlertRepository;
+    EmailProcessor emailProcessor;
 
     private static final long ALERT_COOLDOWN_HOURS = 6;
 
@@ -101,6 +102,9 @@ public class AlertService {
         }
 
         floodAlertRepository.saveAll(alerts);
+
+        //Gửi email
+        emailProcessor.processPendingEmails();
     }
 
     private void createMediumAlerts(AreaRiskSnapshot snapshot, List<User> users) {

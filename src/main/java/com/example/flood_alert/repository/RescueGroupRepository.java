@@ -30,11 +30,12 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
             """)
     Page<RescueGroupResponse> findGroupByTeamId(UUID teamId, Pageable pageable);
 
-
     List<RescueGroup> findByTeamId(UUID teamId);
-
 
     List<RescueGroup> findByTeamIdAndStatus(UUID teamId, String status);
 
-    Optional<RescueGroup>findByLeaderId(UUID leaderId);
+    Optional<RescueGroup> findByLeaderId(UUID leaderId);
+
+    // Số group của 1 đội
+    long countByTeamId(UUID teamId);
 }

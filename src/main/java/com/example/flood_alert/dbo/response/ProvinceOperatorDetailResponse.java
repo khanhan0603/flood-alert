@@ -1,5 +1,4 @@
 package com.example.flood_alert.dbo.response;
-import java.util.List;
 import java.util.UUID;
 
 import lombok.AccessLevel;
@@ -25,5 +24,5 @@ public class ProvinceOperatorDetailResponse {
 
     String tenKhuVucPhuTrach;
 
-    List<ManagedTeamResponse> teams;
+    Long teamCount;
 }

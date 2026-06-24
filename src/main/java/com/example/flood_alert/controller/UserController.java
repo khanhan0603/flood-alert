@@ -47,17 +47,6 @@ public class UserController {
                 .build();
     }
 
-    // Danh sách các province
-    @GetMapping
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-    public ApiResponse<Page<ProvinceOperatorResponse>> getAll(
-            @PageableDefault(size = 20) Pageable pageable) {
-
-        return ApiResponse
-                .<Page<ProvinceOperatorResponse>>builder()
-                .result(
-                        userService.getAll(pageable))
-                .build();
-    }
+   
 
 }

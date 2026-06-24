@@ -59,4 +59,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     // danh sách các province
     Page<User> findByRole(Role role,Pageable pageable);
+
+    
 }

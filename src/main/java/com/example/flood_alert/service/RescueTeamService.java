@@ -357,7 +357,7 @@ public class RescueTeamService {
     }
 
     // Danh sách leader theo khu vực
-    @Transactional(readOnly = true)  // readOnly = true vì chỉ đọc data
+    @Transactional(readOnly = true) // readOnly = true vì chỉ đọc data
     public List<TeamLeaderItemResponse> getLeadersByArea(
             UUID areaId) {
 
@@ -375,28 +375,29 @@ public class RescueTeamService {
     }
 
     @Transactional(readOnly = true)
-    public Page<RescueGroupResponse> getListGroupOfTeam(UUID teamId,Pageable pageable) {
-        Page<RescueGroupResponse> page=rescueGroupRepository.findGroupByTeamId(teamId,pageable);
-        if(page.isEmpty()){
+    public Page<RescueGroupResponse> getListGroupOfTeam(UUID teamId, Pageable pageable) {
+        Page<RescueGroupResponse> page = rescueGroupRepository.findGroupByTeamId(teamId, pageable);
+        if (page.isEmpty()) {
             throw new AppException(ErrorCode.LIST_GROUP_NOT_FOUND);
         }
         return page;
     }
-    
+
     public RescueTeamResponse getDetailTeam(UUID teamId) {
         RescueTeamResponse team = rescueTeamRepository.findDetail(teamId);
-        if(team==null){
+        if (team == null) {
             throw new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND);
         }
         return team;
     }
 
-    //List team by area level 1
-    public Page<RescueTeamResponse> getListTeamByArea(UUID areaId,Pageable pageable) {
-        Page<RescueTeamResponse> page=rescueTeamRepository.findByAreaId(areaId,pageable);
-        if(page.isEmpty()){
+    // List team by area level 1
+    public Page<RescueTeamResponse> getListTeamByArea(UUID areaId, Pageable pageable) {
+        Page<RescueTeamResponse> page = rescueTeamRepository.findByAreaId(areaId, pageable);
+        if (page.isEmpty()) {
             throw new AppException(ErrorCode.LIST_TEAM_NOT_FOUND);
         }
         return page;
     }
+
 }

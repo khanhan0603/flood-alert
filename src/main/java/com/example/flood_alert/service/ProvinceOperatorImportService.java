@@ -20,8 +20,6 @@ import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.enums.Status;
-import com.example.flood_alert.exception.AppException;
-import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.UserRepository;
 
