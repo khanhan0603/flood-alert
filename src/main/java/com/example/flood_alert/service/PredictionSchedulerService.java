@@ -20,7 +20,7 @@ public class PredictionSchedulerService {
     PredictionRepository predictionRepository;
 
     private static final int TOTAL_AREAS = 3321;
-    private static final int BATCH_SIZE = 500;
+    private static final int BATCH_SIZE = 100;
 
     @Scheduled(cron = "0 30 06 * * *", zone = "Asia/Ho_Chi_Minh")
     public void predictMorning() {
