@@ -4,7 +4,10 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.flood_alert.dbo.response.FloodPredictionResponse;
@@ -44,28 +47,36 @@ public class PredictionService {
         }
     }
 
-    public void triggerPredictionBatch(int offset, int limit) {
+    public boolean triggerPredictionBatch(int offset, int limit) {
 
         if (!isFastApiHealthy()) {
             log.error("SKIP BATCH offset={} limit={} - FASTAPI DOWN",
                     offset, limit);
-            return;
+            return false;
         }
 
-        String response = restTemplate.postForObject(
-                fastApiUrl +
-                        "/predict-batch?offset=" +
-                        offset +
-                        "&limit=" +
-                        limit,
-                null,
-                String.class);
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    fastApiUrl +
+                            "/predict-batch?offset=" +
+                            offset +
+                            "&limit=" +
+                            limit,
+                    HttpEntity.EMPTY,
+                    String.class);
 
-        log.info(
-                "BATCH offset={} limit={} response={}",
-                offset,
-                limit,
-                response);
+            log.info(
+                    "BATCH offset={} limit={} status={} response={}",
+                    offset,
+                    limit,
+                    response.getStatusCode(),
+                    response.getBody());
+
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (RestClientException ex) {
+            log.error("BATCH FAILED offset={} limit={}", offset, limit, ex);
+            return false;
+        }
     }
 
     // Thêm endpoint để Spring poll trạng thái nếu cần

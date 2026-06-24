@@ -11,16 +11,18 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.response.IoTAggregateResponse;
 import com.example.flood_alert.entity.IoTAreaAggregates;
 import com.example.flood_alert.entity.IoTSensorReading;
+import com.example.flood_alert.exception.AppException;
+import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.IoTAreaAggregateRepository;
 import com.example.flood_alert.repository.IoTDeviceRepository;
 import com.example.flood_alert.repository.IoTReadingSensorRepository;
 
-import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -226,6 +228,7 @@ public class IoTAreaAggregateService {
                                                 .totalDeviceCount(iotAreaAggregate.getTotalDeviceCount())
                                                 .currentWater(iotAreaAggregate.getCurrentWater())
                                                 .waterRiseRatePerMinute(iotAreaAggregate.getWaterRiseRatePerMinute())
+                                                .dangerDurationMinutes(iotAreaAggregate.getDangerDurationMinutes())
                                                 .recordedAt(iotAreaAggregate.getRecordedAt())
                                                 .build())
                                 .toList();
@@ -248,6 +251,7 @@ public class IoTAreaAggregateService {
                                 .totalDeviceCount(iotAreaAggregate.getTotalDeviceCount())
                                 .currentWater(iotAreaAggregate.getCurrentWater())
                                 .waterRiseRatePerMinute(iotAreaAggregate.getWaterRiseRatePerMinute())
+                                .dangerDurationMinutes(iotAreaAggregate.getDangerDurationMinutes())
                                 .recordedAt(iotAreaAggregate.getRecordedAt())
                                 .build());
         }
@@ -409,5 +413,32 @@ public class IoTAreaAggregateService {
                 }
 
                 log.info("END generateAggregateData areaId={}", areaId);
+        }
+
+        private IoTAggregateResponse toResponse(
+                        IoTAreaAggregates aggregate) {
+
+                return IoTAggregateResponse.builder()
+                                .area_id(aggregate.getArea().getId())
+                                .tenkhuvuc(aggregate.getArea().getTenkhuvuc())
+                                .avgWater(aggregate.getAvgWater())
+                                .maxWater(aggregate.getMaxWater())
+                                .minWater(aggregate.getMinWater())
+                                .currentWater(aggregate.getCurrentWater())
+                                .totalDeviceCount(aggregate.getTotalDeviceCount())
+                                .waterRiseRatePerMinute(aggregate.getWaterRiseRatePerMinute())
+                                .dangerRatio(aggregate.getDangerRatio())
+                                .dangerDurationMinutes(aggregate.getDangerDurationMinutes())
+                                .recordedAt(aggregate.getRecordedAt())
+                                .build();
+        }
+
+        @Transactional(readOnly = true)
+        public IoTAggregateResponse getLatestAggregate(UUID areaId) {
+
+                return ioTAreaAggregateRepository
+                                .findTopByAreaIdOrderByRecordedAtDesc(areaId)
+                                .map(this::toResponse)
+                                .orElseThrow(() -> new AppException(ErrorCode.AREA_RISK_NOT_FOUND));
         }
 }

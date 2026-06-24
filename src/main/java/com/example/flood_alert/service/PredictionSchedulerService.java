@@ -40,6 +40,9 @@ public class PredictionSchedulerService {
 
     private void runBatchPrediction() {
 
+        int successCount = 0;
+        int failedCount = 0;
+
         for (int offset = 0; offset < TOTAL_AREAS; offset += BATCH_SIZE) {
 
             log.info(
@@ -48,10 +51,16 @@ public class PredictionSchedulerService {
                     BATCH_SIZE
             );
 
-            predictionService.triggerPredictionBatch(
+            boolean success = predictionService.triggerPredictionBatch(
                     offset,
                     BATCH_SIZE
             );
+
+            if (success) {
+                successCount++;
+            } else {
+                failedCount++;
+            }
 
             try {
 
@@ -67,7 +76,10 @@ public class PredictionSchedulerService {
             }
         }
 
-        log.info("ALL BATCHES COMPLETED");
+        log.info(
+                "ALL BATCHES COMPLETED success={} failed={}",
+                successCount,
+                failedCount);
     }
 
     @Scheduled(cron="0 0 2 * * *",zone="Asia/Ho_Chi_Minh")

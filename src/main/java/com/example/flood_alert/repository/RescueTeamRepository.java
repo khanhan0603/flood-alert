@@ -24,6 +24,8 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
     // Thông tin của team theo id khuvuc
     Optional<RescueTeam> findByArea_Id(UUID areaId);
 
+    Optional<RescueTeam> findFirstByArea_IdOrderByCreatedAtAsc(UUID areaId);
+
     // Detail a team
     @Query("""
                 SELECT new com.example.flood_alert.dbo.response.RescueTeamResponse(

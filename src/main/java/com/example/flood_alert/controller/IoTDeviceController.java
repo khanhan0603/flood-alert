@@ -19,11 +19,8 @@ import com.example.flood_alert.dbo.request.IoTReadingCreationRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
 import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
+import com.example.flood_alert.dbo.response.NearestSensorHistoryResponse;
 import com.example.flood_alert.entity.IoTDevice;
-import com.example.flood_alert.entity.IoTSensorReading;
-import com.example.flood_alert.enums.WaterStatus;
-import com.example.flood_alert.repository.IoTDeviceRepository;
-import com.example.flood_alert.repository.IoTReadingSensorRepository;
 import com.example.flood_alert.service.AreaService;
 import com.example.flood_alert.service.IoTAreaAggregateService;
 import com.example.flood_alert.service.IoTDeviceService;
@@ -160,5 +157,22 @@ public class IoTDeviceController {
                                 from,
                                 to);
                 return "OK";
+        }
+
+        // Lấy dữ liệu 1 tiếng mực nước của device gần người dân nhất
+        @GetMapping("/nearest/history")
+        public ApiResponse<NearestSensorHistoryResponse> getNearestSensorHistory(
+
+                        @RequestParam double lat,
+
+                        @RequestParam double lon) {
+
+                return ApiResponse
+                                .<NearestSensorHistoryResponse>builder()
+                                .result(
+                                                ioTDeviceService.getNearestSensorHistory(
+                                                                lat,
+                                                                lon))
+                                .build();
         }
 }

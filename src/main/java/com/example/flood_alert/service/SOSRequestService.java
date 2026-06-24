@@ -171,7 +171,7 @@ public class SOSRequestService {
                                 .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
 
                 // Lấy team theo khu vực
-                RescueTeam team = rescueTeamRepository.findByArea_Id(areaId)
+                RescueTeam team = rescueTeamRepository.findFirstByArea_IdOrderByCreatedAtAsc(areaId)
                                 .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
 
                 // 2. Lấy snapshot mới nhất của khu vực

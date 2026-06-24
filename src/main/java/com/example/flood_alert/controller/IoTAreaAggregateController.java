@@ -28,35 +28,47 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class IoTAreaAggregateController {
-    IoTAreaAggregateService ioTAreaAggregateService;
+        IoTAreaAggregateService ioTAreaAggregateService;
 
-    @GetMapping
-    public ApiResponse<List<IoTAggregateResponse>> getLatestAggregates() {
+        //Danh sách các bản ghi mực nước tổng hợp mới nhất của các phường/xã có IoT
+        @GetMapping
+        public ApiResponse<List<IoTAggregateResponse>> getLatestAggregates() {
 
-        return ApiResponse.<List<IoTAggregateResponse>>builder()
-                .result(
-                        ioTAreaAggregateService
-                                .getLatestAggregateOfEachArea())
-                .build();
-    }
+                return ApiResponse.<List<IoTAggregateResponse>>builder()
+                                .result(
+                                                ioTAreaAggregateService
+                                                                .getLatestAggregateOfEachArea())
+                                .build();
+        }
 
-    @GetMapping("/{areaId}")
-    public ApiResponse<Page<IoTAggregateResponse>> getAggregateByAreaId(
-            @PathVariable UUID areaId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+        //Danh sách các dữ liệu mực nước tổng hợp của 1 khu vực
+        @GetMapping("/{areaId}")
+        public ApiResponse<Page<IoTAggregateResponse>> getAggregateByAreaId(
+                        @PathVariable UUID areaId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by("recordedAt").descending());
+                Pageable pageable = PageRequest.of(
+                                page,
+                                size,
+                                Sort.by("recordedAt").descending());
 
-        return ApiResponse.<Page<IoTAggregateResponse>>builder()
-                .result(
-                        ioTAreaAggregateService
-                                .getAggregateByAreaId(
-                                        areaId,
-                                        pageable))
-                .build();
-    }
+                return ApiResponse.<Page<IoTAggregateResponse>>builder()
+                                .result(
+                                                ioTAreaAggregateService
+                                                                .getAggregateByAreaId(
+                                                                                areaId,
+                                                                                pageable))
+                                .build();
+        }
+
+        //Bản ghi tổng hợp mực nước mới nhất của 1 khu vực
+        @GetMapping("/areas/{areaId}/latest")
+        public ApiResponse<IoTAggregateResponse> getLatestAggregate(
+                        @PathVariable UUID areaId) {
+
+                return ApiResponse.<IoTAggregateResponse>builder()
+                                .result(ioTAreaAggregateService.getLatestAggregate(areaId))
+                                .build();
+        }
 }

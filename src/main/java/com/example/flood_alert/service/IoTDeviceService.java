@@ -1,12 +1,11 @@
 package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +13,8 @@ import com.example.flood_alert.dbo.request.IoTDeviceCreationRequest;
 import com.example.flood_alert.dbo.request.IoTReadingCreationRequest;
 import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
 import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
+import com.example.flood_alert.dbo.response.NearestSensorHistoryResponse;
+import com.example.flood_alert.dbo.response.SensorWaterHistoryResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.DeviceAlert;
 import com.example.flood_alert.entity.IoTDevice;
@@ -241,6 +242,44 @@ public class IoTDeviceService {
                                 "DEVICE ERROR: {}",
                                 device.getDeviceCode());
                 deviceAlertRepository.save(alert);
+        }
+
+        // Lấy dữ liệu bất thường nhat cơ bản theo device gần người dân
+        @Transactional(readOnly = true)
+        public NearestSensorHistoryResponse getNearestSensorHistory(
+                        double lat,
+                        double lon) {
+
+                                //Tìm thiet bị gần khu vực người dân nhất
+                IoTDevice device = ioTDeviceRepository
+                                .findNearestDevice(lat, lon)
+                                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
+
+                                //Tính khoảng cách từ device gần nhất đến người dân
+                Double distanceMeters = ioTDeviceRepository
+                                .calculateDistance(
+                                                device.getId(),
+                                                lat,
+                                                lon);
+
+                                                //Lấy dữ liệu bất thường nhat cơ bản theo device gần người dân
+                List<SensorWaterHistoryResponse> histories = ioTReadingSensorRepository
+                                .findByDeviceIdOrderByRecordedAtDesc(
+                                                device.getId(),
+                                                PageRequest.of(0, 360)) //1 giờ dữ liệu tại 10s lấy 1 lần
+                                .stream()
+                                .map(reading -> SensorWaterHistoryResponse.builder()
+                                                .waterLevel(reading.getWaterLevel())
+                                                .recordedAt(reading.getRecordedAt())
+                                                .build())
+                                .toList();
+
+                return NearestSensorHistoryResponse.builder()
+                                .deviceId(device.getId())
+                                .deviceName(device.getTenThietBi())
+                                .distanceMeters(distanceMeters)
+                                .histories(histories)
+                                .build();
         }
 
 }
