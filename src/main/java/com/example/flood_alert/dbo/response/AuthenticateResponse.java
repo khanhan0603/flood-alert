@@ -1,13 +1,13 @@
 package com.example.flood_alert.dbo.response;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
@@ -21,9 +21,11 @@ public class AuthenticateResponse {
     UUID id;
     UUID areaId;
     String hoten;
+    String sodt;
     String role;
     boolean authenticated;
     UUID teamId;
+    String teamName;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     Boolean isLeader;

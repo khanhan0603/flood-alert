@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -41,7 +43,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             """)
     Set<String> findAllPhones();
 
-    //List các rescuer có team nhưng chưa thuộc group nào
+    // List các rescuer có team nhưng chưa thuộc group nào
     @Query("""
                 SELECT u
                 FROM User u
@@ -54,4 +56,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                   )
             """)
     List<User> findAvailableMembers(UUID teamId);
+
+    // danh sách các province
+    Page<User> findByRole(Role role,Pageable pageable);
 }

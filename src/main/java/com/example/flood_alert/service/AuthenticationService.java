@@ -6,7 +6,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.StringJoiner;
 
-import com.example.flood_alert.dbo.response.IntrospectResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.flood_alert.dbo.request.AuthenticateRequest;
 import com.example.flood_alert.dbo.request.IntrospectRequest;
 import com.example.flood_alert.dbo.response.AuthenticateResponse;
+import com.example.flood_alert.dbo.response.IntrospectResponse;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
@@ -30,7 +31,6 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
-import org.springframework.beans.factory.annotation.Value;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -90,11 +90,14 @@ public class AuthenticationService {
                 .id(user.getId())
                 .areaId(user.getArea().getId())
                 .hoten(user.getHoten())
+                .sodt(user.getSodt())
                 .authenticated(true)
                 .role(user.getRole().name())
                 .teamId(user.getTeam() != null
                         ? user.getTeam().getId()
                         : null)
+                .teamName(user.getTeam() != null
+                        ? user.getTeam().getName() : null)
                 .isLeader(isLeader)
                 .build();
 
