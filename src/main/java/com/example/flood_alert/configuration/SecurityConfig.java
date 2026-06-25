@@ -42,6 +42,8 @@ public class SecurityConfig {
                             "/health",
                             "/auth/**",
                             "/sos-request",
+                            "/iot-device/register-device",
+                            "/iot-device/read-sensor",
                             "/sos-request/*/anonymous",
                             "/sos-request/my-active-anonymous"
                         ).permitAll()
