@@ -43,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class SosAssignmentService {
-    private final AlertService alertService;
     SosAssignmentRepository sosAssignmentRepository;
     SosRequestRepository sosRequestRepository;
     RescueTeamRepository rescueTeamRepository;
