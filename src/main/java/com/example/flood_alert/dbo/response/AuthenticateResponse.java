@@ -28,5 +28,8 @@ public class AuthenticateResponse {
     String teamName;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    Boolean isLeader;
+    Boolean isTeamLeader;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    Boolean isGroupLeader;
 }

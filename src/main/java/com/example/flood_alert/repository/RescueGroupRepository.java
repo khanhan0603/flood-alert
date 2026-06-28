@@ -38,4 +38,7 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
 
     // Số group của 1 đội
     long countByTeamId(UUID teamId);
+    
+    //Kiem tra co phai group leader khong
+    boolean existsByLeaderId(UUID leaderId);
 }

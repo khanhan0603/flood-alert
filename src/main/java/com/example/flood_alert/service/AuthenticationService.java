@@ -17,8 +17,11 @@ import com.example.flood_alert.dbo.request.IntrospectRequest;
 import com.example.flood_alert.dbo.response.AuthenticateResponse;
 import com.example.flood_alert.dbo.response.IntrospectResponse;
 import com.example.flood_alert.entity.User;
+import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
+import com.example.flood_alert.repository.RescueGroupRepository;
+import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.UserRepository;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -43,6 +46,8 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
     UserRepository userRepository;
+    RescueTeamRepository rescueTeamRepository;
+    RescueGroupRepository rescueGroupRepository;
 
     @NonFinal
     @Value("${jwt.signedKey}")
@@ -69,11 +74,14 @@ public class AuthenticationService {
         var user = userRepository.findByEmailOrSodt(request.getLoginInfo(), request.getLoginInfo())
                 .orElseThrow(() -> new AppException(ErrorCode.LOGIN_INFO_EXISTED));
 
-        Boolean isLeader = null;
+        //Test team leader
+        Boolean isTeamLeader = false;
+        //Test group leader
+        Boolean isGroupLeader=false;
 
-        if (user.getTeam() != null) {
-            isLeader = user.getTeam().getLeader() != null
-                    && user.getTeam().getLeader().getId().equals(user.getId());
+        if(user.getRole().equals(Role.RESCUER)){
+            isTeamLeader = rescueTeamRepository.existsByLeaderId(user.getId());
+            isGroupLeader=rescueGroupRepository.existsByLeaderId(user.getId());
         }
 
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
@@ -98,7 +106,8 @@ public class AuthenticationService {
                         : null)
                 .teamName(user.getTeam() != null
                         ? user.getTeam().getName() : null)
-                .isLeader(isLeader)
+                .isTeamLeader(isTeamLeader)
+                .isGroupLeader(isGroupLeader)
                 .build();
 
     }
