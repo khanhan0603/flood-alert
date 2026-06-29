@@ -9,6 +9,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,9 +25,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "iot_area_aggregates", indexes = {
-        @Index(name = "idx_area_recorded_at", columnList = "area_id, recorded_at")
-})
+@Table(name = "iot_area_aggregates", uniqueConstraints = @UniqueConstraint(name = "uk_area_recorded_at", columnNames = {
+        "area_id", "recorded_at" }), indexes = {
+                @Index(name = "idx_area_recorded_at", columnList = "area_id, recorded_at")
+        })
 public class IoTAreaAggregates extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "area_id")
@@ -55,7 +57,7 @@ public class IoTAreaAggregates extends BaseEntity {
 
     @Column(name = "danger_duration_minutes")
     Integer dangerDurationMinutes;
-    
+
     @Column(name = "recorded_at")
     LocalDateTime recordedAt;
 

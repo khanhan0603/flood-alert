@@ -1,5 +1,6 @@
 package com.example.flood_alert.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -68,4 +69,7 @@ public interface IoTAreaAggregateRepository extends JpaRepository<IoTAreaAggrega
                 )
             """)
     List<UUID> findAreasHasLatestAggregate();
+
+    //Kiểm tra đã aggregate chưa
+    boolean existsByAreaIdAndRecordedAt(UUID areaId, LocalDateTime recordedAt);
 }

@@ -1,5 +1,6 @@
 package com.example.flood_alert.service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -54,7 +55,7 @@ public class RiskScoreCalculator {
 
     /**
      * Đánh giá mức độ rủi ro của khu vực dựa trên
-     * dữ liệu IoT Aggregate trong 30 phút gần nhất.
+     * dữ liệu IoT Aggregate trong 2 phút gần nhất.
      *
      * HIGH:
      * - Ít nhất 50% aggregate ở trạng thái nguy hiểm
@@ -116,32 +117,26 @@ public class RiskScoreCalculator {
      *
      * Trả về false nếu xuất hiện xu hướng giảm.
      */
-    private boolean isRecentTrendNotDecreasing(
-            List<IoTAreaAggregates> aggregates) {
-
-        if (aggregates.size() < 5) {
+    private boolean isRecentTrendNotDecreasing(List<IoTAreaAggregates> aggregates) {
+        if (aggregates.size() < 2)
             return false;
-        }
-        // Lấy 5 Aggregate mới nhất
-        // Repository đang ORDER BY recordedAt DESC (giảm dần)
-        List<IoTAreaAggregates> last5 = new java.util.ArrayList<>(aggregates.subList(0, 5));
 
-        // Đảo về thứ tự thời gian tăng dần
+        //lấy tối đa 5, không hardcode subList(0, 5)
+        int trendWindow = Math.min(5, aggregates.size());
+        List<IoTAreaAggregates> last5 = new ArrayList<>(
+                aggregates.subList(0, trendWindow));
+
+        // Repository ORDER BY recordedAt DESC → đảo về tăng dần
         Collections.reverse(last5);
 
         for (int i = 1; i < last5.size(); i++) {
-
             Double previous = last5.get(i - 1).getCurrentWater();
-
             Double current = last5.get(i).getCurrentWater();
 
-            if (previous == null || current == null) {
+            if (previous == null || current == null)
                 return false;
-            }
-
-            if (current < previous) {
+            if (current < previous)
                 return false;
-            }
         }
 
         return true;

@@ -43,7 +43,7 @@ public class SecurityConfig {
                             "/auth/**",
                             "/sos-request",
                             "/area/**",
-                            "weather-data/**",
+                            "/weather-data/**",
                             "/iot-device/register-device",
                             "/iot-device/read-sensor",
                             "/sos-request/*/anonymous",
