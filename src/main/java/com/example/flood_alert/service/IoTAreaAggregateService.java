@@ -56,6 +56,10 @@ public class IoTAreaAggregateService {
                         return;
                 }
 
+                log.info("areaId={}", areaId);
+                log.info("startTime={}", startTime);
+                log.info("endTime={}", endTime);
+
                 List<IoTSensorReading> readings = ioTReadingSensorRepository
                                 .findByAreaIdAndTimeRange(areaId, startTime, endTime);
 
