@@ -17,13 +17,15 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class AuthenticateResponse {
-    String token;
+    String accessToken;
+    String refreshToken;
+    boolean authenticated;
+
     UUID id;
     UUID areaId;
     String hoten;
     String sodt;
     String role;
-    boolean authenticated;
     UUID teamId;
     String teamName;
 
