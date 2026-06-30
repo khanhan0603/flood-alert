@@ -324,14 +324,6 @@ public class AuthenticationService {
 
     }
 
-    private void verifyBlackList(String jwtId) {
-
-        if (invalidatedTokenRepository.existsByJwtId(jwtId)) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
-
-    }
-
     private String buildScope(User user) {
         StringJoiner stringJoiner = new StringJoiner(" ");
 

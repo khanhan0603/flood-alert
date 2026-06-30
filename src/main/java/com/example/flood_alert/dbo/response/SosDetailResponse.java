@@ -41,8 +41,6 @@ public class SosDetailResponse {
 
     Priority priority;
 
-    Integer baseSeverityScore;
-
     String priorityReason;
 
     EnvironmentRisk environmentRisk;

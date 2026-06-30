@@ -26,7 +26,7 @@ public class SosResponse {
     Priority priority;
 
     StatusSOS status;
-    Integer baseSeverityScore;
+
     EnvironmentRisk environmentRisk;
 
     Integer victimCount;

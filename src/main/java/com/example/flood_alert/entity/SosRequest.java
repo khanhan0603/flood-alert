@@ -90,20 +90,6 @@ public class SosRequest extends BaseEntity {
     @Column(nullable = false)
     Priority priority;
 
-    // Điểm nghiêm trọng gốc tại thời điểm tạo SOS
-    // Được tính từ
-    // injured
-    // trapped
-    // vulnerable
-    // victimCount
-    // environmentRisk
-    // Ví dụ
-    // 1 người bị thương
-    // 1 người mắc kẹt
-    // EnvironmentRisk=HIGH
-    @Column(nullable = false)
-    Integer baseSeverityScore;
-
     // Giải thích tại sao hệ thống gán Priority này
     @Column(nullable = false, length = 500)
     String priorityReason;

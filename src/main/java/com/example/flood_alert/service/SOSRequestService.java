@@ -70,8 +70,6 @@ public class SOSRequestService {
 
         SosPriorityCalculator sosPriorityCalculator;
 
-        SeverityScoreCalculator severityScoreCalculator;
-
         PriorityReasonGenerator priorityReasonGenerator;
 
         UserRepository userRepository;
@@ -186,16 +184,13 @@ public class SOSRequestService {
                 // 4. Tính Priority
                 Priority priority = sosPriorityCalculator.calculate(request, environmentRisk);
 
-                // 5. Tính BaseSeverityScore
-                Integer baseSeverityScore = severityScoreCalculator.calculate(request, environmentRisk);
-
-                // 6. Sinh PriorityReason
+                // 5. Sinh PriorityReason
                 String priorityReason = priorityReasonGenerator.generate(
                                 priority,
                                 request,
                                 environmentRisk);
 
-                // 7. Tạo SOS
+                // 6. Tạo SOS
                 SosRequest sos = SosRequest.builder()
                                 .user(currentUser)
                                 .area(area)
@@ -228,9 +223,6 @@ public class SOSRequestService {
                                 .mota(request.getMota())
 
                                 .priority(priority)
-
-                                .baseSeverityScore(
-                                                baseSeverityScore)
 
                                 .priorityReason(
                                                 priorityReason)
@@ -543,7 +535,6 @@ public class SOSRequestService {
                                 .description(sos.getMota())
 
                                 .priority(sos.getPriority())
-                                .baseSeverityScore(sos.getBaseSeverityScore())
                                 .priorityReason(sos.getPriorityReason())
 
                                 .environmentRisk(sos.getEnvironmentRisk())
