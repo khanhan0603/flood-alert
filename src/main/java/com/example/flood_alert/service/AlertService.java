@@ -37,6 +37,7 @@ public class AlertService {
     UserRepository userRepository;
     FloodAlertRepository floodAlertRepository;
     EmailProcessor emailProcessor;
+    WebPushProcessor webPushProcessor;
 
     private static final long ALERT_COOLDOWN_HOURS = 6;
 
@@ -105,6 +106,8 @@ public class AlertService {
 
         //Gửi email
         emailProcessor.processPendingEmails();
+        //Gửi web push
+        webPushProcessor.processPendingPushNotifications();
     }
 
     private void createMediumAlerts(AreaRiskSnapshot snapshot, List<User> users) {
