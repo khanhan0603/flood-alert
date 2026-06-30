@@ -8,8 +8,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,7 +39,6 @@ import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
 import com.example.flood_alert.repository.SupportRequestRepository;
-import com.example.flood_alert.repository.UserRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
@@ -71,8 +68,6 @@ public class SOSRequestService {
         SosPriorityCalculator sosPriorityCalculator;
 
         PriorityReasonGenerator priorityReasonGenerator;
-
-        UserRepository userRepository;
 
         SosRequestMapper sosRequestMapper;
 
@@ -469,7 +464,7 @@ public class SOSRequestService {
                                 .findByLeaderId(currentUser.getId())
                                 .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
 
-                return sosRequestRepository.findByTeamId(team.getId(), pageable)
+                return sosRequestRepository.findActiveByTeamId(team.getId(), pageable)
                                 .map(sosRequestMapper::toResponse);
         }
 

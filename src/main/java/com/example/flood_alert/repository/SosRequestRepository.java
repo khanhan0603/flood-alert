@@ -14,78 +14,103 @@ import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.enums.StatusSOS;
 
 public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
-    // Kiểm tra người dân đã đăng nhập đã gửi yêu cầu SOS chưa
-    boolean existsByUserIdAndStatusIn(UUID userId, List<StatusSOS> statuses);
+        // Kiểm tra người dân đã đăng nhập đã gửi yêu cầu SOS chưa
+        boolean existsByUserIdAndStatusIn(UUID userId, List<StatusSOS> statuses);
 
-    // Kiểm tra người dân chưa đăng nhập đã gửi yêu cầu SOS chưa
-    boolean existsBySodtAndClientDeviceIdAndStatusIn(String sodt, String clientDeviceId, List<StatusSOS> statuses);
+        // Kiểm tra người dân chưa đăng nhập đã gửi yêu cầu SOS chưa
+        boolean existsBySodtAndClientDeviceIdAndStatusIn(String sodt, String clientDeviceId, List<StatusSOS> statuses);
 
-    // Cập nhật trang thái yêu cầu SOS
-    Optional<SosRequest> findFirstByUserIdAndStatusIn(
-            UUID userId,
-            List<StatusSOS> statuses);
+        // Cập nhật trang thái yêu cầu SOS
+        Optional<SosRequest> findFirstByUserIdAndStatusIn(
+                        UUID userId,
+                        List<StatusSOS> statuses);
 
-    Optional<SosRequest> findFirstBySodtAndClientDeviceIdAndStatusIn(
-            String sodt,
-            String clientDeviceId,
-            List<StatusSOS> statuses);
+        Optional<SosRequest> findFirstBySodtAndClientDeviceIdAndStatusIn(
+                        String sodt,
+                        String clientDeviceId,
+                        List<StatusSOS> statuses);
 
-    // Tìm kiếm yêu cầu SOS theo Id và UserId
-    Optional<SosRequest> findByIdAndUserId(
-            UUID sosId,
-            UUID userId);
+        // Tìm kiếm yêu cầu SOS theo Id và UserId
+        Optional<SosRequest> findByIdAndUserId(
+                        UUID sosId,
+                        UUID userId);
 
-    // Tìm kiếm yêu cầu SOS theo Id và Sodt và ClientDeviceId
-    Optional<SosRequest> findByIdAndSodtAndClientDeviceId(
-            UUID sosId,
-            String sodt,
-            String clientDeviceId);
+        // Tìm kiếm yêu cầu SOS theo Id và Sodt và ClientDeviceId
+        Optional<SosRequest> findByIdAndSodtAndClientDeviceId(
+                        UUID sosId,
+                        String sodt,
+                        String clientDeviceId);
 
-    // Danh sách yêu cầu SOS theo UserId theo trạng thái
-    @Query("""
-                SELECT s
-                FROM SosRequest s
-                WHERE s.user.id = :userId
-                ORDER BY
-                    CASE
-                        WHEN s.status = 'PENDING' THEN 1
-                        WHEN s.status = 'PROCESSING' THEN 2
-                        WHEN s.status = 'DONE' THEN 3
-                        WHEN s.status = 'CANCELLED' THEN 4
-                    END,
-                    s.createdAt DESC
-            """)
-    Page<SosRequest> findMySos(
-            @Param("userId") UUID userId,
-            Pageable pageable);
+        // Danh sách yêu cầu SOS theo UserId theo trạng thái
+        @Query("""
+                            SELECT s
+                            FROM SosRequest s
+                            WHERE s.user.id = :userId
+                            ORDER BY
+                                CASE
+                                    WHEN s.status = 'PENDING' THEN 1
+                                    WHEN s.status = 'PROCESSING' THEN 2
+                                    WHEN s.status = 'DONE' THEN 3
+                                    WHEN s.status = 'CANCELLED' THEN 4
+                                END,
+                                s.createdAt DESC
+                        """)
+        Page<SosRequest> findMySos(
+                        @Param("userId") UUID userId,
+                        Pageable pageable);
 
-    // Xem danh sách sos đang hoạt động để người lạ coi mình gửi sos có đc xử lý ko
-    @Query("""
-                SELECT s
-                FROM SosRequest s
-                WHERE s.anonymous = true
-                  AND s.sodt = :sodt
-                  AND s.clientDeviceId = :clientDeviceId
-                  AND s.status IN (
-                        com.example.flood_alert.enums.StatusSOS.PENDING,
-                        com.example.flood_alert.enums.StatusSOS.PROCESSING
-                  )
-                ORDER BY s.createdAt DESC
-            """)
-    Page<SosRequest> findAnonymousActiveSos(
-            @Param("sodt") String sodt,
-            @Param("clientDeviceId") String clientDeviceId,
-            Pageable pageable);
+        // Xem danh sách sos đang hoạt động để người lạ coi mình gửi sos có đc xử lý ko
+        @Query("""
+                            SELECT s
+                            FROM SosRequest s
+                            WHERE s.anonymous = true
+                              AND s.sodt = :sodt
+                              AND s.clientDeviceId = :clientDeviceId
+                              AND s.status IN (
+                                    com.example.flood_alert.enums.StatusSOS.PENDING,
+                                    com.example.flood_alert.enums.StatusSOS.PROCESSING
+                              )
+                            ORDER BY s.createdAt DESC
+                        """)
+        Page<SosRequest> findAnonymousActiveSos(
+                        @Param("sodt") String sodt,
+                        @Param("clientDeviceId") String clientDeviceId,
+                        Pageable pageable);
 
-   //Tìm các yêu cầu theo đội cứu hộ
-   Page<SosRequest> findByTeamId(UUID teamId,Pageable pageable);
-   
-   //Các yêu cầu theo team và trạng thái
-   Page<SosRequest> findByTeamIdAndStatus(UUID teamId, StatusSOS status,Pageable pageable);
+        // Tìm các yêu cầu theo đội cứu hộ, sắp xếp theo trạng thái, ngày tạo mà các yêu
+        // cầu đang xử lý hoặc chờ xử lý
+        @Query("""
+                            SELECT s
+                            FROM SosRequest s
+                            WHERE s.team.id = :teamId
+                              AND s.status IN (
+                                    com.example.flood_alert.enums.StatusSOS.PENDING,
+                                    com.example.flood_alert.enums.StatusSOS.PROCESSING
+                              )
+                            ORDER BY
+                                CASE
+                                    WHEN s.priority = 'CRITICAL' THEN 1
+                                    WHEN s.priority = 'HIGH' THEN 2
+                                    WHEN s.priority = 'MEDIUM' THEN 3
+                                    WHEN s.priority = 'LOW' THEN 4
+                                END,
+                                CASE
+                                    WHEN s.environmentRisk = 'HIGH' THEN 1
+                                    WHEN s.environmentRisk = 'MEDIUM' THEN 2
+                                    WHEN s.environmentRisk = 'LOW' THEN 3
+                                END,
+                                s.createdAt ASC
+                        """)
+        Page<SosRequest> findActiveByTeamId(
+                        @Param("teamId") UUID teamId,
+                        Pageable pageable);
 
-   //Tìm các yêu cầu theo trạng thái
-   Page<SosRequest> findByStatus(StatusSOS status,Pageable pageable);
+        // Các yêu cầu theo team và trạng thái
+        Page<SosRequest> findByTeamIdAndStatus(UUID teamId, StatusSOS status, Pageable pageable);
 
-   //Đếm số sos request của team theo status
-   long countByTeamIdAndStatus(UUID teamId, StatusSOS status);
+        // Tìm các yêu cầu theo trạng thái
+        Page<SosRequest> findByStatus(StatusSOS status, Pageable pageable);
+
+        // Đếm số sos request của team theo status
+        long countByTeamIdAndStatus(UUID teamId, StatusSOS status);
 }
