@@ -43,7 +43,10 @@ public class SecurityConfig {
                             "/iot-device/register-device",
                             "/iot-device/read-sensor",
                             "/sos-request/*/anonymous",
-                            "/sos-request/my-active-anonymous"
+                            "/sos-request/my-active-anonymous",
+                            "/sms/**",
+                            "/notification/**",
+                            "/res-team/emergency-contact"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 ->

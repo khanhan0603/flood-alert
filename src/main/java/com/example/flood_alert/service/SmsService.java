@@ -1,10 +1,13 @@
 package com.example.flood_alert.service;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import com.example.flood_alert.configuration.SmsProperties;
-import com.example.flood_alert.dbo.request.SmsRequest;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,23 +22,15 @@ public class SmsService {
     SmsProperties smsProperties;
     RestClient restClient;
 
-    public void sendSms(String phone, String content) {
+    public String getUserInfo() {
+        String authString = smsProperties.getAccessToken() + ":x";
+        String encodedAuth = Base64.getEncoder()
+                .encodeToString(authString.getBytes(StandardCharsets.UTF_8));
 
-        SmsRequest request = SmsRequest.builder()
-                .apiKey(smsProperties.getApiKey())
-                .secretKey(smsProperties.getSecretKey())
-                .phone(phone)
-                .content(content)
-                .smsType(2)
-                .build();
-
-        String response = restClient.post()
-                .uri("https://rest.esms.vn/MainService.svc/json/SendMultipleMessage_V4_post_json/")
-                .body(request)
+        return restClient.get()
+                .uri("https://api.speedsms.vn/index.php/user/info")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + encodedAuth)
                 .retrieve()
                 .body(String.class);
-
-        log.info("SMS Response: {}", response);
     }
-
 }

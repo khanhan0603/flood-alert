@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
@@ -15,4 +16,7 @@ public class CreateRescueTeamRequest {
 
     @NotNull
     UUID areaId;
+
+    @Pattern(regexp = "^(0|\\+84)[0-9]{9,10}$", message = "Số điện thoại không hợp lệ")
+    String emergencyPhone;
 }

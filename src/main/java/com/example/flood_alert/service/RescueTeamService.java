@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
+import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
@@ -72,6 +73,7 @@ public class RescueTeamService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .area(area)
+                .emergencyPhone(request.getEmergencyPhone())
                 .build();
         team = rescueTeamRepository.save(team);
 
@@ -81,6 +83,7 @@ public class RescueTeamService {
                 .description(team.getDescription())
                 .areaId(area.getId())
                 .areaName(area.getTenkhuvuc())
+                .emergencyPhone(team.getEmergencyPhone())
                 .build();
     }
 
@@ -400,4 +403,26 @@ public class RescueTeamService {
         return page;
     }
 
+    // Lấy số điện thoại liên hệ của đội gần người dân nhất
+    @Transactional(readOnly = true)
+    public EmergencyContactResponse getEmergencyContact(
+            BigDecimal lat,
+            BigDecimal lon) {
+
+        UUID areaId = areaRepository.findAreaIdByLatLon(lat, lon);
+
+        if (areaId == null) {
+            throw new AppException(ErrorCode.AREA_NOT_FOUND);
+        }
+
+        RescueTeam team = rescueTeamRepository
+                .findByArea_Id(areaId)
+                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+        return EmergencyContactResponse.builder()
+                .teamId(team.getId())
+                .teamName(team.getName())
+                .emergencyPhone(team.getEmergencyPhone())
+                .build();
+    }
 }

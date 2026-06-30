@@ -26,7 +26,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RescueTeam extends BaseEntity {
 
     @Column(nullable = false)
@@ -43,8 +43,12 @@ public class RescueTeam extends BaseEntity {
     @JoinColumn(name = "leader_id")
     User leader;
 
+    // Số điện thoại khẩn
+    @Column(name = "emergency_phone", length = 20)
+    String emergencyPhone;
+
     @CreationTimestamp
-    @Column(name = "created_at", updatable= false)
+    @Column(name = "created_at", updatable = false)
     LocalDateTime createdAt;
 
     @UpdateTimestamp

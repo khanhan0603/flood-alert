@@ -21,4 +21,6 @@ public class RescueTeamResponse {
     UUID leaderId;
 
     String leaderName;
+
+    String emergencyPhone;
 }

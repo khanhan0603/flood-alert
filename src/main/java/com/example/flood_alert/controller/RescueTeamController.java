@@ -1,5 +1,6 @@
 package com.example.flood_alert.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
@@ -88,8 +90,7 @@ public class RescueTeamController {
         public ApiResponse<Page<RescueGroupResponse>> getListGroupOfTeam(
                         @PathVariable UUID teamId,
                         @RequestParam(defaultValue = "0") int page,
-                        @RequestParam(defaultValue = "10") int size) 
-        {
+                        @RequestParam(defaultValue = "10") int size) {
                 Pageable pageable = PageRequest.of(page, size);
                 return ApiResponse.<Page<RescueGroupResponse>>builder()
                                 .result(rescueTeamService.getListGroupOfTeam(teamId, pageable))
@@ -98,12 +99,12 @@ public class RescueTeamController {
 
         @GetMapping("/detail/{teamId}")
         public ApiResponse<RescueTeamResponse> getDetailTem(@PathVariable UUID teamId) {
-            return ApiResponse.<RescueTeamResponse>builder()
-                            .result(rescueTeamService.getDetailTeam(teamId))
-                            .build();
+                return ApiResponse.<RescueTeamResponse>builder()
+                                .result(rescueTeamService.getDetailTeam(teamId))
+                                .build();
         }
 
-        //List team by area level 1
+        // List team by area level 1
         @GetMapping("/area/{areaId}")
         public ApiResponse<Page<RescueTeamResponse>> getListTeamByArea(
                         @PathVariable UUID areaId,
@@ -114,5 +115,16 @@ public class RescueTeamController {
                                 .result(rescueTeamService.getListTeamByArea(areaId, pageable))
                                 .build();
         }
-        
+
+        // Trả số điện thoại liên hệ của đội gần nhất
+        @GetMapping("/emergency-contact")
+        public ApiResponse<EmergencyContactResponse> getEmergencyContact(
+                        @RequestParam BigDecimal lat,
+                        @RequestParam BigDecimal lon) {
+
+                return ApiResponse.<EmergencyContactResponse>builder()
+                                .result(rescueTeamService.getEmergencyContact(lat, lon))
+                                .build();
+        }
+
 }

@@ -11,8 +11,5 @@ import lombok.Setter;
 @Component
 @ConfigurationProperties(prefix = "sms")
 public class SmsProperties {
-
-    private String apiKey;
-
-    private String secretKey;
+    private String accessToken;
 }

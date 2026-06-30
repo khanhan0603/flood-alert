@@ -38,7 +38,8 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
                     rt.area.id,
                     rt.area.tenkhuvuc,
                     rt.leader.id,
-                    rt.leader.hoten
+                    rt.leader.hoten,
+                    rt.emergencyPhone
                 )
                 FROM RescueTeam rt
                 WHERE rt.id = :teamId
@@ -54,7 +55,8 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
                     rt.area.id,
                     rt.area.tenkhuvuc,
                     rt.leader.id,
-                    rt.leader.hoten
+                    rt.leader.hoten,
+                    rt.emergencyPhone
                 )
                 FROM RescueTeam rt
                 WHERE rt.area.parent.id = :areaId
