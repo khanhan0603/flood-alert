@@ -1,7 +1,9 @@
 package com.example.flood_alert.configuration;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -22,9 +24,23 @@ public class FirebaseConfig {
             return;
         }
 
-        InputStream serviceAccount =
-                new ClassPathResource("firebase-service-account.json")
-                        .getInputStream();
+        InputStream serviceAccount;
+
+        // Ưu tiên lấy từ Environment Variable
+        String firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT");
+
+        if (firebaseJson != null && !firebaseJson.isBlank()) {
+
+            serviceAccount = new ByteArrayInputStream(
+                    firebaseJson.getBytes(StandardCharsets.UTF_8));
+
+        } else {
+
+            // Chạy local thì đọc file
+            serviceAccount = new ClassPathResource(
+                    "firebase-service-account.json")
+                    .getInputStream();
+        }
 
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(
