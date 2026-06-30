@@ -1,5 +1,6 @@
 package com.example.flood_alert.repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -41,4 +42,6 @@ public interface RescueGroupMemberRepository extends JpaRepository<RescueGroupMe
                     u.hoten
             """)
     Page<ListMemberOfGroupResponse> findMembersByGroupId(UUID groupId,Pageable pageable);
+
+    Optional<RescueGroupMember> findByUserId(UUID userId);
 }

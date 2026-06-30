@@ -6,12 +6,15 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.flood_alert.dbo.request.UpdateUserRequest;
 import com.example.flood_alert.dbo.request.UserCreationRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.MyProfileResponse;
 import com.example.flood_alert.dbo.response.ProvinceOperatorResponse;
 import com.example.flood_alert.dbo.response.UserResponse;
 import com.example.flood_alert.entity.User;
@@ -47,6 +50,19 @@ public class UserController {
                 .build();
     }
 
-   
+    //Cập nhật thông tin người dùng
+    @PutMapping("/me")
+    public ApiResponse<MyProfileResponse> updateMyProfile(@RequestBody UpdateUserRequest request) {
+        return ApiResponse.<MyProfileResponse>builder()
+                .result(userService.updateMyProfile(request))
+                .build();
+    }
 
+    //Thông tin người dùng
+    @GetMapping("/me")
+    public ApiResponse<MyProfileResponse> getMyProfile() {
+        return ApiResponse.<MyProfileResponse>builder()
+                .result(userService.getMyProfile())
+                .build();
+    }
 }
