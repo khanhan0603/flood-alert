@@ -30,6 +30,7 @@ public class NotificationService {
 
     UserRepository userRepository;
     UserFcmTokenRepository userFcmTokenRepository;
+    AuthenticationService authenticationService;
 
     // lưu FCM token
     @Transactional
@@ -39,7 +40,7 @@ public class NotificationService {
             return;
         }
 
-        User user = getCurrentUser();
+        User user = authenticationService.getCurrentUser();
 
         UserFcmToken userToken = UserFcmToken.builder()
                 .user(user)
@@ -64,24 +65,5 @@ public class NotificationService {
                 .build();
 
         FirebaseMessaging.getInstance().send(message);
-    }
-
-    private User getCurrentUser() {
-
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || "anonymousUser".equals(authentication.getPrincipal())) {
-
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
-
-        UUID userId = UUID.fromString(authentication.getName());
-
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
     }
 }

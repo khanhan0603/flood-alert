@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
+import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
@@ -124,6 +125,17 @@ public class RescueTeamController {
 
                 return ApiResponse.<EmergencyContactResponse>builder()
                                 .result(rescueTeamService.getEmergencyContact(lat, lon))
+                                .build();
+        }
+
+        //cập nhật thông tin đội
+        @PutMapping("/{teamId}")
+        public ApiResponse<RescueTeamResponse> update(
+                        @PathVariable UUID teamId,
+                        @RequestBody @Valid UpdateRescueTeamRequest request) {
+
+                return ApiResponse.<RescueTeamResponse>builder()
+                                .result(rescueTeamService.update(teamId, request))
                                 .build();
         }
 

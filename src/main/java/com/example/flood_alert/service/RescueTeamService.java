@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
+import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
@@ -59,6 +60,7 @@ public class RescueTeamService {
     AreaRepository areaRepository;
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
+    AuthenticationService authenticationService;
 
     public RescueTeamResponse create(CreateRescueTeamRequest request) {
 
@@ -422,6 +424,56 @@ public class RescueTeamService {
         return EmergencyContactResponse.builder()
                 .teamId(team.getId())
                 .teamName(team.getName())
+                .emergencyPhone(team.getEmergencyPhone())
+                .build();
+    }
+
+    // Cập nhật thông tin đội
+    @Transactional
+    public RescueTeamResponse update(
+            UUID teamId,
+            UpdateRescueTeamRequest request) {
+
+        RescueTeam team = rescueTeamRepository.findById(teamId)
+                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+        User currentUser = authenticationService.getCurrentUser();
+
+        // Chỉ Admin hoặc đội trưởng của chính đội đó được cập nhật
+        if (currentUser.getRole() != Role.ADMIN) {
+
+            if (team.getLeader() == null
+                    || !team.getLeader().getId().equals(currentUser.getId())) {
+
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+        }
+
+        // Kiểm tra trùng tên
+        if (!team.getName().equals(request.getName())
+                && rescueTeamRepository.existsByName(request.getName())) {
+
+            throw new AppException(ErrorCode.RESCUE_TEAM_EXISTED);
+        }
+
+        team.setName(request.getName());
+        team.setDescription(request.getDescription());
+        team.setEmergencyPhone(request.getEmergencyPhone());
+
+        team = rescueTeamRepository.save(team);
+
+        return RescueTeamResponse.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .description(team.getDescription())
+                .areaId(team.getArea().getId())
+                .areaName(team.getArea().getTenkhuvuc())
+                .leaderId(team.getLeader() != null
+                        ? team.getLeader().getId()
+                        : null)
+                .leaderName(team.getLeader() != null
+                        ? team.getLeader().getHoten()
+                        : null)
                 .emergencyPhone(team.getEmergencyPhone())
                 .build();
     }

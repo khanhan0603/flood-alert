@@ -48,6 +48,7 @@ public class SosAssignmentService {
     RescueTeamRepository rescueTeamRepository;
     RescueGroupRepository rescueGroupRepository;
     UserRepository userRepository;
+    AuthenticationService authenticationService;
 
     // Giao nhiệm vụ cho group từ team leader
     @CacheEvict(value = "team-dashboard", allEntries = true)
@@ -142,7 +143,7 @@ public class SosAssignmentService {
     @Transactional
     public UUID assignGroup(AssignGroupRequest request) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = authenticationService.getCurrentUser();
 
         RescueTeam team = rescueTeamRepository.findByLeaderId(currentUser.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
@@ -195,39 +196,10 @@ public class SosAssignmentService {
         return assignment.getId();
     }
 
-    private User getCurrentUser() {
-
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        // log.info("Authentication={}", authentication);
-
-        // if (authentication != null) {
-        // log.info("Principal={}", authentication.getPrincipal());
-        // log.info("Name={}", authentication.getName());
-        // log.info("Authenticated={}", authentication.isAuthenticated());
-        // }
-
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || "anonymousUser".equals(
-                        authentication.getPrincipal())) {
-
-            return null;
-        }
-
-        UUID userId = UUID.fromString(
-                authentication.getName());
-
-        return userRepository.findById(userId)
-                .orElse(null);
-    }
-
     // Trả về danh sách các status assignment
     @Transactional(readOnly = true)
     public List<AssignmentStatusOptionResponse> getAvailableStatuses(UUID assignmentId) {
-        User currentUser = getCurrentUser();
+        User currentUser = authenticationService.getCurrentUser();
 
         SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
@@ -306,7 +278,7 @@ public class SosAssignmentService {
     // Group leader nhận nhiệm vụ và cập nhật status
     @Transactional
     public void updateStatus(UUID assignmentId, UpdateAssignmentStatusRequest request) {
-        User currentUser = getCurrentUser();
+        User currentUser = authenticationService.getCurrentUser();
 
         // Không tìm thấy nhiệm vụ
         SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
@@ -345,7 +317,7 @@ public class SosAssignmentService {
     @Transactional(readOnly = true)
     public List<GroupAssignmentResponse> getMyAssignments() {
 
-        User currentUser = getCurrentUser();
+        User currentUser = authenticationService.getCurrentUser();
 
         return sosAssignmentRepository
                 .findMyAssignments(

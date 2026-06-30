@@ -52,11 +52,12 @@ public class SupportRequestService {
         RescueTeamRepository rescueTeamRepository;
         RescueGroupRepository groupRepository;
         UserRepository userRepository;
+        AuthenticationService authenticationService;
 
         // Tạo yêu cầu hỗ trợ cứu hộ, teamleader tạo
         public UUID create(CreateSupportRequest request) {
                 // Tìm thông tin người gửi yêu cầu
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 // Tìm sos theo id
                 SosRequest sos = sosRequestRepository.findById(request.getSosId())
@@ -112,7 +113,7 @@ public class SupportRequestService {
                         SupportRequestStatus status,
                         Pageable pageable) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 UUID provinceId = currentUser
                                 .getArea()
@@ -182,42 +183,13 @@ public class SupportRequestService {
                                 .build();
         }
 
-        private User getCurrentUser() {
-
-                Authentication authentication = SecurityContextHolder
-                                .getContext()
-                                .getAuthentication();
-
-                // log.info("Authentication={}", authentication);
-
-                // if (authentication != null) {
-                // log.info("Principal={}", authentication.getPrincipal());
-                // log.info("Name={}", authentication.getName());
-                // log.info("Authenticated={}", authentication.isAuthenticated());
-                // }
-
-                if (authentication == null
-                                || !authentication.isAuthenticated()
-                                || "anonymousUser".equals(
-                                                authentication.getPrincipal())) {
-
-                        return null;
-                }
-
-                UUID userId = UUID.fromString(
-                                authentication.getName());
-
-                return userRepository.findById(userId)
-                                .orElse(null);
-        }
-
         // Chấp nhận yêu cầu hỗ trợ
         @Transactional
         public void approve(
                         UUID supportRequestId,
                         ApproveSupportRequest request) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 SupportRequest supportRequest = supportRequestRepository
                                 .findById(supportRequestId)
@@ -265,7 +237,7 @@ public class SupportRequestService {
                         UUID supportRequestId,
                         RejectSupportRequest request) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 SupportRequest supportRequest = supportRequestRepository
                                 .findById(supportRequestId)
@@ -305,7 +277,7 @@ public class SupportRequestService {
                         UUID supportRequestId,
                         RejectAssignedSupportRequest request) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 // Load đơn hỗ trợ
                 SupportRequest supportRequest = supportRequestRepository
@@ -349,7 +321,7 @@ public class SupportRequestService {
         public Page<SupportRequestResponse> getMyTeamSupportRequests(
                         Pageable pageable) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 RescueTeam team = rescueTeamRepository
                                 .findByLeaderId(currentUser.getId())
@@ -368,7 +340,7 @@ public class SupportRequestService {
                         UUID supportRequestId,
                         AssignSupportGroupRequest request) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 SupportRequest supportRequest = supportRequestRepository
                                 .findById(supportRequestId)

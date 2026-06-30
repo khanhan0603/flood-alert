@@ -4,8 +4,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +21,6 @@ import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.mapper.UserMapper;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.RescueGroupMemberRepository;
-import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
@@ -39,6 +36,7 @@ public class UserService {
     AreaRepository areaRepository;
     RescueGroupMemberRepository rescueGroupMemberRepository;
     UserMapper userMapper;
+    AuthenticationService authenticationService;
 
     public User createUser(UserCreationRequest request) {
         if (userRepository.existsByEmail(request.getEmail()))
@@ -64,29 +62,10 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    private User getCurrentUser() {
-
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || "anonymousUser".equals(authentication.getPrincipal())) {
-
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
-
-        UUID userId = UUID.fromString(authentication.getName());
-
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-    }
-
     @Transactional
     public MyProfileResponse updateMyProfile(UpdateUserRequest request) {
 
-        User user = getCurrentUser();
+        User user = authenticationService.getCurrentUser();
 
         if (request.getEmail() != null
                 && !request.getEmail().equals(user.getEmail())
@@ -138,7 +117,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public MyProfileResponse getMyProfile() {
 
-        User user = getCurrentUser();
+        User user = authenticationService.getCurrentUser();
 
         MyProfileResponse response = MyProfileResponse.builder()
                 .id(user.getId())

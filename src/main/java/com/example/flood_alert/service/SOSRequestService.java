@@ -79,6 +79,7 @@ public class SOSRequestService {
         SosAssignmentMapper sosAssignmentMapper;
 
         SupportRequestMapper supportRequestMapper;
+        AuthenticationService authenticationService;
 
         List<StatusSOS> ACTIVE_STATUSES = List.of(
                         StatusSOS.PENDING,
@@ -88,7 +89,7 @@ public class SOSRequestService {
         @CacheEvict(value="team-dashboard", allEntries=true)
         public SosResponse create(CreateSosRequest request, HttpServletRequest httpRequest) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 boolean anonymous = currentUser == null;
 
@@ -258,42 +259,13 @@ public class SOSRequestService {
                 return response;
         }
 
-        private User getCurrentUser() {
-
-                Authentication authentication = SecurityContextHolder
-                                .getContext()
-                                .getAuthentication();
-
-                // log.info("Authentication={}", authentication);
-
-                // if (authentication != null) {
-                // log.info("Principal={}", authentication.getPrincipal());
-                // log.info("Name={}", authentication.getName());
-                // log.info("Authenticated={}", authentication.isAuthenticated());
-                // }
-
-                if (authentication == null
-                                || !authentication.isAuthenticated()
-                                || "anonymousUser".equals(
-                                                authentication.getPrincipal())) {
-
-                        return null;
-                }
-
-                UUID userId = UUID.fromString(
-                                authentication.getName());
-
-                return userRepository.findById(userId)
-                                .orElse(null);
-        }
-
         @Transactional
         public SosResponse update(
                         UUID sosId,
                         UpdateSosRequest request,
                         HttpServletRequest httpRequest) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 boolean anonymous = currentUser == null;
 
@@ -396,7 +368,7 @@ public class SOSRequestService {
         @Transactional(readOnly = true)
         public Page<SosResponse> getMySos(Pageable pageable) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 if (currentUser == null) {
                         throw new AppException(
@@ -435,7 +407,7 @@ public class SOSRequestService {
                 //Test Redis
                 log.info("LOAD DASHBOARD FROM DB");
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 RescueTeam team = rescueTeamRepository
                                 .findByLeaderId(currentUser.getId())
@@ -491,7 +463,7 @@ public class SOSRequestService {
         @Transactional(readOnly = true)
         public Page<SosResponse> getMyTeamSos(Pageable pageable) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 RescueTeam team = rescueTeamRepository
                                 .findByLeaderId(currentUser.getId())
@@ -557,7 +529,7 @@ public class SOSRequestService {
 
         public Page<SosResponse> getMyTeamSosByStatus(StatusSOS status, Pageable pageable) {
 
-                User currentUser = getCurrentUser();
+                User currentUser = authenticationService.getCurrentUser();
 
                 RescueTeam team = rescueTeamRepository
                                 .findByLeaderId(currentUser.getId())
