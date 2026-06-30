@@ -1,15 +1,22 @@
 package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
 import com.example.flood_alert.dbo.response.AreaRiskSnapshotResponse;
+import com.example.flood_alert.dbo.response.RegionalForecastResponse;
+import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.FloodPrediction;
 import com.example.flood_alert.entity.IoTAreaAggregates;
@@ -137,5 +144,51 @@ public class SnapshotService {
                                 .snapshotAt(areaSnapshot.getSnapshotAt())
                                 .createdAt(areaSnapshot.getCreatedAt())
                                 .build());
+        }
+
+        @Transactional
+        public List<RegionalForecastResponse> getRegionalForecast(UUID areaId) {
+
+                Area area = areaRepository.findById(areaId)
+                                .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
+
+                if (area.getParent() == null) {
+                        throw new AppException(ErrorCode.AREA_NOT_FOUND);
+                }
+
+                List<AreaDataByParentResponse> areas = areaRepository
+                                .findByParentId(area.getParent().getId());
+
+                List<UUID> areaIds = areas.stream()
+                                .map(AreaDataByParentResponse::getId)
+                                .toList();
+
+                Map<UUID, AreaRiskSnapshot> latestSnapshots = areaRiskSnapshotRepository
+                                .findLatestSnapshotsByAreaIds(areaIds)
+                                .stream()
+                                .collect(Collectors.toMap(
+                                                snapshot -> snapshot.getArea().getId(),
+                                                snapshot -> snapshot));
+
+                return areas.stream()
+                                .map(areaItem -> {
+
+                                        AreaRiskSnapshot snapshot = latestSnapshots.get(areaItem.getId());
+
+                                        if (snapshot == null) {
+                                                return null;
+                                        }
+
+                                        return RegionalForecastResponse.builder()
+                                                        .areaId(areaItem.getId())
+                                                        .tenkhuvuc(areaItem.getTenkhuvuc())
+                                                        .riskLevel(snapshot.getRiskLevel())
+                                                        .predictionProbability(snapshot.getPredictionProbability())
+                                                        .predictionRiskLevel(snapshot.getPredictionRiskLevel())
+                                                        .snapshotAt(snapshot.getSnapshotAt())
+                                                        .build();
+                                })
+                                .filter(Objects::nonNull)
+                                .toList();
         }
 }

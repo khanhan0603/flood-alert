@@ -28,7 +28,6 @@ public class PredictionController {
     //     return predictionService.getAllPrediction();
     // }
     
-
     @GetMapping("/list-by-area")
     public List<FloodPredictionResponse> getListByArea(@RequestParam UUID areaId) {
         return predictionService.findPredictionByArea(areaId);

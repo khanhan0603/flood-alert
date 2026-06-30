@@ -40,10 +40,10 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
             """)
     List<AreaDataByParentResponse> findByParentId(UUID parentId);
 
-    //Đếm số khuvuc theo level
+    // Đếm số khuvuc theo level
     long countByLevel(int level);
 
-    //Danh sách các khu vực theo level
+    // Danh sách các khu vực theo level
     List<Area> findByLevel(int level);
 
     @Query("""
