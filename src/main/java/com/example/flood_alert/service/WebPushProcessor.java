@@ -12,6 +12,8 @@ import com.example.flood_alert.enums.Channel;
 import com.example.flood_alert.enums.StatusAlert;
 import com.example.flood_alert.repository.FloodAlertRepository;
 import com.example.flood_alert.repository.UserFcmTokenRepository;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.MessagingErrorCode;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -23,22 +25,22 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WebPushProcessor {
-    FloodAlertRepository floodAlertRepository; // lấy các alert PENDING
-    UserFcmTokenRepository userFcmTokenRepository; // lấy FCM token của user.
-    NotificationService notificationService; // gửi notification qua Firebase.
+
+    FloodAlertRepository floodAlertRepository;
+    UserFcmTokenRepository userFcmTokenRepository;
+    NotificationService notificationService;
 
     @Transactional
     public void processPendingPushNotifications() {
-        // lấy danh sách alert PENDING
+
         List<FloodAlert> alerts = floodAlertRepository.findByChannelAndStatus(
                 Channel.WEB_PUSH,
                 StatusAlert.PENDING);
-        // Duyệt từng alert
+
         for (FloodAlert alert : alerts) {
 
-            // lấy FCM token của user cho từng alert
-
-            List<UserFcmToken> tokens = userFcmTokenRepository.findByUser(alert.getUser());
+            List<UserFcmToken> tokens =
+                    userFcmTokenRepository.findByUser(alert.getUser());
 
             if (tokens.isEmpty()) {
 
@@ -47,29 +49,48 @@ public class WebPushProcessor {
                         alert.getUser().getId());
 
                 alert.setStatus(StatusAlert.FAILED);
-
                 continue;
             }
 
-            try {
+            boolean sent = false;
 
-                for (UserFcmToken token : tokens) {
+            for (UserFcmToken token : tokens) {
+
+                try {
 
                     notificationService.sendNotification(
                             token.getToken(),
                             alert.getTitle(),
                             alert.getMessage());
+
+                    sent = true;
+
+                } catch (FirebaseMessagingException e) {
+
+                    log.error(
+                            "Push failed. user={} token={}",
+                            alert.getUser().getId(),
+                            token.getId(),
+                            e);
+
+                    // Token hết hạn hoặc không còn hợp lệ
+                    if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED) {
+
+                        log.warn(
+                                "Delete invalid FCM token {}",
+                                token.getId());
+
+                        userFcmTokenRepository.delete(token);
+                    }
                 }
+            }
+
+            if (sent) {
 
                 alert.setStatus(StatusAlert.SENT);
                 alert.setSentAt(LocalDateTime.now());
 
-            } catch (Exception e) {
-
-                log.error(
-                        "Push notification failed alert={}",
-                        alert.getId(),
-                        e);
+            } else {
 
                 alert.setStatus(StatusAlert.FAILED);
             }
