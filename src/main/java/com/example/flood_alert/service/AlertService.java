@@ -39,10 +39,13 @@ public class AlertService {
     EmailProcessor emailProcessor;
     WebPushProcessor webPushProcessor;
 
-    private static final long ALERT_COOLDOW_MINUTES=2;
+    private static final long ALERT_COOLDOW_MINUTES = 2;
 
     @Transactional
     public void processSnapshot(AreaRiskSnapshot snapshot) {
+        log.info("PROCESS ALERT area={} risk={}",
+                snapshot.getArea().getId(),
+                snapshot.getRiskLevel());
         RiskLevel riskLevel = snapshot.getRiskLevel();
 
         if (riskLevel == RiskLevel.LOW) {
@@ -104,9 +107,9 @@ public class AlertService {
 
         floodAlertRepository.saveAll(alerts);
 
-        //Gửi email
+        // Gửi email
         emailProcessor.processPendingEmails();
-        //Gửi web push
+        // Gửi web push
         webPushProcessor.processPendingPushNotifications();
     }
 
@@ -166,8 +169,12 @@ public class AlertService {
 
     // Check chống spam alert
     private boolean shouldSendAlert(AreaRiskSnapshot snapshot) {
+        log.info("CHECK COOLDOWN");
+
         Optional<FloodAlert> latestAlertOpt = floodAlertRepository
                 .findTopByAreaOrderByCreatedAtDesc(snapshot.getArea());
+
+        log.info("Found latest={}", latestAlertOpt.isPresent());
 
         if (latestAlertOpt.isEmpty()) {
             return true;
@@ -175,24 +182,34 @@ public class AlertService {
 
         FloodAlert latestAlert = latestAlertOpt.get();
 
-        // Lấy mức cảnh báo hiện tại
         RiskLevel currentRisk = snapshot.getRiskLevel();
-
-        // Lấy mức cảnh báo trước đó
         RiskLevel previousRisk = latestAlert.getRiskLevel();
+
+        log.info("Latest created={}", latestAlert.getCreatedAt());
+        log.info("Now={}", LocalDateTime.now());
+        log.info("Current risk={}", currentRisk);
+        log.info("Previous risk={}", previousRisk);
 
         // MEDIUM -> HIGH
         if (currentRisk.ordinal() > previousRisk.ordinal()) {
+            log.info("Risk upgraded -> allow");
             return true;
         }
 
-        // HIGH -> HIGH hoặc MEDIUM -> MEDIUM trong 6 tiếng
+        // HIGH -> HIGH hoặc MEDIUM -> MEDIUM
         if (currentRisk == previousRisk) {
-            return latestAlert.getCreatedAt()
+            boolean allow = latestAlert.getCreatedAt()
                     .plusMinutes(ALERT_COOLDOW_MINUTES)
                     .isBefore(LocalDateTime.now());
+
+            log.info("Allow send={}", allow);
+
+            return allow;
         }
-        // HIGH->MEDIUM
+
+        // HIGH -> MEDIUM
+        log.info("Risk downgraded -> block");
+
         return false;
     }
 

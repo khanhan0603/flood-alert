@@ -86,7 +86,11 @@ public class SnapshotService {
                                 .build();
 
                 AreaRiskSnapshot savedSnapshot = areaRiskSnapshotRepository.save(snapshot);
+                log.info("Snapshot saved. Call AlertService");
+
                 alertService.processSnapshot(savedSnapshot);
+
+                log.info("AlertService finished");
         }
 
         @Transactional
