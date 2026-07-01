@@ -39,7 +39,7 @@ public class AlertService {
     EmailProcessor emailProcessor;
     WebPushProcessor webPushProcessor;
 
-    private static final long ALERT_COOLDOWN_HOURS = 6;
+    private static final long ALERT_COOLDOW_MINUTES=2;
 
     @Transactional
     public void processSnapshot(AreaRiskSnapshot snapshot) {
@@ -189,7 +189,7 @@ public class AlertService {
         // HIGH -> HIGH hoặc MEDIUM -> MEDIUM trong 6 tiếng
         if (currentRisk == previousRisk) {
             return latestAlert.getCreatedAt()
-                    .plusHours(ALERT_COOLDOWN_HOURS)
+                    .plusMinutes(ALERT_COOLDOW_MINUTES)
                     .isBefore(LocalDateTime.now());
         }
         // HIGH->MEDIUM

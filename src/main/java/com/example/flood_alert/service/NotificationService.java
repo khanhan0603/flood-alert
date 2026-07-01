@@ -1,18 +1,12 @@
 package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.entity.UserFcmToken;
-import com.example.flood_alert.exception.AppException;
-import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.UserFcmTokenRepository;
-import com.example.flood_alert.repository.UserRepository;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -28,7 +22,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class NotificationService {
 
-    UserRepository userRepository;
     UserFcmTokenRepository userFcmTokenRepository;
     AuthenticationService authenticationService;
 
