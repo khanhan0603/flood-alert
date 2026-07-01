@@ -146,7 +146,7 @@ public class AuthenticationService {
 
     @Transactional
     public AuthenticateResponse authenticate(AuthenticateRequest request) {
-        var user = userRepository.findByEmailOrSodt(request.getLoginInfo(), request.getLoginInfo())
+        var user = userRepository.findActiveByEmailOrPhone(request.getLoginInfo())
                 .orElseThrow(() -> new AppException(ErrorCode.LOGIN_INFO_EXISTED));
 
         // Test team leader

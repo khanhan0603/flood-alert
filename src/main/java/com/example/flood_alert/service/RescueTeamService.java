@@ -477,4 +477,47 @@ public class RescueTeamService {
                 .emergencyPhone(team.getEmergencyPhone())
                 .build();
     }
+
+    // Xóa member trong team, chỉ team leader mới được xóa, ko xóa group leader
+    @Transactional
+    public void deleteMember(UUID teamId, UUID userId) {
+
+        User currentUser = authenticationService.getCurrentUser();
+
+        RescueTeam team = rescueTeamRepository.findById(teamId)
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+        // Chỉ Team Leader được xóa
+        if (team.getLeader() == null
+                || !team.getLeader().getId().equals(currentUser.getId())) {
+
+            throw new AppException(ErrorCode.NO_PERMISSION);
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.USER_NOT_EXISTED));
+
+        // Phải thuộc đúng team
+        if (!user.getTeam().getId().equals(teamId)) {
+            throw new AppException(ErrorCode.RESCUER_NOT_IN_TEAM);
+        }
+
+        // Chỉ được xóa RESCUER
+        if (user.getRole() != Role.RESCUER) {
+            throw new AppException(ErrorCode.USER_IS_NOT_RESCUER);
+        }
+
+        // Không được xóa nếu đang là Group Leader
+        if (rescueGroupRepository.existsByLeaderId(userId)) {
+            throw new AppException(ErrorCode.GROUP_LEADER_CANNOT_DELETE);
+        }
+
+        // Loại khỏi team và vô hiệu hóa tài khoản
+        user.setTrangthai(Status.INACTIVE);
+        user.setTeam(null);
+
+        userRepository.save(user);
+    }
 }

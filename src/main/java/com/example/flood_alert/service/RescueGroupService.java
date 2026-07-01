@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.AddGroupMembersRequest;
 import com.example.flood_alert.dbo.request.AssignGroupLeaderRequest;
@@ -45,6 +46,7 @@ public class RescueGroupService {
         RescueGroupRepository rescueGroupRepository;
         RescueGroupMemberRepository rescueGroupMemberRepository;
         UserRepository userRepository;
+        AuthenticationService authenticationService;
 
         public RescueGroupResponse create(UUID teamId, CreateRescueGroupRequest request) {
 
@@ -162,13 +164,23 @@ public class RescueGroupService {
         }
 
         // Pick group leader
+        @Transactional
         public GroupLeaderResponse assignLeader(
                         UUID groupId,
                         AssignGroupLeaderRequest request) {
+                User currentUser = authenticationService.getCurrentUser();
 
                 RescueGroup group = rescueGroupRepository.findById(groupId)
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.RESCUE_GROUP_NOT_FOUND));
+
+                RescueTeam team = group.getTeam();
+
+                if (team.getLeader() == null
+                                || !team.getLeader().getId().equals(currentUser.getId())) {
+
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
 
                 User user = userRepository.findById(request.getUserId())
                                 .orElseThrow(() -> new AppException(
@@ -214,4 +226,39 @@ public class RescueGroupService {
                 return rescueGroupMemberRepository
                                 .findMembersByGroupId(groupId, pageable);
         }
+
+        // Loại thành viên ra khỏi group
+        @Transactional
+        public void removeMember(UUID groupId, UUID userId) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                RescueGroup group = rescueGroupRepository.findById(groupId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.RESCUE_GROUP_NOT_FOUND));
+
+                RescueTeam team = group.getTeam();
+
+                if (team.getLeader() == null ||
+                                !team.getLeader().getId().equals(currentUser.getId())) {
+
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                RescueGroupMember member = rescueGroupMemberRepository
+                                .findByGroup_IdAndUser_Id(groupId, userId)
+                                .orElseThrow(() -> new AppException(ErrorCode.GROUP_MEMBER_NOT_FOUND));
+
+                // Không cho loại group leader khỏi nhóm
+                if (group.getLeader() != null
+                                && group.getLeader().getId().equals(userId)) {
+
+                        throw new AppException(
+                                        ErrorCode.GROUP_LEADER_CANNOT_REMOVE);
+                }
+
+                rescueGroupMemberRepository.delete(member);
+        }
+
+        
 }

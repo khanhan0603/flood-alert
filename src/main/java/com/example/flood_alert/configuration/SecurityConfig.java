@@ -44,6 +44,7 @@ public class SecurityConfig {
                             "/iot-device/read-sensor",
                             "/sos-request/*/anonymous",
                             "/sos-request/my-active-anonymous",
+                            "/sos-request/*/anonymous/cancel",
                             "/sms/**",
                             "/notification/**",
                             "/res-team/emergency-contact"

@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -99,7 +100,18 @@ public class RescueGroupController {
                 Pageable pageable = PageRequest.of(page, size);
 
                 return ApiResponse.<Page<ListMemberOfGroupResponse>>builder()
-                                .result(rescueGroupService.getMembers(groupId,pageable))
+                                .result(rescueGroupService.getMembers(groupId, pageable))
                                 .build();
+        }
+
+        // Loại thành viên ra khỏi nhóm, team leader mới được làm
+        @DeleteMapping("/{groupId}/members/{userId}")
+        public ApiResponse<Void> removeMember(
+                        @PathVariable UUID groupId,
+                        @PathVariable UUID userId) {
+
+                rescueGroupService.removeMember(groupId, userId);
+
+                return ApiResponse.<Void>builder().build();
         }
 }

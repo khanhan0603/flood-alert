@@ -57,6 +57,10 @@ public enum ErrorCode {
     SUPPORT_REQUEST_ALREADY_DISPATCHED(1047,"Yêu cầu hỗ trợ đã được giao!"),
     SOS_ALREADY_ASSIGNED(1048,"Yêu cầu cứu hộ đã được giao!"),
     INVALID_SUPPORT_REQUEST_STATUS(1049,"Trang thái yêu cầu hỗ trợ không hợp lệ!"),
+    SOS_CANNOT_CANCEL(1050,"Yêu cầu cứu hộ không thể hủy!"), 
+    GROUP_MEMBER_NOT_FOUND(1051,"Không tìm thấy người dùng trong nhóm!"),
+    GROUP_LEADER_CANNOT_REMOVE(1052,"Không được loại trưởng nhóm ra khỏi nhóm!"),
+    GROUP_LEADER_CANNOT_DELETE(1053,"Không được xóa trưởng nhóm!"),
     ;
 
     int code;

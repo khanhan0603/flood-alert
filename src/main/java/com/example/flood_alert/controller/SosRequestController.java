@@ -7,15 +7,18 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.dbo.request.AnonymousSosListRequest;
+import com.example.flood_alert.dbo.request.CancelAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.CreateSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateSosRequest;
@@ -158,6 +161,34 @@ public class SosRequestController {
                 return ApiResponse.<SosDetailResponse>builder()
                                 .result(
                                                 sosRequestService.getDetail(id))
+                                .build();
+        }
+
+        // Cancel sos người ẩn danh
+        @PatchMapping("/{sosId}/anonymous/cancel")
+        public ApiResponse<Void> cancelAnonymous(
+                        @PathVariable UUID sosId,
+                        @Valid @RequestBody CancelAnonymousSosRequest request) {
+
+                sosRequestService.cancelAnonymous(
+                                sosId,
+                                request.getSodt(),
+                                request.getClientDeviceId());
+
+                return ApiResponse.<Void>builder()
+                                .message("Hủy yêu cầu cứu hộ thành công.")
+                                .build();
+        }
+
+        //Cancel người có tài khoản
+        @PatchMapping("/{sosId}/cancel")
+        public ApiResponse<Void> cancel(
+                        @PathVariable UUID sosId) {
+
+                sosRequestService.cancel(sosId);
+
+                return ApiResponse.<Void>builder()
+                                .message("Hủy yêu cầu cứu hộ thành công.")
                                 .build();
         }
 }

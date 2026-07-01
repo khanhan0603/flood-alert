@@ -41,4 +41,6 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
     
     //Kiem tra co phai group leader khong
     boolean existsByLeaderId(UUID leaderId);
+
+    
 }

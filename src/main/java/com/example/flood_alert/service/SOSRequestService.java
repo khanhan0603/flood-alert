@@ -81,7 +81,7 @@ public class SOSRequestService {
                         StatusSOS.PROCESSING);
 
         @Transactional
-        @CacheEvict(value="team-dashboard", allEntries=true)
+        @CacheEvict(value = "team-dashboard", allEntries = true)
         public SosResponse create(CreateSosRequest request, HttpServletRequest httpRequest) {
 
                 User currentUser = authenticationService.getCurrentUser();
@@ -397,9 +397,8 @@ public class SOSRequestService {
         // Dashboard cho team leader
         @Cacheable(value = "team-dashboard", key = "#teamId")
         @Transactional(readOnly = true)
-        public TeamDashboardResponse getTeamDashboard(UUID teamId) 
-        {
-                //Test Redis
+        public TeamDashboardResponse getTeamDashboard(UUID teamId) {
+                // Test Redis
                 log.info("LOAD DASHBOARD FROM DB");
 
                 User currentUser = authenticationService.getCurrentUser();
@@ -412,7 +411,6 @@ public class SOSRequestService {
                                 .countByTeamIdAndStatus(
                                                 teamId,
                                                 StatusSOS.PENDING);
-                
 
                 long assigned = sosRequestRepository
                                 .countByTeamIdAndStatus(
@@ -533,5 +531,53 @@ public class SOSRequestService {
                 return sosRequestRepository.findByTeamIdAndStatus(team.getId(), status, pageable)
                                 .map(sosRequestMapper::toResponse);
 
+        }
+
+        // Cancel sos người ẩn danh
+        @Transactional
+        @CacheEvict(value = "team-dashboard", allEntries = true)
+        public void cancelAnonymous(
+                        UUID sosId,
+                        String sodt,
+                        String clientDeviceId) {
+
+                SosRequest sos = sosRequestRepository
+                                .findByIdAndSodtAndClientDeviceId(
+                                                sosId,
+                                                sodt,
+                                                clientDeviceId)
+                                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
+
+                if (sos.getStatus() != StatusSOS.PENDING) {
+                        throw new AppException(ErrorCode.SOS_CANNOT_CANCEL);
+                }
+
+                sos.setStatus(StatusSOS.CANCELED);
+
+                sosRequestRepository.save(sos);
+        }
+
+        // Cancel người có tài khoản
+        @Transactional
+        @CacheEvict(value = "team-dashboard", allEntries = true)
+        public void cancel(UUID sosId) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                if (currentUser == null) {
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
+
+                SosRequest sos = sosRequestRepository
+                                .findByIdAndUserId(sosId, currentUser.getId())
+                                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
+
+                if (sos.getStatus() != StatusSOS.PENDING) {
+                        throw new AppException(ErrorCode.SOS_CANNOT_CANCEL);
+                }
+
+                sos.setStatus(StatusSOS.CANCELED);
+
+                sosRequestRepository.save(sos);
         }
 }

@@ -44,4 +44,7 @@ public interface RescueGroupMemberRepository extends JpaRepository<RescueGroupMe
     Page<ListMemberOfGroupResponse> findMembersByGroupId(UUID groupId,Pageable pageable);
 
     Optional<RescueGroupMember> findByUserId(UUID userId);
+
+    //Kiểm tra xem user có trong group ko, và lấy entity để delete
+    Optional<RescueGroupMember> findByGroup_IdAndUser_Id(UUID groupId,UUID userId);
 }

@@ -22,7 +22,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsBySodt(String sodt);
 
-    Optional<User> findByEmailOrSodt(String email, String sodt);
+    @Query("""
+                SELECT u
+                FROM User u
+                WHERE u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
+                  AND (u.email = :username OR u.sodt = :username)
+            """)
+    Optional<User> findActiveByEmailOrPhone(String username);
 
     Optional<User> findByEmail(String email);
 
@@ -43,22 +49,22 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             """)
     Set<String> findAllPhones();
 
-    // List các rescuer có team nhưng chưa thuộc group nào
+    // List các rescuer có team nhưng chưa thuộc group nào, ko hiển thị team leader
     @Query("""
-                SELECT u
-                FROM User u
-                WHERE u.role = com.example.flood_alert.enums.Role.RESCUER
-                  AND u.team.id = :teamId
-                  AND NOT EXISTS (
-                        SELECT rgm
-                        FROM RescueGroupMember rgm
-                        WHERE rgm.user.id = u.id
-                  )
+            SELECT u
+            FROM User u
+            WHERE u.role = com.example.flood_alert.enums.Role.RESCUER
+              AND u.team.id = :teamId
+              AND (u.team.leader IS NULL OR u.id <> u.team.leader.id)
+              AND NOT EXISTS (
+                    SELECT rgm
+                    FROM RescueGroupMember rgm
+                    WHERE rgm.user.id = u.id
+              )
             """)
     List<User> findAvailableMembers(UUID teamId);
 
     // danh sách các province
-    Page<User> findByRole(Role role,Pageable pageable);
+    Page<User> findByRole(Role role, Pageable pageable);
 
-    
 }

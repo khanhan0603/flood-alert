@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -128,7 +129,7 @@ public class RescueTeamController {
                                 .build();
         }
 
-        //cập nhật thông tin đội
+        // cập nhật thông tin đội
         @PutMapping("/{teamId}")
         public ApiResponse<RescueTeamResponse> update(
                         @PathVariable UUID teamId,
@@ -137,6 +138,17 @@ public class RescueTeamController {
                 return ApiResponse.<RescueTeamResponse>builder()
                                 .result(rescueTeamService.update(teamId, request))
                                 .build();
+        }
+
+        //Xóa member ra khỏi team, ko xóa group leader
+        @DeleteMapping("/{teamId}/members/{userId}")
+        public ApiResponse<Void> deleteMember(
+                        @PathVariable UUID teamId,
+                        @PathVariable UUID userId) {
+
+                rescueTeamService.deleteMember(teamId, userId);
+
+                return ApiResponse.<Void>builder().build();
         }
 
 }

@@ -51,7 +51,7 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
                                     WHEN s.status = 'PENDING' THEN 1
                                     WHEN s.status = 'PROCESSING' THEN 2
                                     WHEN s.status = 'DONE' THEN 3
-                                    WHEN s.status = 'CANCELLED' THEN 4
+                                    WHEN s.status = 'CANCELED' THEN 4
                                 END,
                                 s.createdAt DESC
                         """)
