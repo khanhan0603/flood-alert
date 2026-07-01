@@ -37,21 +37,39 @@ public class WebPushProcessor {
         for (FloodAlert alert : alerts) {
 
             // lấy FCM token của user cho từng alert
+
             List<UserFcmToken> tokens = userFcmTokenRepository.findByUser(alert.getUser());
 
+            if (tokens.isEmpty()) {
+
+                log.warn(
+                        "No FCM token for user {}",
+                        alert.getUser().getId());
+
+                alert.setStatus(StatusAlert.FAILED);
+
+                continue;
+            }
+
             try {
+
                 for (UserFcmToken token : tokens) {
 
                     notificationService.sendNotification(
                             token.getToken(),
                             alert.getTitle(),
                             alert.getMessage());
-                            alert.setSentAt(LocalDateTime.now());
                 }
 
                 alert.setStatus(StatusAlert.SENT);
+                alert.setSentAt(LocalDateTime.now());
 
             } catch (Exception e) {
+
+                log.error(
+                        "Push notification failed alert={}",
+                        alert.getId(),
+                        e);
 
                 alert.setStatus(StatusAlert.FAILED);
             }
