@@ -84,14 +84,11 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
             UUID provinceId,
             Pageable pageable);
 
-    // Lấy tất cả các team cùng tỉnh nhưng bỏ đi team gửi support request
+    // Lấy tất cả các team cùng tỉnh
     @Query("""
             SELECT rt
             FROM RescueTeam rt
             WHERE rt.area.parent.id = :provinceId
-            AND rt.id <> :excludeTeamId
             """)
-    List<RescueTeam> findAllSupportTeams(
-            UUID provinceId,
-            UUID excludeTeamId);
+    List<RescueTeam> findAllSupportTeams(UUID provinceId);
 }

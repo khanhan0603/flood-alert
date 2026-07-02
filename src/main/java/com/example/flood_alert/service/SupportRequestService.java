@@ -1,5 +1,6 @@
 package com.example.flood_alert.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +21,6 @@ import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequestItem;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
-import com.example.flood_alert.dbo.request.RejectSupportRequest;
 import com.example.flood_alert.dbo.response.RescueTeamSupportResponse;
 import com.example.flood_alert.dbo.response.SupportRequestItemResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
@@ -45,7 +45,6 @@ import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
 import com.example.flood_alert.repository.SupportRequestItemRepository;
 import com.example.flood_alert.repository.SupportRequestRepository;
-import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -551,7 +550,7 @@ public class SupportRequestService {
                                                 ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
                 // Team đang gửi yêu cầu hỗ trợ
-                UUID excludeTeamId = supportRequest
+                UUID requesterTeamId = supportRequest
                                 .getRequestedBy()
                                 .getTeam()
                                 .getId();
@@ -562,58 +561,60 @@ public class SupportRequestService {
                                 .getArea()
                                 .getParent()
                                 .getId();
-
+                SosRequest sos = supportRequest.getSos();
                 return rescueTeamRepository
-                                .findAllSupportTeams(
-                                                provinceId,
-                                                excludeTeamId)
+                                .findAllSupportTeams(provinceId)
                                 .stream()
                                 .map(team -> RescueTeamSupportResponse.builder()
+
                                                 .id(team.getId())
                                                 .teamName(team.getName())
 
-                                                // Hiển thị trên bản đồ
                                                 .areaId(team.getArea().getId())
                                                 .lat(team.getLat())
                                                 .lon(team.getLon())
 
-                                                // Leader
                                                 .leaderName(
                                                                 team.getLeader() != null
                                                                                 ? team.getLeader().getHoten()
                                                                                 : null)
+
                                                 .leaderPhone(
                                                                 team.getLeader() != null
                                                                                 ? team.getLeader().getSodt()
                                                                                 : null)
 
-                                                // Hotline
                                                 .emergencyPhone(team.getEmergencyPhone())
 
-                                                // Resource
                                                 .availableBoatGroups(
-                                                                groupRepository
-                                                                                .countByTeamIdAndHasBoatTrueAndStatus(
-                                                                                                team.getId(),
-                                                                                                RescueGroupStatus.AVAILABLE))
+                                                                groupRepository.countByTeamIdAndHasBoatTrueAndStatus(
+                                                                                team.getId(),
+                                                                                RescueGroupStatus.AVAILABLE))
 
                                                 .availableMedicalGroups(
-                                                                groupRepository
-                                                                                .countByTeamIdAndHasMedicalTrueAndStatus(
-                                                                                                team.getId(),
-                                                                                                RescueGroupStatus.AVAILABLE))
+                                                                groupRepository.countByTeamIdAndHasMedicalTrueAndStatus(
+                                                                                team.getId(),
+                                                                                RescueGroupStatus.AVAILABLE))
 
                                                 .availableSearchRescueGroups(
-                                                                groupRepository
-                                                                                .countByTeamIdAndHasSearchRescueTrueAndStatus(
-                                                                                                team.getId(),
-                                                                                                RescueGroupStatus.AVAILABLE))
+                                                                groupRepository.countByTeamIdAndHasSearchRescueTrueAndStatus(
+                                                                                team.getId(),
+                                                                                RescueGroupStatus.AVAILABLE))
 
                                                 .availableLogisticsGroups(
-                                                                groupRepository
-                                                                                .countByTeamIdAndHasLogisticsTrueAndStatus(
-                                                                                                team.getId(),
-                                                                                                RescueGroupStatus.AVAILABLE))
+                                                                groupRepository.countByTeamIdAndHasLogisticsTrueAndStatus(
+                                                                                team.getId(),
+                                                                                RescueGroupStatus.AVAILABLE))
+
+                                                .distanceKm(
+                                                                calculateDistanceKm(
+                                                                                sos.getLat(),
+                                                                                sos.getLon(),
+                                                                                team.getLat(),
+                                                                                team.getLon()))
+
+                                                .requesterTeam(
+                                                                team.getId().equals(requesterTeamId))
 
                                                 .build())
                                 .toList();
@@ -671,5 +672,34 @@ public class SupportRequestService {
                                 .createdAt(request.getCreatedAt())
                                 .reviewedAt(request.getReviewedAt())
                                 .build();
+        }
+
+        private Double calculateDistanceKm(
+                        BigDecimal lat1,
+                        BigDecimal lon1,
+                        Double lat2,
+                        Double lon2) {
+
+                if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
+                        return null;
+                }
+
+                double lat1Value = lat1.doubleValue();
+                double lon1Value = lon1.doubleValue();
+
+                final double EARTH_RADIUS = 6371.0;
+
+                double dLat = Math.toRadians(lat2 - lat1Value);
+                double dLon = Math.toRadians(lon2 - lon1Value);
+
+                double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                                + Math.cos(Math.toRadians(lat1Value))
+                                                * Math.cos(Math.toRadians(lat2))
+                                                * Math.sin(dLon / 2)
+                                                * Math.sin(dLon / 2);
+
+                double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                return Math.round(EARTH_RADIUS * c * 100.0) / 100.0;
         }
 }

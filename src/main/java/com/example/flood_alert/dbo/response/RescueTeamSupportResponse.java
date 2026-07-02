@@ -39,4 +39,9 @@ public class RescueTeamSupportResponse {
     Long availableSearchRescueGroups;
 
     Long availableLogisticsGroups;
+
+    Double distanceKm;
+
+     // true nếu là đội đang yêu cầu hỗ trợ
+    Boolean requesterTeam;
 }
