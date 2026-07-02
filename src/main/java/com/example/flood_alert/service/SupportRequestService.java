@@ -410,10 +410,8 @@ public class SupportRequestService {
                                 .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
 
                 return supportRequestRepository
-                                .findMySupportRequests(
-                                                team.getId(),
-                                                pageable)
-                                .map(this::toResponse);
+                                .findMySupportRequests(team.getId(), pageable)
+                                .map(request -> toResponse(request, team.getId()));
         }
 
         @Transactional
@@ -621,4 +619,57 @@ public class SupportRequestService {
                                 .toList();
         }
 
+        private SupportRequestResponse toResponse(
+                        SupportRequest request,
+                        UUID teamId) {
+
+                return SupportRequestResponse.builder()
+                                .id(request.getId())
+                                .sosId(request.getSos().getId())
+                                .status(request.getStatus())
+
+                                .items(
+                                                request.getItems()
+                                                                .stream()
+                                                                .filter(item -> teamId == null ||
+                                                                                (item.getAssignedTeam() != null
+                                                                                                && item.getAssignedTeam()
+                                                                                                                .getId()
+                                                                                                                .equals(teamId)))
+                                                                .map(item -> SupportRequestItemResponse.builder()
+                                                                                .id(item.getId())
+                                                                                .supportType(item.getSupportType())
+                                                                                .requiredGroupCount(item
+                                                                                                .getRequiredGroupCount())
+                                                                                .assignedGroupCount(item
+                                                                                                .getAssignedGroupCount())
+                                                                                .status(item.getStatus())
+                                                                                .assignedTeamId(item
+                                                                                                .getAssignedTeam() != null
+                                                                                                                ? item.getAssignedTeam()
+                                                                                                                                .getId()
+                                                                                                                : null)
+                                                                                .assignedTeamName(item
+                                                                                                .getAssignedTeam() != null
+                                                                                                                ? item.getAssignedTeam()
+                                                                                                                                .getName()
+                                                                                                                : null)
+                                                                                .provinceNote(item.getProvinceNote())
+                                                                                .teamResponse(item.getTeamResponse())
+                                                                                .build())
+                                                                .toList())
+
+                                .reason(request.getReason())
+                                .requestedById(request.getRequestedBy().getId())
+                                .requestedByName(request.getRequestedBy().getHoten())
+                                .approvedById(request.getApprovedBy() != null
+                                                ? request.getApprovedBy().getId()
+                                                : null)
+                                .approvedByName(request.getApprovedBy() != null
+                                                ? request.getApprovedBy().getHoten()
+                                                : null)
+                                .createdAt(request.getCreatedAt())
+                                .reviewedAt(request.getReviewedAt())
+                                .build();
+        }
 }
