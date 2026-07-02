@@ -2,6 +2,7 @@ package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,8 +40,7 @@ public class WebPushProcessor {
 
         for (FloodAlert alert : alerts) {
 
-            List<UserFcmToken> tokens =
-                    userFcmTokenRepository.findByUser(alert.getUser());
+            List<UserFcmToken> tokens = userFcmTokenRepository.findByUser(alert.getUser());
 
             if (tokens.isEmpty()) {
 
@@ -54,6 +54,11 @@ public class WebPushProcessor {
 
             boolean sent = false;
 
+            // Data gửi kèm cho FE
+            Map<String, String> data = Map.of(
+                    "type", "FLOOD_ALERT",
+                    "alertId", alert.getId().toString());
+
             for (UserFcmToken token : tokens) {
 
                 try {
@@ -61,7 +66,8 @@ public class WebPushProcessor {
                     notificationService.sendNotification(
                             token.getToken(),
                             alert.getTitle(),
-                            alert.getMessage());
+                            alert.getMessage(),
+                            data);
 
                     sent = true;
 
@@ -73,8 +79,9 @@ public class WebPushProcessor {
                             token.getId(),
                             e);
 
-                    // Token hết hạn hoặc không còn hợp lệ
-                    if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED) {
+                    // Token không còn hợp lệ -> xóa
+                    if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED
+                            || e.getMessagingErrorCode() == MessagingErrorCode.INVALID_ARGUMENT) {
 
                         log.warn(
                                 "Delete invalid FCM token {}",

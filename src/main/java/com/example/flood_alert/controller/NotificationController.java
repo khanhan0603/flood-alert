@@ -25,16 +25,16 @@ import lombok.extern.slf4j.Slf4j;
 public class NotificationController {
     NotificationService notificationService;
 
-    @PostMapping("/test")
-    public String test(@RequestParam String token) throws Exception {
+    // @PostMapping("/test")
+    // public String test(@RequestParam String token) throws Exception {
 
-        notificationService.sendNotification(
-                token,
-                "Test Flood Alert",
-                "Đây là thông báo thử nghiệm.");
+    //     notificationService.sendNotification(
+    //             token,
+    //             "Test Flood Alert",
+    //             "Đây là thông báo thử nghiệm.");
 
-        return "OK";
-    }
+    //     return "OK";
+    // }
 
      @PostMapping("/token")
     public void saveToken(@RequestBody SaveFcmTokenRequest request) {
