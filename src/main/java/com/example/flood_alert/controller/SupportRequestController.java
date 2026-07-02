@@ -20,7 +20,6 @@ import com.example.flood_alert.dbo.request.ApproveSupportRequest;
 import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
-import com.example.flood_alert.dbo.request.RejectSupportRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.RescueTeamSupportResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;

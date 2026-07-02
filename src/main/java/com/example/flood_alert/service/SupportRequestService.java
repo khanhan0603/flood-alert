@@ -398,7 +398,7 @@ public class SupportRequestService {
                 supportRequestItemRepository.save(item);
         }
 
-        // Team leader xem danh sách yêu cầu đc tỉnh giao cho
+        // Team leader xem danh sách yêu cầu được tỉnh giao cho
         @Transactional(readOnly = true)
         public Page<SupportRequestResponse> getMyTeamSupportRequests(
                         Pageable pageable) {
@@ -410,9 +410,8 @@ public class SupportRequestService {
                                 .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
 
                 return supportRequestRepository
-                                .findByAssignedTeamIdAndStatus(
+                                .findMySupportRequests(
                                                 team.getId(),
-                                                SupportRequestStatus.APPROVED,
                                                 pageable)
                                 .map(this::toResponse);
         }
