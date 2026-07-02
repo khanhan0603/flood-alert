@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers(
                             "/health",
                             "/auth/**",
+                            "/user/register",
                             "/sos-request",
                             "/area/**",
                             "/weather-data/**",

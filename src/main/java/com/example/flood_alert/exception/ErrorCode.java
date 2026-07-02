@@ -61,6 +61,13 @@ public enum ErrorCode {
     GROUP_MEMBER_NOT_FOUND(1051,"Không tìm thấy người dùng trong nhóm!"),
     GROUP_LEADER_CANNOT_REMOVE(1052,"Không được loại trưởng nhóm ra khỏi nhóm!"),
     GROUP_LEADER_CANNOT_DELETE(1053,"Không được xóa trưởng nhóm!"),
+    DUPLICATE_SUPPORT_TYPE(1054,"Trùng loại yêu cầu hỗ trợ!"),
+    SUPPORT_REQUEST_ITEM_NOT_FOUND(1055,"Không tìm thấy chi tiết yêu cầu hỗ trợ!"),
+    ASSIGNED_TEAM_REQUIRED(1056,"Bắt buộc phải chọn team chỉ định với yêu cầu!"),
+    INVALID_SUPPORT_ITEM_STATUS(1057,"Trạng thái của chi tiết yêu cầu không hợp lệ!"),
+    SUPPORT_REQUEST_NOT_FULLY_REVIEWED(1058,"Cần xử lý hết tất cả các chi tiết yêu cầu hỗ trợ!"),
+    SUPPORT_GROUP_ALREADY_ASSIGNED_ENOUGH(1059,"Đã phân công đủ số nhóm cứu hộ!"),
+    GROUP_NOT_SUPPORT_TYPE(1060,"Loại hỗ trợ không đúng!"),
     ;
 
     int code;

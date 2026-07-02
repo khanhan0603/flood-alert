@@ -16,7 +16,7 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
     // Kiểm tra tồn tại tên đội cứu hộ
     boolean existsByName(String name);
 
-    //Kiem tra co phai team leader khong
+    // Kiem tra co phai team leader khong
     boolean existsByLeaderId(UUID leaderId);
 
     // Tìm team theo id leader
@@ -39,6 +39,8 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
                     rt.area.tenkhuvuc,
                     rt.leader.id,
                     rt.leader.hoten,
+                    rt.lat,
+                    rt.lon,
                     rt.emergencyPhone
                 )
                 FROM RescueTeam rt
@@ -56,6 +58,8 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
                     rt.area.tenkhuvuc,
                     rt.leader.id,
                     rt.leader.hoten,
+                    rt.lat,
+                    rt.lon,
                     rt.emergencyPhone
                 )
                 FROM RescueTeam rt
@@ -79,4 +83,15 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
     Page<RescueTeam> findByProvinceId(
             UUID provinceId,
             Pageable pageable);
+
+    // Lấy tất cả các team cùng tỉnh nhưng bỏ đi team gửi support request
+    @Query("""
+            SELECT rt
+            FROM RescueTeam rt
+            WHERE rt.area.parent.id = :provinceId
+            AND rt.id <> :excludeTeamId
+            """)
+    List<RescueTeam> findAllSupportTeams(
+            UUID provinceId,
+            UUID excludeTeamId);
 }

@@ -6,14 +6,17 @@ import org.mapstruct.Mapping;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.entity.SupportRequest;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = SupportRequestItemMapper.class)
 public interface SupportRequestMapper {
+
     @Mapping(target = "sosId", source = "sos.id")
+
     @Mapping(target = "requestedById", source = "requestedBy.id")
     @Mapping(target = "requestedByName", source = "requestedBy.hoten")
-    @Mapping(target = "assignedTeamId", source = "assignedTeam.id")
-    @Mapping(target = "assignedTeamName", source = "assignedTeam.name")
+
     @Mapping(target = "approvedById", source = "approvedBy.id")
     @Mapping(target = "approvedByName", source = "approvedBy.hoten")
-    SupportRequestResponse toResponse(SupportRequest supportRequest);
+
+    SupportRequestResponse toResponse(
+            SupportRequest supportRequest);
 }

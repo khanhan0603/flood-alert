@@ -1,8 +1,5 @@
 package com.example.flood_alert.dbo.response;
-
 import java.util.UUID;
-
-import com.example.flood_alert.enums.RescueGroupStatus;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -18,25 +15,28 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RescueGroupResponse {
-
+public class RescueTeamSupportResponse {
     UUID id;
-
-    String name;
-
-    UUID teamId;
 
     String teamName;
 
-    RescueGroupStatus status;
+    UUID areaId;
 
-    Boolean hasBoat;
+    Double lat;
 
-    Boolean hasMedical;
+    Double lon;
 
-    Boolean hasSearchRescue;
+    String leaderName;
 
-    Boolean hasLogistics;
+    String leaderPhone;
 
-    String notes;
+    String emergencyPhone;
+
+    Long availableBoatGroups;
+
+    Long availableMedicalGroups;
+
+    Long availableSearchRescueGroups;
+
+    Long availableLogisticsGroups;
 }

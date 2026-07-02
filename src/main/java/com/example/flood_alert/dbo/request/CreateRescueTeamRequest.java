@@ -17,6 +17,10 @@ public class CreateRescueTeamRequest {
     @NotNull
     UUID areaId;
 
+    Double lat;
+
+    Double lon;
+
     @Pattern(regexp = "^(0|\\+84)[0-9]{9,10}$", message = "Số điện thoại không hợp lệ")
     String emergencyPhone;
 }

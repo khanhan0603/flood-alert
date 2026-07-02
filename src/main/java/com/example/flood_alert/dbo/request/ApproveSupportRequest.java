@@ -1,6 +1,9 @@
 package com.example.flood_alert.dbo.request;
-import java.util.UUID;
 
+import java.util.List;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +14,7 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ApproveSupportRequest {
-    UUID assignedTeamId;
-    String provinceResponse;
+    @NotEmpty
+    @Valid
+    List<ApproveSupportRequestItem> items;
 }

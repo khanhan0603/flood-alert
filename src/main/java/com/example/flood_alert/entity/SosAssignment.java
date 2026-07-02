@@ -38,8 +38,10 @@ import lombok.experimental.FieldDefaults;
         @Index(name = "idx_assignment_group", columnList = "group_id"),
 
         @Index(name = "idx_assignment_status", columnList = "status"),
-        @Index(name = "idx_assignment_group_status", columnList = "group_id,status"), //vì cần query group hiện đang có nhiệm vụ gì
-        @Index(name = "idx_assignment_sos_status", columnList = "sos_id,status")
+        @Index(name = "idx_assignment_group_status", columnList = "group_id,status"), // vì cần query group hiện đang có
+                                                                                      // nhiệm vụ gì
+        @Index(name = "idx_assignment_sos_status", columnList = "sos_id,status"),
+        @Index(name = "idx_assignment_support_item", columnList = "support_request_item_id")
 })
 public class SosAssignment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
@@ -69,9 +71,14 @@ public class SosAssignment extends BaseEntity {
     LocalDateTime arrivedAt;
 
     @CreationTimestamp
-    LocalDateTime createAt;
+    LocalDateTime createdAt;
     LocalDateTime completedAt;
 
     @Column(columnDefinition = "TEXT")
     String note;
+
+    // nhóm hỗ trợ
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "support_request_item_id")
+    SupportRequestItem supportRequestItem;
 }

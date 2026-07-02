@@ -75,6 +75,8 @@ public class RescueTeamService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .area(area)
+                .lat(request.getLon())
+                .lon(request.getLat())
                 .emergencyPhone(request.getEmergencyPhone())
                 .build();
         team = rescueTeamRepository.save(team);
@@ -85,6 +87,8 @@ public class RescueTeamService {
                 .description(team.getDescription())
                 .areaId(area.getId())
                 .areaName(area.getTenkhuvuc())
+                .lat(team.getLat())
+                .lon(team.getLon())
                 .emergencyPhone(team.getEmergencyPhone())
                 .build();
     }
@@ -475,6 +479,8 @@ public class RescueTeamService {
                         ? team.getLeader().getHoten()
                         : null)
                 .emergencyPhone(team.getEmergencyPhone())
+                .lat(team.getLat())
+                .lon(team.getLon())
                 .build();
     }
 

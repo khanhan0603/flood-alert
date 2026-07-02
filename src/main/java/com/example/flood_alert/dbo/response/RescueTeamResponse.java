@@ -22,5 +22,9 @@ public class RescueTeamResponse {
 
     String leaderName;
 
+    Double lat;
+
+    Double lon;
+
     String emergencyPhone;
 }

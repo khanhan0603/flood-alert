@@ -18,4 +18,8 @@ public class UpdateRescueTeamRequest {
         regexp = "^(0|\\+84)[0-9]{9,10}$",
         message = "Số điện thoại không hợp lệ")
     String emergencyPhone;
+
+    Double lat;
+
+    Double lon;
 }

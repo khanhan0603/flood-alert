@@ -1,38 +1,49 @@
 package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.ApproveSupportRequest;
+import com.example.flood_alert.dbo.request.ApproveSupportRequestItem;
 import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequest;
+import com.example.flood_alert.dbo.request.CreateSupportRequestItem;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
 import com.example.flood_alert.dbo.request.RejectSupportRequest;
+import com.example.flood_alert.dbo.response.RescueTeamSupportResponse;
+import com.example.flood_alert.dbo.response.SupportRequestItemResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.SupportRequest;
+import com.example.flood_alert.entity.SupportRequestItem;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.AssignmentRole;
 import com.example.flood_alert.enums.AssignmentStatus;
 import com.example.flood_alert.enums.RescueGroupStatus;
+import com.example.flood_alert.enums.SupportRequestItemStatus;
 import com.example.flood_alert.enums.SupportRequestStatus;
+import com.example.flood_alert.enums.SupportType;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
+import com.example.flood_alert.repository.SupportRequestItemRepository;
 import com.example.flood_alert.repository.SupportRequestRepository;
 import com.example.flood_alert.repository.UserRepository;
 
@@ -51,8 +62,8 @@ public class SupportRequestService {
         SosAssignmentRepository sosAssignmentRepository;
         RescueTeamRepository rescueTeamRepository;
         RescueGroupRepository groupRepository;
-        UserRepository userRepository;
         AuthenticationService authenticationService;
+        SupportRequestItemRepository supportRequestItemRepository;
 
         // Tạo yêu cầu hỗ trợ cứu hộ, teamleader tạo
         public UUID create(CreateSupportRequest request) {
@@ -77,20 +88,21 @@ public class SupportRequestService {
                 if (!sos.getTeam().getId().equals(team.getId())) {
                         throw new AppException(ErrorCode.NO_PERMISSION);
                 }
+                // kiểm tra sos request có tạo yêu cầu hỗ trợ và đang đợi duyệt ko
+                if (supportRequestRepository.existsBySosIdAndStatus(
+                                request.getSosId(),
+                                SupportRequestStatus.PENDING)) {
 
-                // Kiểm tra xem leader đã tạo hỗ trợ đó chưa
-                if (supportRequestRepository.existsBySosIdAndStatus(request.getSosId(), SupportRequestStatus.PENDING)) {
-
-                        throw new AppException(ErrorCode.SUPPORT_REQUEST_ALREADY_EXISTS);
+                        throw new AppException(
+                                        ErrorCode.SUPPORT_REQUEST_ALREADY_EXISTS);
                 }
 
-                // Tạo đối tượng group
-                RescueGroup suggestedGroup = null;
+                Set<SupportType> supportTypes = new HashSet<>();
 
-                // Nếu không tìm thấy group theo id
-                if (request.getSuggestedGroupId() != null) {
-                        suggestedGroup = groupRepository.findById(request.getSuggestedGroupId())
-                                        .orElseThrow(() -> new AppException(ErrorCode.RESCUE_GROUP_NOT_FOUND));
+                for (CreateSupportRequestItem item : request.getItems()) {
+                        if (!supportTypes.add(item.getSupportType())) {
+                                throw new AppException(ErrorCode.DUPLICATE_SUPPORT_TYPE);
+                        }
                 }
 
                 // Tạo yêu cầu hỗ trợ
@@ -98,11 +110,21 @@ public class SupportRequestService {
                                 .sos(sos)
                                 .requestedBy(currentUser)
                                 .status(SupportRequestStatus.PENDING)
-                                .supportType(request.getSupportType())
-                                .suggestedGroup(suggestedGroup)
                                 .reason(request.getReason())
                                 .build();
 
+                // Tạo support request item
+                List<SupportRequestItem> items = request.getItems()
+                                .stream()
+                                .map(item -> SupportRequestItem.builder()
+                                                .supportRequest(supportRequest)
+                                                .supportType(item.getSupportType())
+                                                .requiredGroupCount(item.getRequiredGroupCount())
+                                                .assignedGroupCount(0)
+                                                .status(SupportRequestItemStatus.PENDING)
+                                                .build())
+                                .toList();
+                supportRequest.setItems(items);
                 supportRequestRepository.save(supportRequest);
                 return supportRequest.getId();
         }
@@ -155,12 +177,43 @@ public class SupportRequestService {
                                 .id(request.getId())
                                 .sosId(request.getSos().getId())
                                 .status(request.getStatus())
-                                .supportType(request.getSupportType())
+
+                                .items(
+                                                request.getItems()
+                                                                .stream()
+                                                                .map(item -> SupportRequestItemResponse.builder()
+                                                                                .id(item.getId())
+                                                                                .supportType(item.getSupportType())
+                                                                                .requiredGroupCount(item
+                                                                                                .getRequiredGroupCount())
+
+                                                                                .status(item.getStatus())
+
+                                                                                .assignedTeamId(
+                                                                                                item.getAssignedTeam() != null
+                                                                                                                ? item.getAssignedTeam()
+                                                                                                                                .getId()
+                                                                                                                : null)
+
+                                                                                .assignedTeamName(
+                                                                                                item.getAssignedTeam() != null
+                                                                                                                ? item.getAssignedTeam()
+                                                                                                                                .getName()
+                                                                                                                : null)
+
+                                                                                .provinceNote(item.getProvinceNote())
+
+                                                                                .teamResponse(item.getTeamResponse())
+
+                                                                                .build())
+                                                                .toList())
+
                                 .reason(request.getReason())
-                                .provinceResponse(request.getProvinceResponse())
-                                .teamResponse(request.getTeamResponse())
+
                                 .requestedById(request.getRequestedBy().getId())
+
                                 .requestedByName(request.getRequestedBy().getHoten())
+
                                 .approvedById(
                                                 request.getApprovedBy() != null
                                                                 ? request.getApprovedBy().getId()
@@ -170,16 +223,11 @@ public class SupportRequestService {
                                                 request.getApprovedBy() != null
                                                                 ? request.getApprovedBy().getHoten()
                                                                 : null)
-                                .assignedTeamId(
-                                                request.getAssignedTeam() != null
-                                                                ? request.getAssignedTeam().getId()
-                                                                : null)
-                                .assignedTeamName(
-                                                request.getAssignedTeam() != null
-                                                                ? request.getAssignedTeam().getName()
-                                                                : null)
+
                                 .createdAt(request.getCreatedAt())
+
                                 .reviewedAt(request.getReviewedAt())
+
                                 .build();
         }
 
@@ -189,14 +237,16 @@ public class SupportRequestService {
                         UUID supportRequestId,
                         ApproveSupportRequest request) {
 
+                // Province đang đăng nhập
                 User currentUser = authenticationService.getCurrentUser();
 
+                // Tìm yêu cầu hỗ trợ
                 SupportRequest supportRequest = supportRequestRepository
                                 .findById(supportRequestId)
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
-                // Kiểm tra xem yêu cầu sos có thuộc tỉnh mình quản lý ko
+                // Kiểm tra SOS có thuộc tỉnh mà Province đang quản lý không
                 if (!supportRequest.getSos()
                                 .getArea()
                                 .getParent()
@@ -206,114 +256,146 @@ public class SupportRequestService {
                         throw new AppException(ErrorCode.NO_PERMISSION);
                 }
 
-                // Kiểm tra xem trạng thái hỗ trợ đã được phê duyệt chưa
+                // Chỉ được duyệt khi yêu cầu còn ở trạng thái PENDING
                 if (supportRequest.getStatus() != SupportRequestStatus.PENDING) {
-
-                        throw new AppException(ErrorCode.SUPPORT_REQUEST_ALREADY_REVIEWED);
+                        throw new AppException(
+                                        ErrorCode.SUPPORT_REQUEST_ALREADY_REVIEWED);
                 }
 
-                // Kiểm tra team phân bố có tồn tại ko
-                RescueTeam team = rescueTeamRepository
-                                .findById(request.getAssignedTeamId())
-                                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
+                // Map các item theo id để tìm nhanh
+                Map<UUID, SupportRequestItem> itemMap = supportRequest.getItems()
+                                .stream()
+                                .collect(Collectors.toMap(
+                                                SupportRequestItem::getId,
+                                                Function.identity()));
+                if (request.getItems().size() != supportRequest.getItems().size()) {
+                        throw new AppException(
+                                        ErrorCode.SUPPORT_REQUEST_NOT_FULLY_REVIEWED);
+                }
+                // Province xử lý từng hạng mục hỗ trợ
+                for (ApproveSupportRequestItem dto : request.getItems()) {
 
-                supportRequest.setStatus(SupportRequestStatus.COMPLETED);
+                        // Kiểm tra item có thuộc support request này không
+                        SupportRequestItem item = itemMap.get(dto.getSupportRequestItemId());
+
+                        if (item == null) {
+                                throw new AppException(
+                                                ErrorCode.SUPPORT_REQUEST_ITEM_NOT_FOUND);
+                        }
+
+                        switch (dto.getStatus()) {
+
+                                // Province đồng ý điều phối
+                                case APPROVED -> {
+
+                                        // Bắt buộc phải chọn Team
+                                        if (dto.getAssignedTeamId() == null) {
+                                                throw new AppException(
+                                                                ErrorCode.ASSIGNED_TEAM_REQUIRED);
+                                        }
+
+                                        // Kiểm tra Team tồn tại
+                                        RescueTeam team = rescueTeamRepository
+                                                        .findById(dto.getAssignedTeamId())
+                                                        .orElseThrow(() -> new AppException(
+                                                                        ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+                                        // Kiểm tra Team có thuộc cùng tỉnh với SOS không
+                                        if (!team.getArea()
+                                                        .getParent()
+                                                        .getId()
+                                                        .equals(supportRequest.getSos()
+                                                                        .getArea()
+                                                                        .getParent()
+                                                                        .getId())) {
+
+                                                throw new AppException(
+                                                                ErrorCode.NO_PERMISSION);
+                                        }
+
+                                        // Giao Team cho hạng mục hỗ trợ
+                                        item.setAssignedTeam(team);
+
+                                        // Cập nhật trạng thái item
+                                        item.setStatus(SupportRequestItemStatus.APPROVED);
+
+                                        // Ghi chú của Province
+                                        item.setProvinceNote(dto.getProvinceResponse());
+                                }
+
+                                // Province từ chối điều phối hạng mục này
+                                case REJECTED -> {
+
+                                        item.setAssignedTeam(null);
+
+                                        item.setStatus(SupportRequestItemStatus.REJECTED);
+
+                                        item.setProvinceNote(dto.getProvinceResponse());
+                                }
+
+                                default ->
+                                        throw new AppException(
+                                                        ErrorCode.INVALID_SUPPORT_ITEM_STATUS);
+                        }
+                }
+
+                // Đánh dấu Province đã xử lý xong toàn bộ Support Request
+                supportRequest.setStatus(
+                                SupportRequestStatus.APPROVED);
 
                 supportRequest.setApprovedBy(currentUser);
 
-                supportRequest.setAssignedTeam(team);
-                ;
-
-                supportRequest.setProvinceResponse(request.getProvinceResponse());
-
-                supportRequest.setReviewedAt(LocalDateTime.now());
+                supportRequest.setReviewedAt(
+                                LocalDateTime.now());
 
                 supportRequestRepository.save(supportRequest);
         }
 
-        // Từ chối hỗ trợ
-        @Transactional
-        public void reject(
-                        UUID supportRequestId,
-                        RejectSupportRequest request) {
-
-                User currentUser = authenticationService.getCurrentUser();
-
-                SupportRequest supportRequest = supportRequestRepository
-                                .findById(supportRequestId)
-                                .orElseThrow(() -> new AppException(
-                                                ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
-
-                // Kiểm tra xem yêu cầu sos có thuộc tỉnh mình quản lý ko
-                if (!supportRequest.getSos()
-                                .getArea()
-                                .getParent()
-                                .getId()
-                                .equals(currentUser.getArea().getId())) {
-
-                        throw new AppException(ErrorCode.NO_PERMISSION);
-                }
-
-                // Kiểm tra xem trạng thái hỗ trợ đã được phê duyệt chưa
-                if (supportRequest.getStatus() != SupportRequestStatus.PENDING) {
-
-                        throw new AppException(ErrorCode.SUPPORT_REQUEST_ALREADY_REVIEWED);
-                }
-
-                supportRequest.setStatus(SupportRequestStatus.REJECTED);
-
-                supportRequest.setApprovedBy(currentUser);
-
-                supportRequest.setProvinceResponse(request.getProvinceResponse());
-
-                supportRequest.setReviewedAt(LocalDateTime.now());
-
-                supportRequestRepository.save(supportRequest);
-        }
-
-        // Team leader từ chối yêu cầu chi viện
+        // Team leader từ chối hạng mục chi viện
         @Transactional
         public void teamReject(
-                        UUID supportRequestId,
+                        UUID supportRequestItemId,
                         RejectAssignedSupportRequest request) {
 
+                // Team leader đang đăng nhập
                 User currentUser = authenticationService.getCurrentUser();
 
-                // Load đơn hỗ trợ
-                SupportRequest supportRequest = supportRequestRepository
-                                .findById(supportRequestId)
+                // Tìm hạng mục hỗ trợ
+                SupportRequestItem item = supportRequestItemRepository
+                                .findById(supportRequestItemId)
                                 .orElseThrow(() -> new AppException(
-                                                ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
+                                                ErrorCode.SUPPORT_REQUEST_ITEM_NOT_FOUND));
 
-                // Chỉ cho từ chối khi status đang APPROVED
-                if (supportRequest.getStatus() != SupportRequestStatus.APPROVED) {
-
-                        throw new AppException(ErrorCode.INVALID_SUPPORT_REQUEST_STATUS);
+                // Chỉ được từ chối khi Province đã giao Team
+                if (item.getStatus() != SupportRequestItemStatus.APPROVED) {
+                        throw new AppException(
+                                        ErrorCode.INVALID_SUPPORT_REQUEST_STATUS);
                 }
 
-                // Kiểm tra team leader
+                // Kiểm tra người đăng nhập có phải Team Leader không
                 RescueTeam myTeam = rescueTeamRepository
-                                .findByLeaderId(
-                                                currentUser.getId())
-                                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
+                                .findByLeaderId(currentUser.getId())
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.NO_PERMISSION));
 
-                // Kiểm tra có đúng team đc giao không
-                if (!supportRequest
-                                .getAssignedTeam()
-                                .getId()
-                                .equals(myTeam.getId())) {
+                // Kiểm tra hạng mục này có được giao cho Team của mình không
+                if (item.getAssignedTeam() == null
+                                || !item.getAssignedTeam().getId().equals(myTeam.getId())) {
 
-                        throw new AppException(ErrorCode.NO_PERMISSION);
+                        throw new AppException(
+                                        ErrorCode.NO_PERMISSION);
                 }
 
-                // Từ chối chi viện
-                supportRequest.setStatus(SupportRequestStatus.TEAM_REJECTED);
+                // Cập nhật trạng thái
+                item.setStatus(SupportRequestItemStatus.TEAM_REJECTED);
 
-                supportRequest.setTeamResponse(request.getReason());
+                // Lưu lý do từ chối
+                item.setTeamResponse(request.getReason());
 
-                supportRequest.setReviewedAt(LocalDateTime.now());
+                // Bỏ Team hiện tại để Province có thể phân công lại
+                item.setAssignedTeam(null);
 
-                supportRequestRepository.save(supportRequest);
+                supportRequestItemRepository.save(item);
         }
 
         // Team leader xem danh sách yêu cầu đc tỉnh giao cho
@@ -337,71 +419,108 @@ public class SupportRequestService {
 
         @Transactional
         public UUID assignGroup(
-                        UUID supportRequestId,
+                        UUID supportRequestItemId,
                         AssignSupportGroupRequest request) {
 
+                // Team leader đang đăng nhập
                 User currentUser = authenticationService.getCurrentUser();
 
-                SupportRequest supportRequest = supportRequestRepository
-                                .findById(supportRequestId)
+                // Tìm hạng mục hỗ trợ
+                SupportRequestItem item = supportRequestItemRepository
+                                .findById(supportRequestItemId)
                                 .orElseThrow(() -> new AppException(
-                                                ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
-                // Kiểm tra request support đc duyệt chưa
-                if (supportRequest.getStatus() != SupportRequestStatus.APPROVED) {
+                                                ErrorCode.SUPPORT_REQUEST_ITEM_NOT_FOUND));
 
+                // Chỉ được phân group khi Province đã duyệt
+                if (item.getStatus() != SupportRequestItemStatus.APPROVED) {
                         throw new AppException(
                                         ErrorCode.SUPPORT_REQUEST_NOT_APPROVED);
                 }
-                // Kiểm tra team leader có phải của team đc giao ko
+
+                // Kiểm tra đã phân đủ số group chưa
+                if (item.getAssignedGroupCount() >= item.getRequiredGroupCount()) {
+                        throw new AppException(
+                                        ErrorCode.SUPPORT_GROUP_ALREADY_ASSIGNED_ENOUGH);
+                }
+
+                // Team leader của Team được giao
                 RescueTeam myTeam = rescueTeamRepository
-                                .findByLeaderId(
-                                                currentUser.getId())
+                                .findByLeaderId(currentUser.getId())
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.NO_PERMISSION));
 
-                if (!supportRequest
-                                .getAssignedTeam()
-                                .getId()
-                                .equals(myTeam.getId())) {
+                // Kiểm tra item có thuộc Team này không
+                if (item.getAssignedTeam() == null
+                                || !item.getAssignedTeam().getId().equals(myTeam.getId())) {
 
                         throw new AppException(
                                         ErrorCode.NO_PERMISSION);
                 }
 
-                // Lấy group
+                // Lấy Group
                 RescueGroup group = groupRepository
                                 .findById(request.getGroupId())
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.RESCUE_GROUP_NOT_FOUND));
 
-                if (group.getStatus() != RescueGroupStatus.AVAILABLE) {
-                        throw new AppException(ErrorCode.GROUP_NOT_AVAILABLE);
-                }
-
-                // Kiểm tra group có thuộc team hỗ trợ
-                if (!group.getTeam().getId()
-                                .equals(myTeam.getId())) {
-
+                // Group phải thuộc Team
+                if (!group.getTeam().getId().equals(myTeam.getId())) {
                         throw new AppException(
                                         ErrorCode.NO_PERMISSION);
                 }
 
-                // Kiểm tra đã giao nhiệm vụ hỗ trợ chưa
-                if (sosAssignmentRepository
-                                .existsBySosIdAndGroupId(
-                                                supportRequest.getSos().getId(),
-                                                group.getId())) {
+                // Group phải AVAILABLE
+                if (group.getStatus() != RescueGroupStatus.AVAILABLE) {
+                        throw new AppException(
+                                        ErrorCode.GROUP_NOT_AVAILABLE);
+                }
+
+                // Kiểm tra năng lực Group
+                switch (item.getSupportType()) {
+
+                        case BOAT -> {
+                                if (!group.isHasBoat()) {
+                                        throw new AppException(
+                                                        ErrorCode.GROUP_NOT_SUPPORT_TYPE);
+                                }
+                        }
+
+                        case MEDICAL -> {
+                                if (!group.isHasMedical()) {
+                                        throw new AppException(
+                                                        ErrorCode.GROUP_NOT_SUPPORT_TYPE);
+                                }
+                        }
+
+                        case SEARCH_RESCUE -> {
+                                if (!group.isHasSearchRescue()) {
+                                        throw new AppException(
+                                                        ErrorCode.GROUP_NOT_SUPPORT_TYPE);
+                                }
+                        }
+
+                        case LOGISTICS -> {
+                                if (!group.isHasLogistics()) {
+                                        throw new AppException(
+                                                        ErrorCode.GROUP_NOT_SUPPORT_TYPE);
+                                }
+                        }
+                }
+
+                // Không cho phân cùng một Group nhiều lần cho cùng SOS
+                if (sosAssignmentRepository.existsBySosIdAndGroupId(
+                                item.getSupportRequest().getSos().getId(),
+                                group.getId())) {
 
                         throw new AppException(
                                         ErrorCode.SOS_ALREADY_ASSIGNED);
                 }
 
-                SosRequest sos = supportRequest.getSos();
-
-                // Tạo assignment
+                // Tạo Assignment
                 SosAssignment assignment = SosAssignment.builder()
-                                .sos(sos)
+                                .sos(item.getSupportRequest().getSos())
                                 .group(group)
+                                .supportRequestItem(item)
                                 .assignedBy(currentUser)
                                 .role(AssignmentRole.SUPPORT)
                                 .status(AssignmentStatus.ASSIGNED)
@@ -411,20 +530,96 @@ public class SupportRequestService {
 
                 sosAssignmentRepository.save(assignment);
 
-                // Chuyển group sang busy
-                group.setStatus(
-                                RescueGroupStatus.BUSY);
-
+                // Group chuyển sang BUSY
+                group.setStatus(RescueGroupStatus.BUSY);
                 groupRepository.save(group);
 
-                // Đánh dấu support request đã được giao cho group
-                supportRequest.setStatus(
-                                SupportRequestStatus.APPROVED);
+                // Tăng số group đã phân
+                item.setAssignedGroupCount(
+                                item.getAssignedGroupCount() + 1);
 
-                supportRequestRepository.save(
-                                supportRequest);
+                supportRequestItemRepository.save(item);
 
                 return assignment.getId();
+        }
+
+        // Danh sách các team trong 1 tỉnh
+        @Transactional(readOnly = true)
+        public List<RescueTeamSupportResponse> getCandidateTeams(
+                        UUID supportRequestId) {
+
+                SupportRequest supportRequest = supportRequestRepository
+                                .findById(supportRequestId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
+
+                // Team đang gửi yêu cầu hỗ trợ
+                UUID excludeTeamId = supportRequest
+                                .getRequestedBy()
+                                .getTeam()
+                                .getId();
+
+                // Province của SOS
+                UUID provinceId = supportRequest
+                                .getSos()
+                                .getArea()
+                                .getParent()
+                                .getId();
+
+                return rescueTeamRepository
+                                .findAllSupportTeams(
+                                                provinceId,
+                                                excludeTeamId)
+                                .stream()
+                                .map(team -> RescueTeamSupportResponse.builder()
+                                                .id(team.getId())
+                                                .teamName(team.getName())
+
+                                                // Hiển thị trên bản đồ
+                                                .areaId(team.getArea().getId())
+                                                .lat(team.getLat())
+                                                .lon(team.getLon())
+
+                                                // Leader
+                                                .leaderName(
+                                                                team.getLeader() != null
+                                                                                ? team.getLeader().getHoten()
+                                                                                : null)
+                                                .leaderPhone(
+                                                                team.getLeader() != null
+                                                                                ? team.getLeader().getSodt()
+                                                                                : null)
+
+                                                // Hotline
+                                                .emergencyPhone(team.getEmergencyPhone())
+
+                                                // Resource
+                                                .availableBoatGroups(
+                                                                groupRepository
+                                                                                .countByTeamIdAndHasBoatTrueAndStatus(
+                                                                                                team.getId(),
+                                                                                                RescueGroupStatus.AVAILABLE))
+
+                                                .availableMedicalGroups(
+                                                                groupRepository
+                                                                                .countByTeamIdAndHasMedicalTrueAndStatus(
+                                                                                                team.getId(),
+                                                                                                RescueGroupStatus.AVAILABLE))
+
+                                                .availableSearchRescueGroups(
+                                                                groupRepository
+                                                                                .countByTeamIdAndHasSearchRescueTrueAndStatus(
+                                                                                                team.getId(),
+                                                                                                RescueGroupStatus.AVAILABLE))
+
+                                                .availableLogisticsGroups(
+                                                                groupRepository
+                                                                                .countByTeamIdAndHasLogisticsTrueAndStatus(
+                                                                                                team.getId(),
+                                                                                                RescueGroupStatus.AVAILABLE))
+
+                                                .build())
+                                .toList();
         }
 
 }

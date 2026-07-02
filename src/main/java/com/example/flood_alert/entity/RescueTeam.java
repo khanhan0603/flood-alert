@@ -47,6 +47,13 @@ public class RescueTeam extends BaseEntity {
     @Column(name = "emergency_phone", length = 20)
     String emergencyPhone;
 
+    //Lat,lon -> vị trí trụ sở chính của team
+    @Column(nullable = false)
+    Double lat;
+
+    @Column(nullable = false)
+    Double lon;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     LocalDateTime createdAt;

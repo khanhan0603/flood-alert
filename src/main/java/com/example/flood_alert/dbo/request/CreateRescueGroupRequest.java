@@ -22,5 +22,8 @@ public class CreateRescueGroupRequest {
 
     Boolean hasMedical;
 
+    Boolean hasSearchRescue;
+
+    Boolean hasLogistics;
     String notes;
 }

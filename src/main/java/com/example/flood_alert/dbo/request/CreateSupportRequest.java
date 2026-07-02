@@ -1,10 +1,11 @@
 package com.example.flood_alert.dbo.request;
+
+import java.util.List;
 import java.util.UUID;
 
-import com.example.flood_alert.enums.SupportType;
-
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,11 +18,10 @@ import lombok.experimental.FieldDefaults;
 public class CreateSupportRequest {
     UUID sosId;
 
-    @NotNull
-    SupportType supportType;
-
-    UUID suggestedGroupId;
-
     @NotBlank
     String reason;
+
+    @NotEmpty
+    @Valid
+    List<CreateSupportRequestItem> items;
 }

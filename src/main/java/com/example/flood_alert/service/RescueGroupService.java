@@ -48,25 +48,43 @@ public class RescueGroupService {
         UserRepository userRepository;
         AuthenticationService authenticationService;
 
-        public RescueGroupResponse create(UUID teamId, CreateRescueGroupRequest request) {
+        public RescueGroupResponse create(
+                        UUID teamId,
+                        CreateRescueGroupRequest request) {
 
                 RescueTeam team = rescueTeamRepository.findById(teamId)
                                 .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
 
-                if (rescueGroupRepository
-                                .existsByTeamIdAndName(
-                                                teamId,
-                                                request.getName())) {
+                if (rescueGroupRepository.existsByTeamIdAndName(
+                                teamId,
+                                request.getName())) {
 
                         throw new AppException(ErrorCode.RESCUE_GROUP_EXISTED);
                 }
+
+                // Năng lực của nhóm
+                boolean hasSearchRescue = Boolean.TRUE.equals(request.getHasSearchRescue());
+                boolean hasLogistics = Boolean.TRUE.equals(request.getHasLogistics());
+
+                // Search & Rescue và Logistics mặc định có xuồng + y tế
+                boolean hasBoat = Boolean.TRUE.equals(request.getHasBoat())
+                                || hasSearchRescue
+                                || hasLogistics;
+
+                boolean hasMedical = Boolean.TRUE.equals(request.getHasMedical())
+                                || hasSearchRescue
+                                || hasLogistics;
 
                 RescueGroup group = RescueGroup.builder()
                                 .team(team)
                                 .name(request.getName())
                                 .status(RescueGroupStatus.AVAILABLE)
-                                .hasBoat(Boolean.TRUE.equals(request.getHasBoat()))
-                                .hasMedical(Boolean.TRUE.equals(request.getHasMedical()))
+
+                                .hasBoat(hasBoat)
+                                .hasMedical(hasMedical)
+                                .hasSearchRescue(hasSearchRescue)
+                                .hasLogistics(hasLogistics)
+
                                 .notes(request.getNotes())
                                 .createdAt(LocalDateTime.now())
                                 .updatedAt(LocalDateTime.now())
@@ -77,11 +95,17 @@ public class RescueGroupService {
                 return RescueGroupResponse.builder()
                                 .id(group.getId())
                                 .name(group.getName())
+
                                 .teamId(team.getId())
                                 .teamName(team.getName())
+
                                 .status(group.getStatus())
+
                                 .hasBoat(group.isHasBoat())
                                 .hasMedical(group.isHasMedical())
+                                .hasSearchRescue(group.isHasSearchRescue())
+                                .hasLogistics(group.isHasLogistics())
+
                                 .notes(group.getNotes())
                                 .build();
         }
@@ -260,5 +284,4 @@ public class RescueGroupService {
                 rescueGroupMemberRepository.delete(member);
         }
 
-        
 }

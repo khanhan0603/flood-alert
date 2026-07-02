@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.entity.RescueGroup;
+import com.example.flood_alert.enums.RescueGroupStatus;
 
 public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> {
     boolean existsByTeamIdAndName(UUID teamId, String name);
@@ -24,6 +25,8 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
                     rg.status,
                     rg.hasBoat,
                     rg.hasMedical,
+                    rg.hasSearchRescue,
+                    rg.hasLogistics,
                     rg.notes)
                FROM RescueGroup rg
                WHERE rg.team.id = :teamId
@@ -38,9 +41,28 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
 
     // Số group của 1 đội
     long countByTeamId(UUID teamId);
-    
-    //Kiem tra co phai group leader khong
+
+    // Kiem tra co phai group leader khong
     boolean existsByLeaderId(UUID leaderId);
 
-    
+    // Số lượng group boat của team
+    long countByTeamIdAndHasBoatTrueAndStatus(
+            UUID teamId,
+            RescueGroupStatus status);
+
+    // Số lượng group medical của team
+    long countByTeamIdAndHasMedicalTrueAndStatus(
+            UUID teamId,
+            RescueGroupStatus status);
+
+            // Số lượng group search rescue của team
+    long countByTeamIdAndHasSearchRescueTrueAndStatus(
+            UUID teamId,
+            RescueGroupStatus status);
+
+            // Số lượng group logistics của team
+    long countByTeamIdAndHasLogisticsTrueAndStatus(
+            UUID teamId,
+            RescueGroupStatus status);
+
 }

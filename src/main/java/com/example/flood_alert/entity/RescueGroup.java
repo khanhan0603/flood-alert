@@ -60,7 +60,13 @@ public class RescueGroup extends BaseEntity {
 
     boolean hasMedical;
 
-    @Column(columnDefinition ="TEXT")
+    //Nhóm tìm kiếm cứu nạn
+    boolean hasSearchRescue;
+
+    //Nhóm hậu cần: nhu yếu phẩm, đồ ăn, thức uống
+    boolean hasLogistics;
+
+    @Column(columnDefinition = "TEXT")
     String notes;
 
     @CreationTimestamp

@@ -18,17 +18,20 @@ import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
+import com.example.flood_alert.entity.SupportRequestItem;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.AssignmentRole;
 import com.example.flood_alert.enums.AssignmentStatus;
 import com.example.flood_alert.enums.RescueGroupStatus;
 import com.example.flood_alert.enums.StatusSOS;
+import com.example.flood_alert.enums.SupportRequestItemStatus;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
+import com.example.flood_alert.repository.SupportRequestItemRepository;
 import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
@@ -41,339 +44,342 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class SosAssignmentService {
-    SosAssignmentRepository sosAssignmentRepository;
-    SosRequestRepository sosRequestRepository;
-    RescueTeamRepository rescueTeamRepository;
-    RescueGroupRepository rescueGroupRepository;
-    UserRepository userRepository;
-    AuthenticationService authenticationService;
+        SosAssignmentRepository sosAssignmentRepository;
+        SosRequestRepository sosRequestRepository;
+        RescueTeamRepository rescueTeamRepository;
+        RescueGroupRepository rescueGroupRepository;
+        UserRepository userRepository;
+        AuthenticationService authenticationService;
+        SupportRequestItemRepository supportRequestItemRepository;
 
-    // Giao nhiệm vụ cho group từ team leader
-    @CacheEvict(value = "team-dashboard", allEntries = true)
-    @Transactional
-    public UUID assignGroup(UUID sosId, UUID groupId, AssignmentRole role, String note, UUID leaderId) {
-        // Tìm yêu cầu sos theo id
-        SosRequest sos = sosRequestRepository.findById(sosId)
-                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
+        // Giao nhiệm vụ cho group từ team leader
+        @CacheEvict(value = "team-dashboard", allEntries = true)
+        @Transactional
+        public UUID assignGroup(UUID sosId, UUID groupId, AssignmentRole role, String note, UUID leaderId) {
+                // Tìm yêu cầu sos theo id
+                SosRequest sos = sosRequestRepository.findById(sosId)
+                                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
 
-        // Tìm group theo id
-        RescueGroup group = rescueGroupRepository.findById(groupId)
-                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_GROUP_NOT_FOUND));
+                // Tìm group theo id
+                RescueGroup group = rescueGroupRepository.findById(groupId)
+                                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_GROUP_NOT_FOUND));
 
-        // Tìm team leader theo id
-        User leader = userRepository.findById(leaderId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                // Tìm team leader theo id
+                User leader = userRepository.findById(leaderId)
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        // Kiểm tra xem người đó có phải leader của team ko
-        if (!group.getTeam().getId().equals(leader.getTeam().getId())) {
-            throw new AppException(ErrorCode.NO_PERMISSION);
-        }
-
-        SosAssignment assignment = SosAssignment.builder()
-                .sos(sos)
-                .group(group)
-                .assignedBy(leader)
-                .role(role)
-                .status(AssignmentStatus.ASSIGNED)
-                .assignedAt(LocalDateTime.now())
-                .note(note)
-                .build();
-        sosAssignmentRepository.save(assignment).getId();
-        // Cập nhật trạng thái cho yêu cầu sos
-        sos.setStatus(StatusSOS.ASSIGNED);
-        sosRequestRepository.save(sos);
-        return assignment.getId();
-    }
-
-    // Hàm cập nhật trạng thái cho nhiệm vụ do group leader làm
-    public void updateStatus(UUID assignmentId, AssignmentStatus newStatus, String note, UUID currentUserId) {
-        // Tìm kiếm nhiệm vụ theo Id
-        SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
-                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
-
-        // Kiem tra nguoi dung hien tai co phai la leader cua group khong
-        if (!assignment.getGroup().getLeader().getId().equals(currentUserId)) {
-            throw new AppException(ErrorCode.NO_PERMISSION);
-        }
-        assignment.setStatus(newStatus);
-        switch (newStatus) {
-            case ACKNOWLEDGED ->
-                assignment.setAcknowledgedAt(LocalDateTime.now());
-            case ARRIVED -> assignment.setArrivedAt(LocalDateTime.now());
-            case COMPLETED -> assignment.setCompletedAt(LocalDateTime.now());
-            default ->
-                {
-
+                // Kiểm tra xem người đó có phải leader của team ko
+                if (!group.getTeam().getId().equals(leader.getTeam().getId())) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
                 }
-        }
-        assignment.setNote(note);
-        sosAssignmentRepository.save(assignment);
-        updateSosStatus(assignment.getSos().getId());
-    }
 
-    // Cập nhật trạng thái cho yêu cầu sos
-    private void updateSosStatus(UUID sosId) {
-        List<SosAssignment> assignments = sosAssignmentRepository.findBySosId(sosId);
-
-        boolean hasProcessing = assignments.stream()
-                .anyMatch(a -> a.getStatus() == AssignmentStatus.ACKNOWLEDGED
-                        || a.getStatus() == AssignmentStatus.MOVING
-                        || a.getStatus() == AssignmentStatus.ARRIVED
-                        || a.getStatus() == AssignmentStatus.RESCUING);
-        boolean allCompleted = !assignments.isEmpty()
-                &&
-                assignments.stream()
-                        .allMatch(a -> a.getStatus() == AssignmentStatus.COMPLETED);
-
-        SosRequest sos = sosRequestRepository.findById(sosId)
-                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
-
-        if (allCompleted) {
-            sos.setStatus(StatusSOS.DONE);
-        } else if (hasProcessing) {
-            sos.setStatus(StatusSOS.PROCESSING);
+                SosAssignment assignment = SosAssignment.builder()
+                                .sos(sos)
+                                .group(group)
+                                .assignedBy(leader)
+                                .role(role)
+                                .status(AssignmentStatus.ASSIGNED)
+                                .assignedAt(LocalDateTime.now())
+                                .note(note)
+                                .build();
+                sosAssignmentRepository.save(assignment).getId();
+                // Cập nhật trạng thái cho yêu cầu sos
+                sos.setStatus(StatusSOS.ASSIGNED);
+                sosRequestRepository.save(sos);
+                return assignment.getId();
         }
 
-        sosRequestRepository.save(sos);
-    }
+        // Cập nhật trạng thái cho yêu cầu sos
+        private void updateSosStatus(UUID sosId) {
+                List<SosAssignment> assignments = sosAssignmentRepository.findBySosId(sosId);
 
-    // Leader giao nhiệm vụ cho group
-    @Transactional
-    public UUID assignGroup(AssignGroupRequest request) {
+                boolean hasProcessing = assignments.stream()
+                                .anyMatch(a -> a.getStatus() == AssignmentStatus.ACKNOWLEDGED
+                                                || a.getStatus() == AssignmentStatus.MOVING
+                                                || a.getStatus() == AssignmentStatus.ARRIVED
+                                                || a.getStatus() == AssignmentStatus.RESCUING);
+                boolean allCompleted = !assignments.isEmpty()
+                                &&
+                                assignments.stream()
+                                                .allMatch(a -> a.getStatus() == AssignmentStatus.COMPLETED);
 
-        User currentUser = authenticationService.getCurrentUser();
+                SosRequest sos = sosRequestRepository.findById(sosId)
+                                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
 
-        RescueTeam team = rescueTeamRepository.findByLeaderId(currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
+                if (allCompleted) {
+                        sos.setStatus(StatusSOS.DONE);
+                } else if (hasProcessing) {
+                        sos.setStatus(StatusSOS.PROCESSING);
+                }
 
-        SosRequest sos = sosRequestRepository
-                .findById(request.getSosId())
-                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
-
-        // SOS phải thuộc Team của Leader
-        if (!sos.getTeam().getId().equals(team.getId())) {
-            throw new AppException(ErrorCode.NO_PERMISSION);
+                sosRequestRepository.save(sos);
         }
 
-        RescueGroup group = rescueGroupRepository
-                .findById(request.getGroupId())
-                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
+        // Leader giao nhiệm vụ cho group
+        @Transactional
+        public UUID assignGroup(AssignGroupRequest request) {
 
-        // Chỉ được assign Group trong Team mình
-        if (!group.getTeam().getId().equals(team.getId())) {
-            throw new AppException(ErrorCode.NO_PERMISSION);
-        }
+                User currentUser = authenticationService.getCurrentUser();
 
-        // Group phải đang AVAILABLE
-        if (group.getStatus() != RescueGroupStatus.AVAILABLE) {
-            throw new AppException(ErrorCode.GROUP_NOT_AVAILABLE);
-        }
+                RescueTeam team = rescueTeamRepository.findByLeaderId(currentUser.getId())
+                                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
 
-        SosAssignment assignment = SosAssignment.builder()
-                .sos(sos)
-                .group(group)
-                .assignedBy(currentUser)
-                .role(request.getRole())
-                .status(AssignmentStatus.ASSIGNED)
-                .assignedAt(LocalDateTime.now())
-                .note(request.getNote())
-                .build();
+                SosRequest sos = sosRequestRepository
+                                .findById(request.getSosId())
+                                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
 
-        sosAssignmentRepository.save(assignment);
+                // SOS phải thuộc Team của Leader
+                if (!sos.getTeam().getId().equals(team.getId())) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
 
-        // SOS chuyển sang ASSIGNED
-        if (sos.getStatus() == StatusSOS.PENDING) {
-            sos.setStatus(StatusSOS.ASSIGNED);
-            sosRequestRepository.save(sos);
-        }
+                RescueGroup group = rescueGroupRepository
+                                .findById(request.getGroupId())
+                                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
 
-        // Group chuyển BUSY
-        group.setStatus(RescueGroupStatus.BUSY);
-        rescueGroupRepository.save(group);
+                // Chỉ được assign Group trong Team mình
+                if (!group.getTeam().getId().equals(team.getId())) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
 
-        return assignment.getId();
-    }
+                // Group phải đang AVAILABLE
+                if (group.getStatus() != RescueGroupStatus.AVAILABLE) {
+                        throw new AppException(ErrorCode.GROUP_NOT_AVAILABLE);
+                }
 
-    // Trả về danh sách các status assignment
-    @Transactional(readOnly = true)
-    public List<AssignmentStatusOptionResponse> getAvailableStatuses(UUID assignmentId) {
-        User currentUser = authenticationService.getCurrentUser();
+                SosAssignment assignment = SosAssignment.builder()
+                                .sos(sos)
+                                .group(group)
+                                .assignedBy(currentUser)
+                                .role(request.getRole())
+                                .status(AssignmentStatus.ASSIGNED)
+                                .assignedAt(LocalDateTime.now())
+                                .note(request.getNote())
+                                .build();
 
-        SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
-                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+                sosAssignmentRepository.save(assignment);
 
-        // Không phải group leader
-        if (!assignment.getGroup().getLeader().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.NO_PERMISSION);
-        }
+                // SOS chuyển sang ASSIGNED
+                if (sos.getStatus() == StatusSOS.PENDING) {
+                        sos.setStatus(StatusSOS.ASSIGNED);
+                        sosRequestRepository.save(sos);
+                }
 
-        List<AssignmentStatus> nextStatus = getNextStatuses(assignment.getStatus());
-
-        return nextStatus.stream()
-                .map(status -> AssignmentStatusOptionResponse.builder()
-                        .code(status.name())
-                        .name(getDisplayName(status))
-                        .build())
-                .toList();
-    }
-
-    // Rule chuyển trạng thái
-    private List<AssignmentStatus> getNextStatuses(
-            AssignmentStatus currentStatus) {
-
-        return switch (currentStatus) {
-
-            case ASSIGNED ->
-                List.of(AssignmentStatus.ACKNOWLEDGED);
-
-            case ACKNOWLEDGED ->
-                List.of(
-                        AssignmentStatus.MOVING,
-                        AssignmentStatus.FAILED);
-
-            case MOVING ->
-                List.of(
-                        AssignmentStatus.ARRIVED,
-                        AssignmentStatus.FAILED);
-
-            case ARRIVED ->
-                List.of(
-                        AssignmentStatus.RESCUING,
-                        AssignmentStatus.FAILED);
-
-            case RESCUING ->
-                List.of(
-                        AssignmentStatus.COMPLETED,
-                        AssignmentStatus.FAILED);
-
-            case COMPLETED, FAILED ->
-                Collections.emptyList();
-        };
-    }
-
-    // Tên hiển thị trạng thái
-    private String getDisplayName(
-            AssignmentStatus status) {
-
-        return switch (status) {
-
-            case ASSIGNED -> "Đã giao nhiệm vụ";
-
-            case ACKNOWLEDGED -> "Đã xác nhận";
-
-            case MOVING -> "Đang di chuyển";
-
-            case ARRIVED -> "Đã đến hiện trường";
-
-            case RESCUING -> "Đang cứu hộ";
-
-            case COMPLETED -> "Hoàn thành";
-
-            case FAILED -> "Thất bại";
-        };
-    }
-
-    // Group leader nhận nhiệm vụ và cập nhật status
-    @Transactional
-    public void updateStatus(UUID assignmentId, UpdateAssignmentStatusRequest request) {
-        User currentUser = authenticationService.getCurrentUser();
-
-        // Không tìm thấy nhiệm vụ
-        SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
-                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
-
-        // Không phải group leader
-        if (!assignment.getGroup().getLeader().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.NO_PERMISSION);
-        }
-
-        AssignmentStatus newStatus = request.getStatus();
-
-        assignment.setStatus(newStatus);
-
-        assignment.setNote(request.getNote());
-
-        switch (newStatus) {
-            case ACKNOWLEDGED -> assignment.setAcknowledgedAt(LocalDateTime.now());
-            case ARRIVED -> assignment.setArrivedAt(LocalDateTime.now());
-            case COMPLETED -> {
-                assignment.setCompletedAt(LocalDateTime.now());
-
-                RescueGroup group = assignment.getGroup();
-                group.setStatus(RescueGroupStatus.AVAILABLE);
-
+                // Group chuyển BUSY
+                group.setStatus(RescueGroupStatus.BUSY);
                 rescueGroupRepository.save(group);
-            }
-            default -> {
-            }
-        }
-        sosAssignmentRepository.save(assignment);
-        updateSosStatus(assignment.getSos().getId());
-    }
 
-    // Danh sách nhiệm vụ của group
-    @Transactional(readOnly = true)
-    public List<GroupAssignmentResponse> getMyAssignments() {
-
-        User currentUser = authenticationService.getCurrentUser();
-
-        return sosAssignmentRepository
-                .findMyAssignments(
-                        currentUser.getId())
-                .stream()
-                .map(this::toGroupResponse)
-                .toList();
-    }
-
-    private GroupAssignmentResponse toGroupResponse(
-            SosAssignment assignment) {
-
-        GroupAssignmentResponse.GroupAssignmentResponseBuilder builder = GroupAssignmentResponse.builder()
-                .assignmentId(assignment.getId())
-                .sosId(assignment.getSos().getId())
-                .role(assignment.getRole())
-                .status(assignment.getStatus())
-                .priority(assignment.getSos().getPriority())
-                .lat(assignment.getSos().getLat())
-                .lon(assignment.getSos().getLon());
-
-        // Nếu group đang xem danh sách là group hỗ trợ
-        if (assignment.getRole() == AssignmentRole.SUPPORT) {
-
-            sosAssignmentRepository
-                    .findPrimaryAssignment(
-                            assignment.getSos().getId())
-                    .ifPresent(primary -> {
-
-                        builder.primaryGroupId(
-                                primary.getGroup().getId());
-
-                        builder.primaryGroupName(
-                                primary.getGroup().getName());
-                    });
+                return assignment.getId();
         }
 
-        // Nếu group đang xem danh sách là group chính
-        if (assignment.getRole() == AssignmentRole.PRIMARY) {
+        // Trả về danh sách các status assignment
+        @Transactional(readOnly = true)
+        public List<AssignmentStatusOptionResponse> getAvailableStatuses(UUID assignmentId) {
+                User currentUser = authenticationService.getCurrentUser();
 
-            List<SupportGroupResponse> supportGroups = sosAssignmentRepository
-                    .findSupportAssignments(
-                            assignment.getSos().getId())
-                    .stream()
-                    .map(sa -> SupportGroupResponse
-                            .builder()
-                            .groupId(
-                                    sa.getGroup().getId())
-                            .groupName(
-                                    sa.getGroup().getName())
-                            .status(
-                                    sa.getStatus())
-                            .build())
-                    .toList();
+                SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
+                                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
 
-            builder.supportGroups(supportGroups);
+                // Không phải group leader
+                if (!assignment.getGroup().getLeader().getId().equals(currentUser.getId())) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                List<AssignmentStatus> nextStatus = getNextStatuses(assignment.getStatus());
+
+                return nextStatus.stream()
+                                .map(status -> AssignmentStatusOptionResponse.builder()
+                                                .code(status.name())
+                                                .name(getDisplayName(status))
+                                                .build())
+                                .toList();
         }
 
-        return builder.build();
-    }
+        // Rule chuyển trạng thái
+        private List<AssignmentStatus> getNextStatuses(
+                        AssignmentStatus currentStatus) {
+
+                return switch (currentStatus) {
+
+                        case ASSIGNED ->
+                                List.of(AssignmentStatus.ACKNOWLEDGED);
+
+                        case ACKNOWLEDGED ->
+                                List.of(
+                                                AssignmentStatus.MOVING,
+                                                AssignmentStatus.FAILED);
+
+                        case MOVING ->
+                                List.of(
+                                                AssignmentStatus.ARRIVED,
+                                                AssignmentStatus.FAILED);
+
+                        case ARRIVED ->
+                                List.of(
+                                                AssignmentStatus.RESCUING,
+                                                AssignmentStatus.FAILED);
+
+                        case RESCUING ->
+                                List.of(
+                                                AssignmentStatus.COMPLETED,
+                                                AssignmentStatus.FAILED);
+
+                        case COMPLETED, FAILED ->
+                                Collections.emptyList();
+                };
+        }
+
+        // Tên hiển thị trạng thái
+        private String getDisplayName(
+                        AssignmentStatus status) {
+
+                return switch (status) {
+
+                        case ASSIGNED -> "Đã giao nhiệm vụ";
+
+                        case ACKNOWLEDGED -> "Đã xác nhận";
+
+                        case MOVING -> "Đang di chuyển";
+
+                        case ARRIVED -> "Đã đến hiện trường";
+
+                        case RESCUING -> "Đang cứu hộ";
+
+                        case COMPLETED -> "Hoàn thành";
+
+                        case FAILED -> "Thất bại";
+                };
+        }
+
+        // Group leader nhận nhiệm vụ và cập nhật status
+        @Transactional
+        public void updateStatus(UUID assignmentId, UpdateAssignmentStatusRequest request) {
+                User currentUser = authenticationService.getCurrentUser();
+
+                // Không tìm thấy nhiệm vụ
+                SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
+                                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+                // Không phải group leader
+                if (!assignment.getGroup().getLeader().getId().equals(currentUser.getId())) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                AssignmentStatus newStatus = request.getStatus();
+
+                assignment.setStatus(newStatus);
+
+                assignment.setNote(request.getNote());
+
+                switch (newStatus) {
+                        case ACKNOWLEDGED -> assignment.setAcknowledgedAt(LocalDateTime.now());
+                        case ARRIVED -> assignment.setArrivedAt(LocalDateTime.now());
+                        case COMPLETED -> {
+
+                                assignment.setCompletedAt(LocalDateTime.now());
+
+                                RescueGroup group = assignment.getGroup();
+
+                                group.setStatus(RescueGroupStatus.AVAILABLE);
+
+                                rescueGroupRepository.save(group);
+
+                                // Nếu đây là assignment hỗ trợ
+                                if (assignment.getSupportRequestItem() != null) {
+
+                                        SupportRequestItem item = assignment.getSupportRequestItem();
+
+                                        item.setCompletedGroupCount(
+                                                        item.getCompletedGroupCount() + 1);
+
+                                        // Khi tất cả các group đã hoàn thành
+                                        if (item.getCompletedGroupCount() >= item.getRequiredGroupCount()) {
+
+                                                item.setStatus(
+                                                                SupportRequestItemStatus.COMPLETED);
+                                        }
+
+                                        supportRequestItemRepository.save(item);
+                                }
+                        }
+                        case FAILED -> {
+
+                                RescueGroup group = assignment.getGroup();
+
+                                group.setStatus(RescueGroupStatus.AVAILABLE);
+
+                                rescueGroupRepository.save(group);
+                        }
+                        default -> {
+                        }
+                }
+                sosAssignmentRepository.save(assignment);
+                updateSosStatus(assignment.getSos().getId());
+        }
+
+        // Danh sách nhiệm vụ của group
+        @Transactional(readOnly = true)
+        public List<GroupAssignmentResponse> getMyAssignments() {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                return sosAssignmentRepository
+                                .findMyAssignments(
+                                                currentUser.getId())
+                                .stream()
+                                .map(this::toGroupResponse)
+                                .toList();
+        }
+
+        private GroupAssignmentResponse toGroupResponse(
+                        SosAssignment assignment) {
+
+                GroupAssignmentResponse.GroupAssignmentResponseBuilder builder = GroupAssignmentResponse.builder()
+                                .assignmentId(assignment.getId())
+                                .sosId(assignment.getSos().getId())
+                                .role(assignment.getRole())
+                                .status(assignment.getStatus())
+                                .priority(assignment.getSos().getPriority())
+                                .lat(assignment.getSos().getLat())
+                                .lon(assignment.getSos().getLon());
+
+                // Nếu group đang xem danh sách là group hỗ trợ
+                if (assignment.getRole() == AssignmentRole.SUPPORT) {
+
+                        sosAssignmentRepository
+                                        .findPrimaryAssignment(
+                                                        assignment.getSos().getId())
+                                        .ifPresent(primary -> {
+
+                                                builder.primaryGroupId(
+                                                                primary.getGroup().getId());
+
+                                                builder.primaryGroupName(
+                                                                primary.getGroup().getName());
+                                        });
+                }
+
+                // Nếu group đang xem danh sách là group chính
+                if (assignment.getRole() == AssignmentRole.PRIMARY) {
+
+                        List<SupportGroupResponse> supportGroups = sosAssignmentRepository
+                                        .findSupportAssignments(
+                                                        assignment.getSos().getId())
+                                        .stream()
+                                        .map(sa -> SupportGroupResponse
+                                                        .builder()
+                                                        .groupId(
+                                                                        sa.getGroup().getId())
+                                                        .groupName(
+                                                                        sa.getGroup().getName())
+                                                        .status(
+                                                                        sa.getStatus())
+                                                        .build())
+                                        .toList();
+
+                        builder.supportGroups(supportGroups);
+                }
+
+                return builder.build();
+        }
 }

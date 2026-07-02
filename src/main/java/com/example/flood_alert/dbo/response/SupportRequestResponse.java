@@ -1,6 +1,7 @@
 package com.example.flood_alert.dbo.response;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.example.flood_alert.enums.SupportRequestStatus;
@@ -28,7 +29,7 @@ public class SupportRequestResponse {
 
     SupportRequestStatus status;
 
-    SupportType supportType;
+    List<SupportRequestItemResponse> items;
 
     String reason;
 
@@ -36,16 +37,9 @@ public class SupportRequestResponse {
 
     String requestedByName;
 
-    UUID assignedTeamId;
-    String assignedTeamName;
-
     UUID approvedById;
 
     String approvedByName;
-
-    String provinceResponse;
-
-    String teamResponse;
 
     LocalDateTime createdAt;
 

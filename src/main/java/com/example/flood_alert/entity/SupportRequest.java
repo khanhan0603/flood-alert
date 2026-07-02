@@ -1,12 +1,15 @@
 package com.example.flood_alert.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.example.flood_alert.enums.SupportRequestStatus;
-import com.example.flood_alert.enums.SupportType;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -50,9 +53,8 @@ public class SupportRequest extends BaseEntity {
     @Column(nullable = false)
     SupportRequestStatus status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    SupportType supportType;
+    @OneToMany(mappedBy= "supportRequest", cascade= CascadeType.ALL, orphanRemoval = true)
+    List<SupportRequestItem> items = new ArrayList<>();
 
     @Column(nullable = false, length = 500)
     String reason;
@@ -67,18 +69,4 @@ public class SupportRequest extends BaseEntity {
     LocalDateTime reviewedAt;
     @CreationTimestamp
     LocalDateTime createdAt;
-
-    // Nhóm cứu hộ đc yêu cầu chi viện
-    @ManyToOne
-    @JoinColumn(name = "suggested_group_id")
-    RescueGroup suggestedGroup;
-
-    // Đội cứu hộ đc giao chi viện
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_team_id")
-    RescueTeam assignedTeam;
-
-    //Phản hồi của đội chi viện
-    @Column(columnDefinition = "TEXT")
-    String teamResponse;
 }
