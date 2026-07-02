@@ -13,5 +13,7 @@ public interface UserFcmTokenRepository
 
     List<UserFcmToken> findByUser(User user);
 
+    List<UserFcmToken> findByUserId(UUID userId);
+
     boolean existsByToken(String token);
 }

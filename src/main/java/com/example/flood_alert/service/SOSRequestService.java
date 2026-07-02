@@ -75,6 +75,7 @@ public class SOSRequestService {
 
         SupportRequestMapper supportRequestMapper;
         AuthenticationService authenticationService;
+        NotificationService notificationService;
 
         List<StatusSOS> ACTIVE_STATUSES = List.of(
                         StatusSOS.PENDING,
@@ -245,6 +246,14 @@ public class SOSRequestService {
 
                 // Hibernate flush xuống DB ngay lập tức và đồng bộ lại entity
                 sos = sosRequestRepository.saveAndFlush(sos);
+
+                // Gửi thông báo cho Team Leader của Team phụ trách
+                if (team.getLeader() != null) {
+
+                        notificationService.sendNewSosNotification(
+                                        team.getLeader(),
+                                        sos);
+                }
 
                 // 8. Response
                 SosResponse response = sosRequestMapper.toResponse(sos);
