@@ -34,8 +34,11 @@ import com.example.flood_alert.dbo.response.RowError;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderResponse;
 import com.example.flood_alert.entity.Area;
+import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.User;
+import com.example.flood_alert.enums.RescueGroupStatus;
+import com.example.flood_alert.enums.RescueGroupType;
 import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
@@ -62,6 +65,7 @@ public class RescueTeamService {
     PasswordEncoder passwordEncoder;
     AuthenticationService authenticationService;
 
+    @Transactional
     public RescueTeamResponse create(CreateRescueTeamRequest request) {
 
         if (rescueTeamRepository.existsByName(request.getName())) {
@@ -75,11 +79,27 @@ public class RescueTeamService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .area(area)
-                .lat(request.getLon())
-                .lon(request.getLat())
+                .lat(request.getLat())
+                .lon(request.getLon())
                 .emergencyPhone(request.getEmergencyPhone())
                 .build();
         team = rescueTeamRepository.save(team);
+
+        // Lưu 1 group hotline khi tạo team
+        // Lưu 1 group Hotline khi tạo Team
+        RescueGroup hotline = RescueGroup.builder()
+                .team(team)
+                .name("Hotline")
+                .type(RescueGroupType.HOTLINE)
+                .status(RescueGroupStatus.AVAILABLE)
+                .hasBoat(false)
+                .hasMedical(false)
+                .hasSearchRescue(false)
+                .hasLogistics(false)
+                .notes("Nhóm trực Hotline của đội.")
+                .build();
+
+        rescueGroupRepository.save(hotline);
 
         return RescueTeamResponse.builder()
                 .id(team.getId())
@@ -407,29 +427,6 @@ public class RescueTeamService {
             throw new AppException(ErrorCode.LIST_TEAM_NOT_FOUND);
         }
         return page;
-    }
-
-    // Lấy số điện thoại liên hệ của đội gần người dân nhất
-    @Transactional(readOnly = true)
-    public EmergencyContactResponse getEmergencyContact(
-            BigDecimal lat,
-            BigDecimal lon) {
-
-        UUID areaId = areaRepository.findAreaIdByLatLon(lat, lon);
-
-        if (areaId == null) {
-            throw new AppException(ErrorCode.AREA_NOT_FOUND);
-        }
-
-        RescueTeam team = rescueTeamRepository
-                .findByArea_Id(areaId)
-                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
-
-        return EmergencyContactResponse.builder()
-                .teamId(team.getId())
-                .teamName(team.getName())
-                .emergencyPhone(team.getEmergencyPhone())
-                .build();
     }
 
     // Cập nhật thông tin đội

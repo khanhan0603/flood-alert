@@ -25,5 +25,6 @@ public class CreateRescueGroupRequest {
     Boolean hasSearchRescue;
 
     Boolean hasLogistics;
+
     String notes;
 }

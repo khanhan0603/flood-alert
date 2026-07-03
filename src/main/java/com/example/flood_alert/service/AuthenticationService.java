@@ -193,6 +193,25 @@ public class AuthenticationService {
 
     }
 
+    //Hàm lấy người dùng nếu có đăng nhập trên hệ thống phục vụ tạo sos
+    public User getCurrentUserOrNull() {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+
+            return null;
+        }
+
+        UUID userId = UUID.fromString(authentication.getName());
+
+        return userRepository.findById(userId).orElse(null);
+    }
+
     // Logout
     @Transactional
     public void logout(LogoutRequest request)

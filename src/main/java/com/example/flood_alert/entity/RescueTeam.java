@@ -1,5 +1,6 @@
 package com.example.flood_alert.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -48,11 +49,11 @@ public class RescueTeam extends BaseEntity {
     String emergencyPhone;
 
     //Lat,lon -> vị trí trụ sở chính của team
-    @Column(nullable = false)
-    Double lat;
+    @Column(name = "caller_lat", precision = 10, scale = 7, nullable = false)
+    BigDecimal lat;
 
-    @Column(nullable = false)
-    Double lon;
+    @Column(name = "caller_lon", precision = 10, scale = 7, nullable = false)
+    BigDecimal lon;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

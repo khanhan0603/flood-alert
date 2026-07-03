@@ -1,5 +1,6 @@
 package com.example.flood_alert.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,7 +66,6 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
                             FROM SosRequest s
                             WHERE s.anonymous = true
                               AND s.sodt = :sodt
-                              AND s.clientDeviceId = :clientDeviceId
                               AND s.status IN (
                                     com.example.flood_alert.enums.StatusSOS.PENDING,
                                     com.example.flood_alert.enums.StatusSOS.PROCESSING
@@ -74,7 +74,6 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
                         """)
         Page<SosRequest> findAnonymousActiveSos(
                         @Param("sodt") String sodt,
-                        @Param("clientDeviceId") String clientDeviceId,
                         Pageable pageable);
 
         // Tìm các yêu cầu theo đội cứu hộ, sắp xếp theo trạng thái, ngày tạo mà các yêu
@@ -113,4 +112,28 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
 
         // Đếm số sos request của team theo status
         long countByTeamIdAndStatus(UUID teamId, StatusSOS status);
+
+        /**
+         * Kiểm tra mã tra cứu đã tồn tại hay chưa.
+         * Dùng khi sinh trackingCode để đảm bảo tính duy nhất.
+         */
+        boolean existsByTrackingCode(String trackingCode);
+
+        /**
+         * Tra cứu một SOS theo mã trackingCode.
+         * Dùng cho API public và Operator tra cứu trạng thái SOS.
+         */
+        Optional<SosRequest> findByTrackingCode(String trackingCode);
+
+        /**
+         * Lấy danh sách SOS theo số điện thoại người yêu cầu cứu hộ.
+         * Sắp xếp mới nhất trước.
+         * Dùng khi Operator tra cứu các lần yêu cầu cứu hộ của người dân
+         * khi họ gọi lại Hotline.
+         */
+        List<SosRequest> findBySodtOrderByCreatedAtDesc(String sodt);
+
+        Optional<SosRequest> findFirstBySodtAndStatusIn(
+                        String sodt,
+                        Collection<StatusSOS> statuses);
 }

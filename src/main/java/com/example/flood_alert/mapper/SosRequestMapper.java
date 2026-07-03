@@ -10,5 +10,6 @@ import com.example.flood_alert.entity.SosRequest;
 public interface SosRequestMapper {
 
     @Mapping(target = "alreadyExists", ignore = true)
+    @Mapping(target = "callEventId", source = "linkedCallEvent.id")
     SosResponse toResponse(SosRequest sos);
 }

@@ -30,6 +30,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             """)
     Optional<User> findActiveByEmailOrPhone(String username);
 
+    @Query("""
+                SELECT u
+                FROM User u
+                WHERE u.trangthai = :status
+                  AND u.sodt = :username
+            """)
+    Optional<User> findBySodtAndStatus(String username,Status status);
+
     Optional<User> findByEmail(String email);
 
     Optional<User> findBySodt(String sodt);

@@ -24,6 +24,7 @@ import com.example.flood_alert.entity.RescueGroupMemberId;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.RescueGroupStatus;
+import com.example.flood_alert.enums.RescueGroupType;
 import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
@@ -79,7 +80,7 @@ public class RescueGroupService {
                                 .team(team)
                                 .name(request.getName())
                                 .status(RescueGroupStatus.AVAILABLE)
-
+                                .type(RescueGroupType.OPERATIONAL)
                                 .hasBoat(hasBoat)
                                 .hasMedical(hasMedical)
                                 .hasSearchRescue(hasSearchRescue)
@@ -89,7 +90,9 @@ public class RescueGroupService {
                                 .createdAt(LocalDateTime.now())
                                 .updatedAt(LocalDateTime.now())
                                 .build();
-
+                //Check xem có tạo nhầm nhóm hotline với năng lực ko đc phép ko
+                validateHotlineGroup(group);
+                
                 group = rescueGroupRepository.save(group);
 
                 return RescueGroupResponse.builder()
@@ -108,6 +111,20 @@ public class RescueGroupService {
 
                                 .notes(group.getNotes())
                                 .build();
+        }
+
+        private void validateHotlineGroup(RescueGroup group) {
+
+                if (group.getType() == RescueGroupType.HOTLINE) {
+
+                        if (group.isHasBoat()
+                                        || group.isHasMedical()
+                                        || group.isHasSearchRescue()
+                                        || group.isHasLogistics()) {
+
+                                throw new AppException(ErrorCode.INVALID_HOTLINE_GROUP_CAPABILITY);
+                        }
+                }
         }
 
         public List<AvailableMemberResponse> getAvailableMembers(

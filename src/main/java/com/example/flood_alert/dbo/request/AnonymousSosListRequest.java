@@ -11,7 +11,4 @@ import lombok.experimental.FieldDefaults;
 public class AnonymousSosListRequest {
     @NotBlank
     String sodt;
-
-    @NotBlank
-    String clientDeviceId;
 }

@@ -1,66 +1,60 @@
 package com.example.flood_alert.service;
 
 import org.springframework.stereotype.Component;
-
-import com.example.flood_alert.dbo.request.CreateSosRequest;
 import com.example.flood_alert.enums.EnvironmentRisk;
 import com.example.flood_alert.enums.Priority;
 
 @Component
 public class SosPriorityCalculator {
     public Priority calculate(
-            CreateSosRequest request,
+            Integer victimCount,
+            Boolean injured,
+            Boolean trapped,
+            Boolean vulnerable,
             EnvironmentRisk environmentRisk) {
-
-        boolean injured = request.getInjured();
-
-        boolean trapped = request.getTrapped();
-
-        boolean vulnerable = request.getVulnerable();
-
-        int victimCount = request.getVictimCount();
-
         // =====================
         // CRITICAL
         // =====================
 
-        if (trapped && injured) {
+        if (Boolean.TRUE.equals(trapped)
+                && Boolean.TRUE.equals(injured)) {
             return Priority.CRITICAL;
         }
 
-        if (trapped && vulnerable) {
+        if (Boolean.TRUE.equals(trapped)
+                && Boolean.TRUE.equals(vulnerable)) {
             return Priority.CRITICAL;
         }
 
-        if (trapped
+        if (Boolean.TRUE.equals(trapped)
                 && environmentRisk == EnvironmentRisk.HIGH) {
             return Priority.CRITICAL;
         }
 
-        if (injured
-                && vulnerable
+        if (Boolean.TRUE.equals(injured)
+                && Boolean.TRUE.equals(vulnerable)
                 && environmentRisk == EnvironmentRisk.HIGH) {
             return Priority.CRITICAL;
         }
-
         // =====================
         // HIGH
         // =====================
 
-        if (trapped) {
+        if (Boolean.TRUE.equals(trapped)) {
             return Priority.HIGH;
         }
 
-        if (injured && vulnerable) {
+        if (Boolean.TRUE.equals(injured)
+                && Boolean.TRUE.equals(vulnerable)) {
             return Priority.HIGH;
         }
 
-        if (injured
+        if (Boolean.TRUE.equals(injured)
                 && environmentRisk == EnvironmentRisk.HIGH) {
             return Priority.HIGH;
         }
 
-        if (vulnerable
+        if (Boolean.TRUE.equals(vulnerable)
                 && environmentRisk == EnvironmentRisk.HIGH) {
             return Priority.HIGH;
         }
@@ -74,11 +68,11 @@ public class SosPriorityCalculator {
         // MEDIUM
         // =====================
 
-        if (injured) {
+        if (Boolean.TRUE.equals(injured)) {
             return Priority.MEDIUM;
         }
 
-        if (vulnerable) {
+        if (Boolean.TRUE.equals(vulnerable)) {
             return Priority.MEDIUM;
         }
 

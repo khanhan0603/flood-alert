@@ -1,5 +1,6 @@
 package com.example.flood_alert.dbo.request;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
@@ -17,9 +18,9 @@ public class CreateRescueTeamRequest {
     @NotNull
     UUID areaId;
 
-    Double lat;
+    BigDecimal lat;
 
-    Double lon;
+    BigDecimal lon;
 
     @Pattern(regexp = "^(0|\\+84)[0-9]{9,10}$", message = "Số điện thoại không hợp lệ")
     String emergencyPhone;

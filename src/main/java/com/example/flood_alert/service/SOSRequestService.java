@@ -1,8 +1,12 @@
 package com.example.flood_alert.service;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
+
+import javax.xml.stream.events.Characters;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -26,7 +30,9 @@ import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.EnvironmentRisk;
+import com.example.flood_alert.enums.LocationSource;
 import com.example.flood_alert.enums.Priority;
+import com.example.flood_alert.enums.SosSource;
 import com.example.flood_alert.enums.StatusSOS;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
@@ -76,7 +82,9 @@ public class SOSRequestService {
         SupportRequestMapper supportRequestMapper;
         AuthenticationService authenticationService;
         NotificationService notificationService;
+        private static final String CHARACTERS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
+        private static final SecureRandom RANDOM = new SecureRandom();
         List<StatusSOS> ACTIVE_STATUSES = List.of(
                         StatusSOS.PENDING,
                         StatusSOS.PROCESSING);
@@ -85,7 +93,7 @@ public class SOSRequestService {
         @CacheEvict(value = "team-dashboard", allEntries = true)
         public SosResponse create(CreateSosRequest request, HttpServletRequest httpRequest) {
 
-                User currentUser = authenticationService.getCurrentUser();
+                User currentUser = authenticationService.getCurrentUserOrNull();
 
                 boolean anonymous = currentUser == null;
 
@@ -179,12 +187,20 @@ public class SOSRequestService {
                 EnvironmentRisk environmentRisk = environmentRiskEvaluator.evaluate(snapshot);
 
                 // 4. Tính Priority
-                Priority priority = sosPriorityCalculator.calculate(request, environmentRisk);
+                Priority priority = sosPriorityCalculator.calculate(
+                                request.getVictimCount(),
+                                request.getInjured(),
+                                request.getTrapped(),
+                                request.getVulnerable(),
+                                environmentRisk);
 
                 // 5. Sinh PriorityReason
                 String priorityReason = priorityReasonGenerator.generate(
                                 priority,
-                                request,
+                                request.getVictimCount(),
+                                request.getInjured(),
+                                request.getTrapped(),
+                                request.getVulnerable(),
                                 environmentRisk);
 
                 // 6. Tạo SOS
@@ -242,6 +258,14 @@ public class SOSRequestService {
 
                                 .team(team)
 
+                                .createdByUser(currentUser)
+
+                                .sosSource(SosSource.DIRECT)
+
+                                .trackingCode(generateTrackingCode())
+
+                                .locationSource(LocationSource.MANUAL_ADDRESS)
+
                                 .build();
 
                 // Hibernate flush xuống DB ngay lập tức và đồng bộ lại entity
@@ -261,6 +285,19 @@ public class SOSRequestService {
                 response.setAlreadyExists(false);
 
                 return response;
+        }
+
+        public static String generateTrackingCode() {
+
+                StringBuilder sb = new StringBuilder(6);
+
+                for (int i = 0; i < 6; i++) {
+                        sb.append(
+                                        CHARACTERS.charAt(
+                                                        RANDOM.nextInt(CHARACTERS.length())));
+                }
+
+                return sb.toString();
         }
 
         @Transactional
@@ -393,7 +430,6 @@ public class SOSRequestService {
                 Page<SosRequest> page = sosRequestRepository
                                 .findAnonymousActiveSos(
                                                 request.getSodt(),
-                                                request.getClientDeviceId(),
                                                 pageable);
                 if (page.isEmpty()) {
                         throw new AppException(

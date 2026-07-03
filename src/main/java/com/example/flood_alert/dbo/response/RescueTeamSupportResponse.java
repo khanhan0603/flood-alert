@@ -1,4 +1,5 @@
 package com.example.flood_alert.dbo.response;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import lombok.AccessLevel;
@@ -22,9 +23,9 @@ public class RescueTeamSupportResponse {
 
     UUID areaId;
 
-    Double lat;
+    BigDecimal lat;
 
-    Double lon;
+    BigDecimal lon;
 
     String leaderName;
 
@@ -40,7 +41,7 @@ public class RescueTeamSupportResponse {
 
     Long availableLogisticsGroups;
 
-    Double distanceKm;
+    BigDecimal distanceKm;
 
      // true nếu là đội đang yêu cầu hỗ trợ
     Boolean requesterTeam;

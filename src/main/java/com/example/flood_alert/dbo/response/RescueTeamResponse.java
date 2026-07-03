@@ -1,5 +1,6 @@
 package com.example.flood_alert.dbo.response;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import lombok.Builder;
@@ -22,9 +23,9 @@ public class RescueTeamResponse {
 
     String leaderName;
 
-    Double lat;
+    BigDecimal lat;
 
-    Double lon;
+    BigDecimal lon;
 
     String emergencyPhone;
 }

@@ -7,7 +7,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.flood_alert.enums.EnvironmentRisk;
+import com.example.flood_alert.enums.LocationSource;
 import com.example.flood_alert.enums.Priority;
+import com.example.flood_alert.enums.SosSource;
 import com.example.flood_alert.enums.StatusSOS;
 
 import jakarta.persistence.Column;
@@ -112,17 +114,17 @@ public class SosRequest extends BaseEntity {
     // 11.5 cm/phút
     Double snapshotWaterRise;
 
-    //Snapshot tỉ lệ cảm biến vượt ngưỡng
+    // Snapshot tỉ lệ cảm biến vượt ngưỡng
     Double snapshotDangerRatio;
 
-    //Snapshot dự báo lũ của AI theo thời tiết
+    // Snapshot dự báo lũ của AI theo thời tiết
     Double snapshotPredictionProbability;
 
     // Thời điểm cập nhật vị trí gần nhất
     // Lần tạo SOS đầu tiên sẽ bằng createdAt
     LocalDateTime lastLocationUpdate;
 
-    //Vị trí hiện tại có đáng tin ko, lỡ người dân nhập tay sai vị trí
+    // Vị trí hiện tại có đáng tin ko, lỡ người dân nhập tay sai vị trí
     @Column(nullable = false)
     Boolean locationConfirmed;
 
@@ -132,7 +134,7 @@ public class SosRequest extends BaseEntity {
     StatusSOS status = StatusSOS.PENDING;
 
     @CreationTimestamp
-    @Column(nullable = false,updatable = false, name = "created_at")
+    @Column(nullable = false, updatable = false, name = "created_at")
     LocalDateTime createdAt;
 
     @UpdateTimestamp
@@ -142,4 +144,37 @@ public class SosRequest extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = false)
     RescueTeam team;
+
+    // User tạo bản ghi SOS.
+    // - DIRECT: là người dân gửi SOS.
+    // - HOTLINE_OPERATOR: là Operator tiếp nhận cuộc gọi và tạo SOS thay người dân.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id")
+    User createdByUser;
+
+    // Nguồn tạo SOS.
+    // - DIRECT: người dân tự gửi từ ứng dụng.
+    // - HOTLINE_OPERATOR: Operator tạo thay người dân qua Hotline.
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sos_source", nullable = false)
+    SosSource sosSource = SosSource.DIRECT;
+
+    // EmergencyCallEvent được dùng để tạo SOS này.
+    // Null nếu người dân gửi trực tiếp hoặc Operator nhập tay toàn bộ thông tin.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "linked_call_event_id")
+    EmergencyCallEvent linkedCallEvent;
+
+    // Nguồn xác định vị trí của SOS.
+    // - GPS_FROM_CALL_EVENT: sử dụng GPS đã lưu khi người dân bấm nút "Gọi SOS".
+    // - MANUAL_ADDRESS: Operator nhập địa chỉ người dân cung cấp qua điện thoại.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "location_source")
+    LocationSource locationSource;
+
+    // Mã tra cứu để người dân theo dõi trạng thái SOS.
+    // Sinh tự động, gồm 6 ký tự và duy nhất trong toàn hệ thống.
+    @Column(name = "tracking_code", length = 6, nullable = false, unique = true)
+    String trackingCode;
 }

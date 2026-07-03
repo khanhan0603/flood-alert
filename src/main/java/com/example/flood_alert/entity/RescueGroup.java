@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.flood_alert.enums.RescueGroupStatus;
+import com.example.flood_alert.enums.RescueGroupType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -34,10 +35,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class RescueGroup extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    UUID id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = false)
     RescueTeam team;
@@ -48,6 +45,13 @@ public class RescueGroup extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id")
     User leader;
+
+    //Group hotline đã được tạo mặc định khi tạo đội nên team leader tạo thêm nhóm thì sẽ
+    //mặc định là nhóm type vận hành
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    RescueGroupType type = RescueGroupType.OPERATIONAL;
 
     @Enumerated(EnumType.STRING)
     RescueGroupStatus status;
@@ -60,10 +64,10 @@ public class RescueGroup extends BaseEntity {
 
     boolean hasMedical;
 
-    //Nhóm tìm kiếm cứu nạn
+    // Nhóm tìm kiếm cứu nạn
     boolean hasSearchRescue;
 
-    //Nhóm hậu cần: nhu yếu phẩm, đồ ăn, thức uống
+    // Nhóm hậu cần: nhu yếu phẩm, đồ ăn, thức uống
     boolean hasLogistics;
 
     @Column(columnDefinition = "TEXT")

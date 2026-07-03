@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.example.flood_alert.enums.EnvironmentRisk;
 import com.example.flood_alert.enums.Priority;
+import com.example.flood_alert.enums.SosSource;
 import com.example.flood_alert.enums.StatusSOS;
 
 import lombok.AccessLevel;
@@ -34,6 +35,10 @@ public class SosResponse {
     String priorityReason;
 
     String mota;
+
+    SosSource sosSource;
+
+    UUID callEventId;
 
     LocalDateTime createdAt;
 }

@@ -38,7 +38,7 @@ public class SecurityConfig {
                             "/health",
                             "/auth/**",
                             "/user/register",
-                            "/sos-request",
+                            "/sos-request/**",
                             "/area/**",
                             "/weather-data/**",
                             "/iot-device/register-device",
@@ -48,7 +48,7 @@ public class SecurityConfig {
                             "/sos-request/*/anonymous/cancel",
                             "/sms/**",
                             "/notification/**",
-                            "/res-team/emergency-contact"
+                            "/hotline/emergency-contact"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 ->

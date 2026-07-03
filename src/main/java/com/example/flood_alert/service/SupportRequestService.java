@@ -1,6 +1,7 @@
 package com.example.flood_alert.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -674,32 +675,37 @@ public class SupportRequestService {
                                 .build();
         }
 
-        private Double calculateDistanceKm(
+        private BigDecimal calculateDistanceKm(
                         BigDecimal lat1,
                         BigDecimal lon1,
-                        Double lat2,
-                        Double lon2) {
+                        BigDecimal lat2,
+                        BigDecimal lon2) {
 
                 if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
                         return null;
                 }
 
-                double lat1Value = lat1.doubleValue();
-                double lon1Value = lon1.doubleValue();
-
                 final double EARTH_RADIUS = 6371.0;
 
-                double dLat = Math.toRadians(lat2 - lat1Value);
-                double dLon = Math.toRadians(lon2 - lon1Value);
+                double lat1Value = lat1.doubleValue();
+                double lon1Value = lon1.doubleValue();
+                double lat2Value = lat2.doubleValue();
+                double lon2Value = lon2.doubleValue();
+
+                double dLat = Math.toRadians(lat2Value - lat1Value);
+                double dLon = Math.toRadians(lon2Value - lon1Value);
 
                 double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
                                 + Math.cos(Math.toRadians(lat1Value))
-                                                * Math.cos(Math.toRadians(lat2))
+                                                * Math.cos(Math.toRadians(lat2Value))
                                                 * Math.sin(dLon / 2)
                                                 * Math.sin(dLon / 2);
 
                 double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-                return Math.round(EARTH_RADIUS * c * 100.0) / 100.0;
+                double distance = EARTH_RADIUS * c;
+
+                return BigDecimal.valueOf(distance)
+                                .setScale(2, RoundingMode.HALF_UP);
         }
 }

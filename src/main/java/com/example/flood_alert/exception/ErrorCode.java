@@ -68,6 +68,10 @@ public enum ErrorCode {
     SUPPORT_REQUEST_NOT_FULLY_REVIEWED(1058,"Cần xử lý hết tất cả các chi tiết yêu cầu hỗ trợ!"),
     SUPPORT_GROUP_ALREADY_ASSIGNED_ENOUGH(1059,"Đã phân công đủ số nhóm cứu hộ!"),
     GROUP_NOT_SUPPORT_TYPE(1060,"Loại hỗ trợ không đúng!"),
+    INVALID_HOTLINE_GROUP_CAPABILITY(1061,"Nhóm Hotline không được có năng lực cứu hộ!"),
+    LOCATION_REQUIRED(1062,"Địa chỉ không được để trống!"),
+    CALL_EVENT_NOT_FOUND(1063,"Không tìm thấy cuộc gọi hoặc cuộc gọi đã được xử lý!"),
+    INVALID_CALL_EVENT_STATUS(1064,"Trang thái cuộc gọi không hợp lệ!"),
     ;
 
     int code;

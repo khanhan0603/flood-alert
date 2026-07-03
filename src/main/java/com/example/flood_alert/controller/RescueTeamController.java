@@ -1,6 +1,5 @@
 package com.example.flood_alert.controller;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,7 +22,6 @@ import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
-import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
@@ -115,17 +113,6 @@ public class RescueTeamController {
                 Pageable pageable = PageRequest.of(page, size);
                 return ApiResponse.<Page<RescueTeamResponse>>builder()
                                 .result(rescueTeamService.getListTeamByArea(areaId, pageable))
-                                .build();
-        }
-
-        // Trả số điện thoại liên hệ của đội gần nhất
-        @GetMapping("/emergency-contact")
-        public ApiResponse<EmergencyContactResponse> getEmergencyContact(
-                        @RequestParam BigDecimal lat,
-                        @RequestParam BigDecimal lon) {
-
-                return ApiResponse.<EmergencyContactResponse>builder()
-                                .result(rescueTeamService.getEmergencyContact(lat, lon))
                                 .build();
         }
 
