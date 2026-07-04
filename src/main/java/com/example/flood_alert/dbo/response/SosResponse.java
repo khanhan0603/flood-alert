@@ -39,6 +39,8 @@ public class SosResponse {
     SosSource sosSource;
 
     UUID callEventId;
+    
+    String trackingCode;
 
     LocalDateTime createdAt;
 }

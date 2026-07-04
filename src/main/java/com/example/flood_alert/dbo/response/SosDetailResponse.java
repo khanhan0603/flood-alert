@@ -53,6 +53,8 @@ public class SosDetailResponse {
 
     StatusSOS status;
 
+    String trackingCode;
+
     LocalDateTime createdAt;
 
     List<SosAssignmentResponse> assignments;

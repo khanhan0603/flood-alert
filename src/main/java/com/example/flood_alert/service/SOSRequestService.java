@@ -1,12 +1,8 @@
 package com.example.flood_alert.service;
 
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
-
-import javax.xml.stream.events.Characters;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -82,9 +78,7 @@ public class SOSRequestService {
         SupportRequestMapper supportRequestMapper;
         AuthenticationService authenticationService;
         NotificationService notificationService;
-        private static final String CHARACTERS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
-
-        private static final SecureRandom RANDOM = new SecureRandom();
+        TrackingCodeGenerator trackingCodeGenerator;
         List<StatusSOS> ACTIVE_STATUSES = List.of(
                         StatusSOS.PENDING,
                         StatusSOS.PROCESSING);
@@ -262,14 +256,11 @@ public class SOSRequestService {
 
                                 .sosSource(SosSource.DIRECT)
 
-                                .trackingCode(generateTrackingCode())
-
                                 .locationSource(LocationSource.MANUAL_ADDRESS)
 
                                 .build();
 
-                // Hibernate flush xuống DB ngay lập tức và đồng bộ lại entity
-                sos = sosRequestRepository.saveAndFlush(sos);
+                sos = trackingCodeGenerator.save(sos);
 
                 // Gửi thông báo cho Team Leader của Team phụ trách
                 if (team.getLeader() != null) {
@@ -286,20 +277,6 @@ public class SOSRequestService {
 
                 return response;
         }
-
-        public static String generateTrackingCode() {
-
-                StringBuilder sb = new StringBuilder(6);
-
-                for (int i = 0; i < 6; i++) {
-                        sb.append(
-                                        CHARACTERS.charAt(
-                                                        RANDOM.nextInt(CHARACTERS.length())));
-                }
-
-                return sb.toString();
-        }
-
         @Transactional
         public SosResponse update(
                         UUID sosId,
@@ -555,6 +532,8 @@ public class SOSRequestService {
                                 .address(sos.getDiachi())
 
                                 .status(sos.getStatus())
+
+                                .trackingCode(sos.getTrackingCode())
 
                                 .createdAt(sos.getCreatedAt())
 

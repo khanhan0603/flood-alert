@@ -114,12 +114,6 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
         long countByTeamIdAndStatus(UUID teamId, StatusSOS status);
 
         /**
-         * Kiểm tra mã tra cứu đã tồn tại hay chưa.
-         * Dùng khi sinh trackingCode để đảm bảo tính duy nhất.
-         */
-        boolean existsByTrackingCode(String trackingCode);
-
-        /**
          * Tra cứu một SOS theo mã trackingCode.
          * Dùng cho API public và Operator tra cứu trạng thái SOS.
          */

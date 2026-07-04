@@ -80,6 +80,7 @@ public class HotlineService {
                         StatusSOS.PROCESSING);
 
         EmergencyCallEventMapper emergencyCallEventMapper;
+        TrackingCodeGenerator trackingCodeGenerator;
 
         // Lấy số điện thoại liên hệ của đội gần người dân nhất
         @Transactional
@@ -322,12 +323,11 @@ public class HotlineService {
 
                                 .linkedCallEvent(callEvent)
 
-                                .trackingCode(generateTrackingCode())
 
                                 .build();
 
                 // Lưu
-                sos = sosRequestRepository.saveAndFlush(sos);
+                sos = trackingCodeGenerator.save(sos);
 
                 // Nếu tạo từ emergencyCallEvent
                 if (callEvent != null) {
@@ -354,18 +354,6 @@ public class HotlineService {
 
                 return response;
         }
-
-        private String generateTrackingCode() {
-
-                String code;
-
-                do {
-                        code = SOSRequestService.generateTrackingCode();
-                } while (sosRequestRepository.existsByTrackingCode(code));
-
-                return code;
-        }
-
         private void validateCreateHotlineSosRequest(
                         CreateHotlineSosRequest request) {
 
