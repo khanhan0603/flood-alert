@@ -47,7 +47,7 @@ public class SosRequestController {
         public ApiResponse<SosResponse> create(
                         @RequestBody CreateSosRequest request,
                         HttpServletRequest httpRequest) {
-                                 System.out.println("========== CREATE ==========");
+                System.out.println("========== CREATE ==========");
                 return ApiResponse.<SosResponse>builder()
                                 .result(sosRequestService.create(request, httpRequest))
                                 .build();
@@ -179,7 +179,7 @@ public class SosRequestController {
                                 .build();
         }
 
-        //Cancel người có tài khoản
+        // Cancel người có tài khoản
         @PatchMapping("/{sosId}/cancel")
         public ApiResponse<Void> cancel(
                         @PathVariable UUID sosId) {
@@ -188,6 +188,19 @@ public class SosRequestController {
 
                 return ApiResponse.<Void>builder()
                                 .message("Hủy yêu cầu cứu hộ thành công.")
+                                .build();
+        }
+
+        /**
+         * Tra cứu thông tin SOS bằng mã tracking.
+         * Người dân không cần đăng nhập.
+         */
+        @GetMapping("/tracking/{trackingCode}")
+        public ApiResponse<SosResponse> getByTrackingCode(
+                        @PathVariable String trackingCode) {
+
+                return ApiResponse.<SosResponse>builder()
+                                .result(sosRequestService.getByTrackingCode(trackingCode))
                                 .build();
         }
 }

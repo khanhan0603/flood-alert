@@ -73,6 +73,7 @@ public enum ErrorCode {
     CALL_EVENT_NOT_FOUND(1063,"Không tìm thấy cuộc gọi hoặc cuộc gọi đã được xử lý!"),
     INVALID_CALL_EVENT_STATUS(1064,"Trang thái cuộc gọi không hợp lệ!"),
     GENERATE_TRACKING_CODE_FAILED(1065,"Không thể tạo mã tra cứu. Vui lòng thử lại!"),
+    TRACKING_CODE_REQUIRED(1066,"Mã tra cứu không được để trống!"),
     ;
 
     int code;

@@ -277,6 +277,7 @@ public class SOSRequestService {
 
                 return response;
         }
+
         @Transactional
         public SosResponse update(
                         UUID sosId,
@@ -603,5 +604,25 @@ public class SOSRequestService {
                 sos.setStatus(StatusSOS.CANCELED);
 
                 sosRequestRepository.save(sos);
+        }
+
+        // Tra cứu sos theo tracking code cho người dân
+        @Transactional(readOnly = true)
+        public SosResponse getByTrackingCode(
+                        String trackingCode) {
+                if (trackingCode == null || trackingCode.isBlank()) {
+                        throw new AppException(ErrorCode.TRACKING_CODE_REQUIRED);
+                }
+
+                SosRequest sos = sosRequestRepository
+                                .findByTrackingCode(trackingCode)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.SOS_NOT_FOUND));
+
+                SosResponse response = sosRequestMapper.toResponse(sos);
+
+                response.setAlreadyExists(false);
+
+                return response;
         }
 }
