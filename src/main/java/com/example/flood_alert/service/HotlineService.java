@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.CreateHotlineSosRequest;
 import com.example.flood_alert.dbo.request.EmergencyContactRequest;
+import com.example.flood_alert.dbo.request.SearchHotlineSosRequest;
 import com.example.flood_alert.dbo.response.CallEventResponse;
 import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
@@ -323,7 +324,6 @@ public class HotlineService {
 
                                 .linkedCallEvent(callEvent)
 
-
                                 .build();
 
                 // Lưu
@@ -354,6 +354,7 @@ public class HotlineService {
 
                 return response;
         }
+
         private void validateCreateHotlineSosRequest(
                         CreateHotlineSosRequest request) {
 
@@ -411,5 +412,29 @@ public class HotlineService {
                                                 status,
                                                 pageable)
                                 .map(emergencyCallEventMapper::toResponse);
+        }
+
+        // Tra cứu cho hotline
+        @Transactional(readOnly = true)
+        public Page<SosResponse> searchHotlineSos(
+                        SearchHotlineSosRequest request,
+                        Pageable pageable) {
+
+                String keyword = request.getKeyword();
+
+                if (keyword != null) {
+                        keyword = keyword.trim();
+
+                        if (keyword.isBlank()) {
+                                keyword = null;
+                        }
+                }
+
+                return sosRequestRepository
+                                .searchHotlineSos(
+                                                keyword,
+                                                request.getStatus(),
+                                                pageable)
+                                .map(sosRequestMapper::toResponse);
         }
 }
