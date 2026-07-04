@@ -467,4 +467,14 @@ public class HotlineService {
                         case CANCELED -> "Đã hủy";
                 };
         }
+
+        // Danh sách các sos do hotline nhập thủ công
+        @Transactional(readOnly = true)
+        public Page<SosResponse> getManualHotlineSos(
+                        Pageable pageable) {
+
+                return sosRequestRepository
+                                .findManualHotlineSos(pageable)
+                                .map(sosRequestMapper::toResponse);
+        }
 }

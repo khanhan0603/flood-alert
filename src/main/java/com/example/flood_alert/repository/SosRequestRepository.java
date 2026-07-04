@@ -160,4 +160,18 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
             @Param("keyword") String keyword,
             @Param("status") StatusSOS status,
             Pageable pageable);
+
+    /**
+     * Danh sách SOS do Operator nhập tay.
+     */
+    @Query("""
+                SELECT s
+                FROM SosRequest s
+                WHERE
+                    s.sosSource = com.example.flood_alert.enums.SosSource.HOTLINE_OPERATOR
+                    AND s.linkedCallEvent IS NULL
+                ORDER BY s.createdAt DESC
+            """)
+    Page<SosRequest> findManualHotlineSos(
+            Pageable pageable);
 }

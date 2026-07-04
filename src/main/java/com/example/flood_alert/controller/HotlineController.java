@@ -134,4 +134,17 @@ public class HotlineController {
                                 .result(hotlineService.getStatusOptions())
                                 .build();
         }
+
+        /**
+         * Danh sách các SOS do Operator nhập tay.
+         */
+        @GetMapping("/manual-sos")
+        public ApiResponse<Page<SosResponse>> getManualHotlineSos(
+
+                        @PageableDefault(size = 20) Pageable pageable) {
+
+                return ApiResponse.<Page<SosResponse>>builder()
+                                .result(hotlineService.getManualHotlineSos(pageable))
+                                .build();
+        }
 }
