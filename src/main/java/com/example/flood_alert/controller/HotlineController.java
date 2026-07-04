@@ -1,5 +1,6 @@
 package com.example.flood_alert.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.example.flood_alert.dbo.response.SosResponse;
+import com.example.flood_alert.dbo.response.StatusOptionResponse;
 import com.example.flood_alert.enums.CallEventStatus;
 
 import lombok.AccessLevel;
@@ -118,6 +120,18 @@ public class HotlineController {
                                 .result(hotlineService.searchHotlineSos(
                                                 request,
                                                 pageable))
+                                .build();
+        }
+
+        /**
+         * Danh sách trạng thái SOS.
+         * Dùng để hiển thị ComboBox trên giao diện.
+         */
+        @GetMapping("/status-options")
+        public ApiResponse<List<StatusOptionResponse>> getStatusOptions() {
+
+                return ApiResponse.<List<StatusOptionResponse>>builder()
+                                .result(hotlineService.getStatusOptions())
                                 .build();
         }
 }

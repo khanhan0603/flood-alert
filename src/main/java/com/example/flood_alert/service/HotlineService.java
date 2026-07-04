@@ -2,6 +2,7 @@ package com.example.flood_alert.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import com.example.flood_alert.dbo.request.SearchHotlineSosRequest;
 import com.example.flood_alert.dbo.response.CallEventResponse;
 import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
+import com.example.flood_alert.dbo.response.StatusOptionResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.EmergencyCallEvent;
@@ -436,5 +438,33 @@ public class HotlineService {
                                                 request.getStatus(),
                                                 pageable)
                                 .map(sosRequestMapper::toResponse);
+        }
+
+        // Combo box chọn status
+        @Transactional(readOnly = true)
+        public List<StatusOptionResponse> getStatusOptions() {
+
+                return Arrays.stream(StatusSOS.values())
+                                .map(status -> StatusOptionResponse.builder()
+                                                .value(status.name())
+                                                .label(getStatusLabel(status))
+                                                .build())
+                                .toList();
+        }
+
+        private String getStatusLabel(StatusSOS status) {
+
+                return switch (status) {
+
+                        case PENDING -> "Chờ phân công";
+
+                        case ASSIGNED -> "Đã phân công";
+
+                        case PROCESSING -> "Đang cứu hộ";
+
+                        case DONE -> "Hoàn thành";
+
+                        case CANCELED -> "Đã hủy";
+                };
         }
 }
