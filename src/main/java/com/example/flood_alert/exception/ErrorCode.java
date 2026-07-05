@@ -75,6 +75,7 @@ public enum ErrorCode {
     GENERATE_TRACKING_CODE_FAILED(1065,"Không thể tạo mã tra cứu. Vui lòng thử lại!"),
     TRACKING_CODE_REQUIRED(1066,"Mã tra cứu không được để trống!"),
     SEARCH_CONDITION_REQUIRED(1067,"Vui lòng nhập ít nhất một điều kiện!"),
+    PREDICTION_JOB_NOT_FOUND(1068,"Không tìm thấy phiên chạy dự báo lũ lụt theo dữ liệu thời tiết!"),
     ;
 
     int code;

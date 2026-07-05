@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import com.example.flood_alert.dbo.response.AiPredictionResponse;
 import com.example.flood_alert.dbo.response.FloodPredictionResponse;
 import com.example.flood_alert.repository.PredictionRepository;
 
@@ -25,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PredictionService {
 
     final RestTemplate restTemplate;
-    final PredictionRepository predictionReposiory;
+    final PredictionRepository predictionRepository;
 
     @Value("${fastapi.url}")
     private String fastApiUrl;
@@ -47,23 +48,25 @@ public class PredictionService {
         }
     }
 
-    public boolean triggerPredictionBatch(int offset, int limit) {
+    public AiPredictionResponse triggerPredictionBatch(int offset, int limit) {
 
         if (!isFastApiHealthy()) {
-            log.error("SKIP BATCH offset={} limit={} - FASTAPI DOWN",
-                    offset, limit);
-            return false;
+            log.error(
+                    "SKIP BATCH offset={} limit={} - FASTAPI DOWN",
+                    offset,
+                    limit);
+            return null;
         }
 
         try {
-            ResponseEntity<String> response = restTemplate.postForEntity(
+            ResponseEntity<AiPredictionResponse> response = restTemplate.postForEntity(
                     fastApiUrl +
                             "/predict-batch?offset=" +
                             offset +
                             "&limit=" +
                             limit,
                     HttpEntity.EMPTY,
-                    String.class);
+                    AiPredictionResponse.class);
 
             log.info(
                     "BATCH offset={} limit={} status={} response={}",
@@ -72,10 +75,14 @@ public class PredictionService {
                     response.getStatusCode(),
                     response.getBody());
 
-            return response.getStatusCode().is2xxSuccessful();
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                return null;
+            }
+
+            return response.getBody();
         } catch (RestClientException ex) {
             log.error("BATCH FAILED offset={} limit={}", offset, limit, ex);
-            return false;
+            return null;
         }
     }
 
@@ -85,10 +92,10 @@ public class PredictionService {
     }
 
     public List<FloodPredictionResponse> getAllPrediction() {
-        return predictionReposiory.findLatestPredictionsForAllAreas();
+        return predictionRepository.findLatestPredictionsForAllAreas();
     }
 
     public List<FloodPredictionResponse> findPredictionByArea(UUID areaId) {
-        return predictionReposiory.findPredictionByArea(areaId);
+        return predictionRepository.findPredictionByArea(areaId);
     }
 }
