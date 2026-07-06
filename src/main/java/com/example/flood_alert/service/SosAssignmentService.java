@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.AssignGroupRequest;
+import com.example.flood_alert.dbo.request.FailAssignmentRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
 import com.example.flood_alert.dbo.response.GroupAssignmentResponse;
@@ -51,6 +52,7 @@ public class SosAssignmentService {
         UserRepository userRepository;
         AuthenticationService authenticationService;
         SupportRequestItemRepository supportRequestItemRepository;
+        NotificationManagerService notificationManagerService;
 
         // Giao nhiệm vụ cho group từ team leader
         @CacheEvict(value = "team-dashboard", allEntries = true)
@@ -103,12 +105,18 @@ public class SosAssignmentService {
                                 assignments.stream()
                                                 .allMatch(a -> a.getStatus() == AssignmentStatus.COMPLETED);
 
+                boolean hasFailed = assignments.stream()
+                                .anyMatch(a -> a.getStatus() == AssignmentStatus.FAILED);
+
                 SosRequest sos = sosRequestRepository.findById(sosId)
                                 .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
 
                 if (allCompleted) {
+
                         sos.setStatus(StatusSOS.DONE);
-                } else if (hasProcessing) {
+
+                } else if (hasProcessing || hasFailed) {
+
                         sos.setStatus(StatusSOS.PROCESSING);
                 }
 
@@ -205,24 +213,16 @@ public class SosAssignmentService {
                                 List.of(AssignmentStatus.ACKNOWLEDGED);
 
                         case ACKNOWLEDGED ->
-                                List.of(
-                                                AssignmentStatus.MOVING,
-                                                AssignmentStatus.FAILED);
+                                List.of(AssignmentStatus.MOVING);
 
                         case MOVING ->
-                                List.of(
-                                                AssignmentStatus.ARRIVED,
-                                                AssignmentStatus.FAILED);
+                                List.of(AssignmentStatus.ARRIVED);
 
                         case ARRIVED ->
-                                List.of(
-                                                AssignmentStatus.RESCUING,
-                                                AssignmentStatus.FAILED);
+                                List.of(AssignmentStatus.RESCUING);
 
                         case RESCUING ->
-                                List.of(
-                                                AssignmentStatus.COMPLETED,
-                                                AssignmentStatus.FAILED);
+                                List.of(AssignmentStatus.COMPLETED);
 
                         case COMPLETED, FAILED ->
                                 Collections.emptyList();
@@ -267,6 +267,11 @@ public class SosAssignmentService {
 
                 AssignmentStatus newStatus = request.getStatus();
 
+                // Fail hiện tách thành 1 api riêng
+                if (newStatus == AssignmentStatus.FAILED) {
+                        throw new AppException(ErrorCode.INVALID_ASSIGNMENT_STATUS);
+                }
+
                 assignment.setStatus(newStatus);
 
                 assignment.setNote(request.getNote());
@@ -289,26 +294,16 @@ public class SosAssignmentService {
 
                                         SupportRequestItem item = assignment.getSupportRequestItem();
 
-                                        item.setCompletedGroupCount(
-                                                        item.getCompletedGroupCount() + 1);
+                                        item.setCompletedGroupCount(item.getCompletedGroupCount() + 1);
 
                                         // Khi tất cả các group đã hoàn thành
                                         if (item.getCompletedGroupCount() >= item.getRequiredGroupCount()) {
 
-                                                item.setStatus(
-                                                                SupportRequestItemStatus.COMPLETED);
+                                                item.setStatus(SupportRequestItemStatus.COMPLETED);
                                         }
 
                                         supportRequestItemRepository.save(item);
                                 }
-                        }
-                        case FAILED -> {
-
-                                RescueGroup group = assignment.getGroup();
-
-                                group.setStatus(RescueGroupStatus.AVAILABLE);
-
-                                rescueGroupRepository.save(group);
                         }
                         default -> {
                         }
@@ -381,5 +376,68 @@ public class SosAssignmentService {
                 }
 
                 return builder.build();
+        }
+
+        // Group leader báo FAILED
+        @Transactional
+        public void failed(UUID assignmentId, FailAssignmentRequest request) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                // Tìm assignment
+                SosAssignment assignment = sosAssignmentRepository.findById(assignmentId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+                RescueGroup group = assignment.getGroup();
+
+                // Chỉ Group Leader mới được báo FAILED
+                if (group.getLeader() == null
+                                || !group.getLeader().getId().equals(currentUser.getId())) {
+
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                // Chỉ cho FAILED khi đang thực hiện nhiệm vụ
+                if (assignment.getStatus() != AssignmentStatus.ACKNOWLEDGED
+                                && assignment.getStatus() != AssignmentStatus.MOVING
+                                && assignment.getStatus() != AssignmentStatus.ARRIVED
+                                && assignment.getStatus() != AssignmentStatus.RESCUING) {
+
+                        throw new AppException(ErrorCode.INVALID_ASSIGNMENT_STATUS);
+                }
+
+                // Cập nhật nhiệm vụ
+                assignment.setStatus(AssignmentStatus.FAILED);
+                assignment.setFailedReason(request.getFailedReason());
+                assignment.setFailedNote(request.getFailedNote());
+                assignment.setFailedAt(LocalDateTime.now());
+
+                // Cập nhật trạng thái group
+                switch (request.getFailedReason()) {
+
+                        case BOAT_BROKEN,
+                                        VEHICLE_BROKEN,
+                                        LOST_CONTACT ->
+                                group.setStatus(RescueGroupStatus.OFFLINE);
+
+                        case CANNOT_ACCESS,
+                                        OTHER ->
+                                group.setStatus(RescueGroupStatus.AVAILABLE);
+                }
+
+                // Lưu dữ liệu
+                sosAssignmentRepository.save(assignment);
+                rescueGroupRepository.save(group);
+                sosAssignmentRepository.save(assignment);
+                rescueGroupRepository.save(group);
+
+                // Gửi thông báo cho Team Leader
+                notificationManagerService.notifyAssignmentFailed(
+                                group.getTeam().getLeader(),
+                                assignment);
+
+                // Cập nhật trạng thái SOS
+                updateSosStatus(assignment.getSos().getId());
         }
 }

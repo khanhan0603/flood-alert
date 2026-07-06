@@ -2,7 +2,6 @@ package com.example.flood_alert.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import com.example.flood_alert.enums.CallEventStatus;
 

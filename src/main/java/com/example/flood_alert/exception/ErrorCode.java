@@ -77,6 +77,7 @@ public enum ErrorCode {
     SEARCH_CONDITION_REQUIRED(1067,"Vui lòng nhập ít nhất một điều kiện!"),
     PREDICTION_JOB_NOT_FOUND(1068,"Không tìm thấy phiên chạy dự báo lũ lụt theo dữ liệu thời tiết!"),
     SOS_CANNOT_BE_UPDATED(1069,"Yêu cầu cứu hộ không thể cập nhật!"),
+    INVALID_ASSIGNMENT_STATUS(1070,"Trạng thái nhiệm vụ không hợp lệ!"),
     ;
 
     int code;

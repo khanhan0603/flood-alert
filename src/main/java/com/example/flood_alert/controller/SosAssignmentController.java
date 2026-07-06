@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.dbo.request.AssignGroupRequest;
+import com.example.flood_alert.dbo.request.FailAssignmentRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
@@ -64,7 +65,7 @@ public class SosAssignmentController {
                                 .build();
         }
 
-        //Danh sách nhiệm vụ của group
+        // Danh sách nhiệm vụ của group
         @GetMapping("/my-group")
         @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<List<GroupAssignmentResponse>> getMyAssignments() {
@@ -74,6 +75,20 @@ public class SosAssignmentController {
                                 .result(
                                                 sosAssignmentService
                                                                 .getMyAssignments())
+                                .build();
+        }
+
+        // Group leader báo fail
+        @PatchMapping("/{assignmentId}/failed")
+        public ApiResponse<Void> failed(
+                        @PathVariable UUID assignmentId,
+                        @Valid @RequestBody FailAssignmentRequest request) {
+
+                sosAssignmentService.failed(
+                                assignmentId,
+                                request);
+
+                return ApiResponse.<Void>builder()
                                 .build();
         }
 }

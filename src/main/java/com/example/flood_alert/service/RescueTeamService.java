@@ -26,7 +26,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
-import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.example.flood_alert.enums.AssignmentFailedReason;
 import com.example.flood_alert.enums.AssignmentRole;
 import com.example.flood_alert.enums.AssignmentStatus;
 
@@ -81,4 +82,16 @@ public class SosAssignment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "support_request_item_id")
     SupportRequestItem supportRequestItem;
+
+    //Trạng thái failed
+    @Enumerated(EnumType.STRING)
+    @Column(name = "failed_reason")
+    AssignmentFailedReason failedReason;
+
+    //Lý do xây ra fail
+    @Column(name = "failed_note", length = 500)
+    String failedNote;
+
+    //Thời gian fail
+    LocalDateTime failedAt;
 }
