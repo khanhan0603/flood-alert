@@ -49,7 +49,7 @@ public class SecurityConfig {
                             "/sms/**",
                             "/notification/**",
                             "/hotline/emergency-contact",
-                             "/prediction/run"
+                             "/predict/run"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 ->
