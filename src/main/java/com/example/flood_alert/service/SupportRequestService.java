@@ -3,6 +3,7 @@ package com.example.flood_alert.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,8 @@ import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequestItem;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
 import com.example.flood_alert.dbo.response.RescueTeamSupportResponse;
+import com.example.flood_alert.dbo.response.SosMarkerResponse;
+import com.example.flood_alert.dbo.response.SupportMapResponse;
 import com.example.flood_alert.dbo.response.SupportRequestItemResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.entity.RescueGroup;
@@ -34,6 +37,7 @@ import com.example.flood_alert.entity.SupportRequestItem;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.AssignmentRole;
 import com.example.flood_alert.enums.AssignmentStatus;
+import com.example.flood_alert.enums.MarkerType;
 import com.example.flood_alert.enums.RescueGroupStatus;
 import com.example.flood_alert.enums.SupportRequestItemStatus;
 import com.example.flood_alert.enums.SupportRequestStatus;
@@ -540,9 +544,10 @@ public class SupportRequestService {
                 return assignment.getId();
         }
 
-        // Danh sách các team trong 1 tỉnh
+        // Danh sách các team trong 1 tỉnh: bao gồm vị trí sos, team gửi support và các
+        // team lân cận
         @Transactional(readOnly = true)
-        public List<RescueTeamSupportResponse> getCandidateTeams(
+        public SupportMapResponse getCandidateTeams(
                         UUID supportRequestId) {
 
                 SupportRequest supportRequest = supportRequestRepository
@@ -563,13 +568,23 @@ public class SupportRequestService {
                                 .getParent()
                                 .getId();
                 SosRequest sos = supportRequest.getSos();
-                return rescueTeamRepository
+                List<RescueTeamSupportResponse> result = new ArrayList<>();
+
+                // Marker SOS màu đỏ
+                SosMarkerResponse sosMarker = SosMarkerResponse.builder()
+                                .sosId(sos.getId())
+                                .lat(sos.getLat())
+                                .lon(sos.getLon())
+                                .priority(sos.getPriority())
+                                .build();
+
+                List<RescueTeamSupportResponse> teams = rescueTeamRepository
                                 .findAllSupportTeams(provinceId)
                                 .stream()
                                 .map(team -> RescueTeamSupportResponse.builder()
 
                                                 .id(team.getId())
-                                                .teamName(team.getName())
+                                                .name(team.getName())
 
                                                 .areaId(team.getArea().getId())
                                                 .lat(team.getLat())
@@ -614,11 +629,18 @@ public class SupportRequestService {
                                                                                 team.getLat(),
                                                                                 team.getLon()))
 
-                                                .requesterTeam(
-                                                                team.getId().equals(requesterTeamId))
+                                                .markerType(
+                                                                team.getId().equals(requesterTeamId)
+                                                                                ? MarkerType.REQUESTER_TEAM
+                                                                                : MarkerType.CANDIDATE_TEAM)
 
                                                 .build())
                                 .toList();
+
+                return SupportMapResponse.builder()
+                                .sos(sosMarker)
+                                .teams(teams)
+                                .build();
         }
 
         private SupportRequestResponse toResponse(

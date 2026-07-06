@@ -22,6 +22,7 @@ import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.RescueTeamSupportResponse;
+import com.example.flood_alert.dbo.response.SupportMapResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.enums.SupportRequestStatus;
 import com.example.flood_alert.service.SupportRequestService;
@@ -121,14 +122,14 @@ public class SupportRequestController {
                 return ApiResponse.<Void>builder().build();
         }
 
-        // Danh sách các team trong tỉnh
+        // Danh sách các team trong tỉnh + vị trí SOS
         @GetMapping("/{id}/candidate-teams")
         @PreAuthorize("hasAuthority('SCOPE_PROVINCE_OPERATOR')")
-        public ApiResponse<List<RescueTeamSupportResponse>> getCandidateTeams(
+        public ApiResponse<SupportMapResponse> getCandidateTeams(
                         @PathVariable UUID id) {
 
                 return ApiResponse
-                                .<List<RescueTeamSupportResponse>>builder()
+                                .<SupportMapResponse>builder()
                                 .result(
                                                 supportRequestService.getCandidateTeams(id))
                                 .build();

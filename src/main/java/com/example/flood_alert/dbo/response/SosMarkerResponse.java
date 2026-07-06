@@ -1,8 +1,9 @@
 package com.example.flood_alert.dbo.response;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
-import com.example.flood_alert.enums.MarkerType;
+import com.example.flood_alert.enums.Priority;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -18,32 +19,13 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RescueTeamSupportResponse {
-    UUID id;
+public class SosMarkerResponse {
 
-    String name;
-
-    UUID areaId;
+    UUID sosId;
 
     BigDecimal lat;
 
     BigDecimal lon;
 
-    String leaderName;
-
-    String leaderPhone;
-
-    String emergencyPhone;
-
-    Long availableBoatGroups;
-
-    Long availableMedicalGroups;
-
-    Long availableSearchRescueGroups;
-
-    Long availableLogisticsGroups;
-
-    BigDecimal distanceKm;
-
-    MarkerType markerType;
+    Priority priority;
 }

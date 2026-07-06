@@ -35,30 +35,27 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                            "/health",
-                            "/auth/**",
-                            "/user/register",
-                            "/sos-request/**",
-                            "/area/**",
-                            "/weather-data/**",
-                            "/iot-device/register-device",
-                            "/iot-device/read-sensor",
-                            "/sos-request/*/anonymous",
-                            "/sos-request/my-active-anonymous",
-                            "/sos-request/*/anonymous/cancel",
-                            "/sms/**",
-                            "/notification/**",
-                            "/hotline/emergency-contact",
-                             "/predict/run"
-                        ).permitAll()
+                                "/health",
+                                "/auth/**",
+                                "/user/register",
+                                "/sos-request/**",
+                                "/area/**",
+                                "/weather-data/**",
+                                "/iot-device/register-device",
+                                "/iot-device/read-sensor",
+                                "/sos-request/*/anonymous",
+                                "/sos-request/my-active-anonymous",
+                                "/sos-request/*/anonymous/cancel",
+                                "/sms/**",
+                                "/notification/**",
+                                "/hotline/emergency-contact",
+                                "/predict/run")
+                        .permitAll()
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 ->
-                    oauth2.jwt(jwt ->
-                            jwt.decoder(customJwtDecoder)))
-                .exceptionHandling(ex->ex
-                    .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                    .accessDeniedHandler(jwtAccessDeniedHandler)
-                );
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(customJwtDecoder)))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler));
         return http.build();
     }
 
