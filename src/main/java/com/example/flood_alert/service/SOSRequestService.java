@@ -1,5 +1,6 @@
 package com.example.flood_alert.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -301,31 +302,17 @@ public class SOSRequestService {
                                         .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
                 }
 
-                if (sos.getStatus() != StatusSOS.PENDING && sos.getStatus() != StatusSOS.PROCESSING) {
+                switch (sos.getStatus()) {
 
-                        throw new AppException(ErrorCode.SOS_CANNOT_UPDATE);
+                        case PENDING -> updatePendingSos(sos, request);
+
+                        case ASSIGNED, PROCESSING -> updateAssignedOrProcessingSos(
+                                        sos,
+                                        request);
+
+                        case DONE, CANCELED -> throw new AppException(
+                                        ErrorCode.SOS_CANNOT_UPDATE);
                 }
-
-                sos.setVictimCount(request.getVictimCount());
-
-                sos.setLat(request.getLat());
-
-                sos.setLon(request.getLon());
-
-                sos.setDiachi(request.getDiachi());
-
-                sos.setAccuracy(request.getAccuracy());
-
-                sos.setInjured(request.getInjured());
-
-                sos.setTrapped(request.getTrapped());
-
-                sos.setVulnerable(request.getVulnerable());
-
-                sos.setMota(request.getMota());
-
-                sos.setLastLocationUpdate(
-                                java.time.LocalDateTime.now());
 
                 sos = sosRequestRepository.save(sos);
 
@@ -347,12 +334,29 @@ public class SOSRequestService {
                                                 request.getClientDeviceId())
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.UNAUTHORIZED_UPDATE_SOS));
-                if (sos.getStatus() != StatusSOS.PENDING
-                                && sos.getStatus() != StatusSOS.PROCESSING) {
+                switch (sos.getStatus()) {
 
-                        throw new AppException(
+                        case PENDING -> updatePendingAnonymousSos(sos,request);
+
+                        case ASSIGNED, PROCESSING -> updateAssignedOrProcessingAnonymousSos(sos,request);
+
+                        case DONE, CANCELED -> throw new AppException(
                                         ErrorCode.SOS_CANNOT_UPDATE);
                 }
+
+                sos = sosRequestRepository.save(sos);
+
+                SosResponse response = sosRequestMapper.toResponse(sos);
+
+                response.setAlreadyExists(false);
+
+                return response;
+        }
+
+        private void updatePendingSos(
+                        SosRequest sos,
+                        UpdateSosRequest request) {
+
                 sos.setVictimCount(request.getVictimCount());
 
                 sos.setLat(request.getLat());
@@ -371,16 +375,198 @@ public class SOSRequestService {
 
                 sos.setMota(request.getMota());
 
+                sos.setLastLocationUpdate(LocalDateTime.now());
+
+                // =====================
+                // Xác định lại khu vực
+                // =====================
+
+                UUID areaId = areaRepository.findAreaIdByLatLon(
+                                request.getLat(),
+                                request.getLon());
+
+                if (areaId == null) {
+                        throw new AppException(ErrorCode.AREA_NOT_FOUND);
+                }
+
+                Area area = areaRepository.findById(areaId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.AREA_NOT_FOUND));
+
+                sos.setArea(area);
+
+                // =====================
+                // Xác định lại Team
+                // =====================
+
+                RescueTeam team = rescueTeamRepository
+                                .findFirstByArea_IdOrderByCreatedAtAsc(areaId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+                sos.setTeam(team);
+
+                // =====================
+                // Snapshot
+                // =====================
+
+                AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
+                                .findLatestSnapshotByAreaId(areaId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.AREA_RISK_NOT_FOUND));
+
+                EnvironmentRisk environmentRisk = environmentRiskEvaluator.evaluate(snapshot);
+
+                Priority priority = sosPriorityCalculator.calculate(
+                                request.getVictimCount(),
+                                request.getInjured(),
+                                request.getTrapped(),
+                                request.getVulnerable(),
+                                environmentRisk);
+
+                String priorityReason = priorityReasonGenerator.generate(
+                                priority,
+                                request.getVictimCount(),
+                                request.getInjured(),
+                                request.getTrapped(),
+                                request.getVulnerable(),
+                                environmentRisk);
+
+                sos.setEnvironmentRisk(environmentRisk);
+
+                sos.setPriority(priority);
+
+                sos.setPriorityReason(priorityReason);
+
+                sos.setSnapshotWaterRise(
+                                snapshot.getWaterRiseRatePerMinute());
+
+                sos.setSnapshotDangerRatio(
+                                snapshot.getDangerRatio());
+
+                sos.setSnapshotPredictionProbability(
+                                snapshot.getPredictionProbability());
+        }
+
+        private void updatePendingAnonymousSos(
+                        SosRequest sos,
+                        UpdateAnonymousSosRequest request) {
+
+                sos.setVictimCount(request.getVictimCount());
+
+                sos.setLat(request.getLat());
+
+                sos.setLon(request.getLon());
+
+                sos.setDiachi(request.getDiachi());
+
+                sos.setAccuracy(request.getAccuracy());
+
+                sos.setInjured(request.getInjured());
+
+                sos.setTrapped(request.getTrapped());
+
+                sos.setVulnerable(request.getVulnerable());
+
+                sos.setMota(request.getMota());
+
+                sos.setLastLocationUpdate(LocalDateTime.now());
+
+                // =====================
+                // Xác định lại khu vực
+                // =====================
+
+                UUID areaId = areaRepository.findAreaIdByLatLon(
+                                request.getLat(),
+                                request.getLon());
+
+                if (areaId == null) {
+                        throw new AppException(ErrorCode.AREA_NOT_FOUND);
+                }
+
+                Area area = areaRepository.findById(areaId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.AREA_NOT_FOUND));
+
+                sos.setArea(area);
+
+                // =====================
+                // Xác định lại Team
+                // =====================
+
+                RescueTeam team = rescueTeamRepository
+                                .findFirstByArea_IdOrderByCreatedAtAsc(areaId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+                sos.setTeam(team);
+
+                // =====================
+                // Snapshot
+                // =====================
+
+                AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
+                                .findLatestSnapshotByAreaId(areaId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.AREA_RISK_NOT_FOUND));
+
+                EnvironmentRisk environmentRisk = environmentRiskEvaluator.evaluate(snapshot);
+
+                Priority priority = sosPriorityCalculator.calculate(
+                                request.getVictimCount(),
+                                request.getInjured(),
+                                request.getTrapped(),
+                                request.getVulnerable(),
+                                environmentRisk);
+
+                String priorityReason = priorityReasonGenerator.generate(
+                                priority,
+                                request.getVictimCount(),
+                                request.getInjured(),
+                                request.getTrapped(),
+                                request.getVulnerable(),
+                                environmentRisk);
+
+                sos.setEnvironmentRisk(environmentRisk);
+
+                sos.setPriority(priority);
+
+                sos.setPriorityReason(priorityReason);
+
+                sos.setSnapshotWaterRise(
+                                snapshot.getWaterRiseRatePerMinute());
+
+                sos.setSnapshotDangerRatio(
+                                snapshot.getDangerRatio());
+
+                sos.setSnapshotPredictionProbability(
+                                snapshot.getPredictionProbability());
+        }
+
+        private void updateAssignedOrProcessingSos(
+                        SosRequest sos,
+                        UpdateSosRequest request) {
+                sos.setLat(request.getLat());
+                sos.setLon(request.getLon());
+                sos.setDiachi(request.getDiachi());
+
+                sos.setMota(request.getMota());
+
                 sos.setLastLocationUpdate(
-                                java.time.LocalDateTime.now());
+                                LocalDateTime.now());
+        }
+        private void updateAssignedOrProcessingAnonymousSos(
+                        SosRequest sos,
+                        UpdateAnonymousSosRequest request) {
 
-                sos = sosRequestRepository.save(sos);
+                sos.setLat(request.getLat());
+                sos.setLon(request.getLon());
+                sos.setDiachi(request.getDiachi());
 
-                SosResponse response = sosRequestMapper.toResponse(sos);
+                sos.setMota(request.getMota());
 
-                response.setAlreadyExists(false);
-
-                return response;
+                sos.setLastLocationUpdate(
+                                LocalDateTime.now());
         }
 
         // List sos request xếp theo status

@@ -3,7 +3,6 @@ package com.example.flood_alert.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +22,7 @@ import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequestItem;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
+import com.example.flood_alert.dbo.response.ProvinceSupportItemResponse;
 import com.example.flood_alert.dbo.response.RescueTeamSupportResponse;
 import com.example.flood_alert.dbo.response.SosMarkerResponse;
 import com.example.flood_alert.dbo.response.SupportMapResponse;
@@ -235,7 +235,7 @@ public class SupportRequestService {
                                 .build();
         }
 
-        // Chấp nhận yêu cầu hỗ trợ
+        // Chấp nhận yêu cầu hỗ trợ (có hỗ trợ assign lại khi team reject)
         @Transactional
         public void approve(
                         UUID supportRequestId,
@@ -260,12 +260,6 @@ public class SupportRequestService {
                         throw new AppException(ErrorCode.NO_PERMISSION);
                 }
 
-                // Chỉ được duyệt khi yêu cầu còn ở trạng thái PENDING
-                if (supportRequest.getStatus() != SupportRequestStatus.PENDING) {
-                        throw new AppException(
-                                        ErrorCode.SUPPORT_REQUEST_ALREADY_REVIEWED);
-                }
-
                 // Map các item theo id để tìm nhanh
                 Map<UUID, SupportRequestItem> itemMap = supportRequest.getItems()
                                 .stream()
@@ -285,6 +279,14 @@ public class SupportRequestService {
                         if (item == null) {
                                 throw new AppException(
                                                 ErrorCode.SUPPORT_REQUEST_ITEM_NOT_FOUND);
+                        }
+
+                        // Chỉ cho phép Province xử lý item đang chờ hoặc bị Team từ chối
+                        if (item.getStatus() != SupportRequestItemStatus.PENDING
+                                        && item.getStatus() != SupportRequestItemStatus.TEAM_REJECTED) {
+
+                                throw new AppException(
+                                                ErrorCode.INVALID_SUPPORT_ITEM_STATUS);
                         }
 
                         switch (dto.getStatus()) {
@@ -395,9 +397,6 @@ public class SupportRequestService {
 
                 // Lưu lý do từ chối
                 item.setTeamResponse(request.getReason());
-
-                // Bỏ Team hiện tại để Province có thể phân công lại
-                item.setAssignedTeam(null);
 
                 supportRequestItemRepository.save(item);
         }
@@ -568,7 +567,6 @@ public class SupportRequestService {
                                 .getParent()
                                 .getId();
                 SosRequest sos = supportRequest.getSos();
-                List<RescueTeamSupportResponse> result = new ArrayList<>();
 
                 // Marker SOS màu đỏ
                 SosMarkerResponse sosMarker = SosMarkerResponse.builder()
@@ -729,5 +727,66 @@ public class SupportRequestService {
 
                 return BigDecimal.valueOf(distance)
                                 .setScale(2, RoundingMode.HALF_UP);
+        }
+
+        @Transactional(readOnly = true)
+        public Page<ProvinceSupportItemResponse> getSupportItemsByStatus(
+                        SupportRequestItemStatus status,
+                        Pageable pageable) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                UUID provinceId = currentUser.getArea().getId();
+
+                return supportRequestItemRepository
+                                .findByProvinceAndStatus(
+                                                provinceId,
+                                                status,
+                                                pageable)
+                                .map(this::toProvinceItemResponse);
+        }
+
+        private ProvinceSupportItemResponse toProvinceItemResponse(
+                        SupportRequestItem item) {
+
+                return ProvinceSupportItemResponse.builder()
+                                .priority(item.getSupportRequest()
+                                                .getSos()
+                                                .getPriority())
+
+                                .itemId(item.getId())
+
+                                .supportRequestId(item.getSupportRequest().getId())
+
+                                .sosId(item.getSupportRequest()
+                                                .getSos()
+                                                .getId())
+
+                                .supportType(item.getSupportType())
+
+                                .status(item.getStatus())
+
+                                .requiredGroupCount(item.getRequiredGroupCount())
+
+                                .assignedGroupCount(item.getAssignedGroupCount())
+
+                                .requesterTeamName(
+                                                item.getSupportRequest()
+                                                                .getRequestedBy()
+                                                                .getTeam()
+                                                                .getName())
+
+                                .assignedTeamName(
+                                                item.getAssignedTeam() != null
+                                                                ? item.getAssignedTeam().getName()
+                                                                : null)
+
+                                .provinceNote(item.getProvinceNote())
+
+                                .teamResponse(item.getTeamResponse())
+
+                                .createdAt(item.getSupportRequest().getCreatedAt())
+
+                                .build();
         }
 }

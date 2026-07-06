@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import com.example.flood_alert.enums.SupportRequestStatus;
-import com.example.flood_alert.enums.SupportType;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

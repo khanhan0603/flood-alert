@@ -5,6 +5,12 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,26 +18,19 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.flood_alert.dbo.request.CreateHotlineSosRequest;
 import com.example.flood_alert.dbo.request.EmergencyContactRequest;
 import com.example.flood_alert.dbo.request.SearchHotlineSosRequest;
+import com.example.flood_alert.dbo.request.UpdateHotlineSosRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.CallEventResponse;
 import com.example.flood_alert.dbo.response.EmergencyContactResponse;
-import com.example.flood_alert.service.HotlineService;
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-
-import org.springframework.data.web.PageableDefault;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
 import com.example.flood_alert.dbo.response.SosResponse;
 import com.example.flood_alert.dbo.response.StatusOptionResponse;
 import com.example.flood_alert.enums.CallEventStatus;
+import com.example.flood_alert.service.HotlineService;
 
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @RestController
 @RequestMapping("/hotline")
@@ -145,6 +144,19 @@ public class HotlineController {
 
                 return ApiResponse.<Page<SosResponse>>builder()
                                 .result(hotlineService.getManualHotlineSos(pageable))
+                                .build();
+        }
+
+        /**
+         * Hotline cập nhật thông tin SOS.
+         */
+        @PutMapping("/sos/{id}")
+        public ApiResponse<SosResponse> updateHotlineSos(
+                        @PathVariable UUID id,
+                        @RequestBody @Valid UpdateHotlineSosRequest request) {
+
+                return ApiResponse.<SosResponse>builder()
+                                .result(hotlineService.updateHotlineSos(id, request))
                                 .build();
         }
 }

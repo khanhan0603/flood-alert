@@ -1,6 +1,5 @@
 package com.example.flood_alert.controller;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -21,9 +20,10 @@ import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
-import com.example.flood_alert.dbo.response.RescueTeamSupportResponse;
+import com.example.flood_alert.dbo.response.ProvinceSupportItemResponse;
 import com.example.flood_alert.dbo.response.SupportMapResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
+import com.example.flood_alert.enums.SupportRequestItemStatus;
 import com.example.flood_alert.enums.SupportRequestStatus;
 import com.example.flood_alert.service.SupportRequestService;
 
@@ -132,6 +132,21 @@ public class SupportRequestController {
                                 .<SupportMapResponse>builder()
                                 .result(
                                                 supportRequestService.getCandidateTeams(id))
+                                .build();
+        }
+
+        // Province xem danh sách Support Item theo trạng thái
+        @GetMapping("/items/status")
+        @PreAuthorize("hasAuthority('SCOPE_PROVINCE_OPERATOR')")
+        public ApiResponse<Page<ProvinceSupportItemResponse>> getSupportItemsByStatus(
+                        @RequestParam SupportRequestItemStatus status,
+                        @PageableDefault(size = 20) Pageable pageable) {
+
+                return ApiResponse.<Page<ProvinceSupportItemResponse>>builder()
+                                .result(
+                                                supportRequestService.getSupportItemsByStatus(
+                                                                status,
+                                                                pageable))
                                 .build();
         }
 }
