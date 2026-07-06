@@ -48,7 +48,8 @@ public class SecurityConfig {
                             "/sos-request/*/anonymous/cancel",
                             "/sms/**",
                             "/notification/**",
-                            "/hotline/emergency-contact"
+                            "/hotline/emergency-contact",
+                             "/prediction/run"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 ->

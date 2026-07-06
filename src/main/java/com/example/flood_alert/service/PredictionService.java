@@ -98,4 +98,30 @@ public class PredictionService {
     public List<FloodPredictionResponse> findPredictionByArea(UUID areaId) {
         return predictionRepository.findPredictionByArea(areaId);
     }
+
+    // Recovery after prediction
+    public void triggerRecovery() {
+
+        if (!isFastApiHealthy()) {
+            log.error("SKIP RECOVERY - FASTAPI DOWN");
+            return;
+        }
+
+        try {
+
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    fastApiUrl + "/recover-missing",
+                    HttpEntity.EMPTY,
+                    String.class);
+
+            log.info(
+                    "RECOVERY status={} body={}",
+                    response.getStatusCode(),
+                    response.getBody());
+
+        } catch (RestClientException ex) {
+
+            log.error("RECOVERY FAILED", ex);
+        }
+    }
 }

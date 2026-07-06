@@ -46,6 +46,13 @@ public class PredictionSchedulerService {
         runBatchPrediction(PredictionJobType.EVENING);
     }
 
+    public void runManualPrediction() {
+
+        log.info("START MANUAL PREDICTION");
+
+        runBatchPrediction(PredictionJobType.MORNING);
+    }
+
     private void runBatchPrediction(PredictionJobType jobType) {
 
         // Thời gian bắt đầu
@@ -85,17 +92,6 @@ public class PredictionSchedulerService {
                         ? response.getHighRisk()
                         : 0;
                 predictionErrors += response.getErrors();
-
-                if (response.getRecovery() != null) {
-
-                    recoveryAttempts = Math.max(
-                            recoveryAttempts,
-                            response.getRecovery().getAttempts());
-
-                    recoveredAreas += response.getRecovery().getRecovered();
-
-                    remainingMissing = response.getRecovery().getRemainingMissing();
-                }
 
             } else {
 
@@ -145,6 +141,16 @@ public class PredictionSchedulerService {
         }
         // Xác định trạng thái
         PredictionJobStatus status;
+
+        // Recovery
+        if (successBatch > 0) {
+
+            log.info("START RECOVERY");
+
+            predictionService.triggerRecovery();
+
+            log.info("RECOVERY COMPLETED");
+        }
 
         String message;
 
