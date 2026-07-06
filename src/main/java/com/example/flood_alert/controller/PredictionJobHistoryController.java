@@ -5,8 +5,10 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.dbo.response.ApiResponse;
@@ -19,13 +21,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @RestController
+@RequestMapping("/prediction-jobs")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PredictionJobHistoryController {
 
     PredictionJobHistoryService predictionJobHistoryService;
 
-    @GetMapping("/prediction-jobs")
+    @GetMapping
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public ApiResponse<Page<PredictionJobHistoryResponse>> getPredictionJobs(
             @PageableDefault(size = 10) Pageable pageable) {
 
@@ -37,6 +41,7 @@ public class PredictionJobHistoryController {
 
     // Chi tiết 1 lần chạy
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public ApiResponse<PredictionJobHistoryDetailResponse> getPredictionJobHistoryDetail(
             @PathVariable UUID id) {
 
