@@ -81,7 +81,9 @@ public class PredictionSchedulerService {
                 successBatch++;
 
                 processedAreas += response.getProcessed();
-                highRiskAreas += response.getHighRisk();
+                highRiskAreas += response.getHighRisk() != null
+                        ? response.getHighRisk()
+                        : 0;
                 predictionErrors += response.getErrors();
 
                 if (response.getRecovery() != null) {
@@ -105,7 +107,7 @@ public class PredictionSchedulerService {
                 Thread.sleep(60 * 1000);
 
             }
-// Lưu lịch sử tác vụ thất bại trc khi thoát
+            // Lưu lịch sử tác vụ thất bại trc khi thoát
             catch (InterruptedException e) {
 
                 Thread.currentThread().interrupt();
@@ -116,7 +118,7 @@ public class PredictionSchedulerService {
                         .startedAt(startedAt)
                         .finishedAt(LocalDateTime.now())
 
-                         .jobType(jobType)
+                        .jobType(jobType)
 
                         .totalAreas(TOTAL_AREAS)
                         .processedAreas(processedAreas)
@@ -169,7 +171,7 @@ public class PredictionSchedulerService {
                 .startedAt(startedAt)
                 .finishedAt(LocalDateTime.now())
 
-                 .jobType(jobType)
+                .jobType(jobType)
 
                 .totalAreas(TOTAL_AREAS)
                 .processedAreas(processedAreas)
@@ -190,13 +192,13 @@ public class PredictionSchedulerService {
                 successBatch,
                 failedBatch);
         try {
-            //Lưu db
+            // Lưu db
             predictionJobHistoryRepository.save(history);
 
             log.info("Prediction job history saved.");
 
         } catch (Exception ex) {
-            //Lỗi lưu db
+            // Lỗi lưu db
 
             log.error("Cannot save prediction job history", ex);
         }

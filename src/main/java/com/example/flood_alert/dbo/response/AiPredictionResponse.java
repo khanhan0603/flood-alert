@@ -1,5 +1,7 @@
 package com.example.flood_alert.dbo.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
@@ -14,10 +16,12 @@ public class AiPredictionResponse {
 
     Integer processed;
 
+    @JsonProperty("high_risk")
     Integer highRisk;
 
     Integer errors;
 
+    @JsonProperty("duration_ms")
     Long durationMs;
 
     Recovery recovery;
