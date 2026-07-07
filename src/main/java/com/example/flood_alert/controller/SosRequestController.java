@@ -16,12 +16,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.flood_alert.dbo.request.AnonymousSosDetailRequest;
 import com.example.flood_alert.dbo.request.AnonymousSosListRequest;
 import com.example.flood_alert.dbo.request.CancelAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.CreateSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateSosRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.CitizenSosDetailResponse;
 import com.example.flood_alert.dbo.response.SosDetailResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
 import com.example.flood_alert.dbo.response.TeamDashboardResponse;
@@ -81,6 +83,30 @@ public class SosRequestController {
                                                                 sosId,
                                                                 request,
                                                                 httpRequest))
+                                .build();
+        }
+
+        // Người dân xem chi tiết SOS của mình
+        @GetMapping("/my/{sosId}")
+        public ApiResponse<CitizenSosDetailResponse> getMySosDetail(
+                        @PathVariable UUID sosId) {
+
+                return ApiResponse.<CitizenSosDetailResponse>builder()
+                                .result(sosRequestService.getMySosDetail(sosId))
+                                .build();
+        }
+
+        // Người gửi SOS ẩn danh xem chi tiết SOS
+        @PostMapping("/anonymous/{sosId}")
+        public ApiResponse<CitizenSosDetailResponse> getAnonymousSosDetail(
+                        @PathVariable UUID sosId,
+                        @RequestBody AnonymousSosDetailRequest request) {
+
+                return ApiResponse.<CitizenSosDetailResponse>builder()
+                                .result(sosRequestService.getAnonymousSosDetail(
+                                                sosId,
+                                                request.getSodt(),
+                                                request.getClientDeviceId()))
                                 .build();
         }
 

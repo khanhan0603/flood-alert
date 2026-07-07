@@ -10,6 +10,7 @@ import com.example.flood_alert.entity.SosAssignment;
 public interface SosAssignmentMapper {
     @Mapping(target = "groupId", source = "group.id")
     @Mapping(target = "groupName", source = "group.name")
+    @Mapping(target = "groupLeaderPhone", source = "group.leader.sodt")
     @Mapping(target = "teamId", source = "group.team.id")
     @Mapping(target = "teamName", source = "group.team.name")
     SosAssignmentResponse toResponse(

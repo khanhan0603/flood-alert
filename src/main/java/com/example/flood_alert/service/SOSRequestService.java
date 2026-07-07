@@ -16,6 +16,8 @@ import com.example.flood_alert.dbo.request.AnonymousSosListRequest;
 import com.example.flood_alert.dbo.request.CreateSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateSosRequest;
+import com.example.flood_alert.dbo.response.CitizenAssignmentResponse;
+import com.example.flood_alert.dbo.response.CitizenSosDetailResponse;
 import com.example.flood_alert.dbo.response.SosAssignmentResponse;
 import com.example.flood_alert.dbo.response.SosDetailResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
@@ -336,9 +338,9 @@ public class SOSRequestService {
                                                 ErrorCode.UNAUTHORIZED_UPDATE_SOS));
                 switch (sos.getStatus()) {
 
-                        case PENDING -> updatePendingAnonymousSos(sos,request);
+                        case PENDING -> updatePendingAnonymousSos(sos, request);
 
-                        case ASSIGNED, PROCESSING -> updateAssignedOrProcessingAnonymousSos(sos,request);
+                        case ASSIGNED, PROCESSING -> updateAssignedOrProcessingAnonymousSos(sos, request);
 
                         case DONE, CANCELED -> throw new AppException(
                                         ErrorCode.SOS_CANNOT_UPDATE);
@@ -555,6 +557,7 @@ public class SOSRequestService {
                 sos.setLastLocationUpdate(
                                 LocalDateTime.now());
         }
+
         private void updateAssignedOrProcessingAnonymousSos(
                         SosRequest sos,
                         UpdateAnonymousSosRequest request) {
@@ -567,6 +570,108 @@ public class SOSRequestService {
 
                 sos.setLastLocationUpdate(
                                 LocalDateTime.now());
+        }
+
+        // Get detail sos for người có tài khoản
+        @Transactional(readOnly = true)
+        public CitizenSosDetailResponse getMySosDetail(UUID sosId) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                SosRequest sos = sosRequestRepository
+                                .findByIdAndUserId(sosId, currentUser.getId())
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.SOS_NOT_FOUND));
+
+                List<CitizenAssignmentResponse> assignments = sosAssignmentRepository
+                                .findBySosId(sosId)
+                                .stream()
+                                .map(assignment -> CitizenAssignmentResponse.builder()
+                                                .groupName(assignment.getGroup().getName())
+                                                .groupLeaderName(
+                                                                assignment.getGroup().getLeader() != null
+                                                                                ? assignment.getGroup().getLeader()
+                                                                                                .getHoten()
+                                                                                : null)
+                                                .groupLeaderPhone(
+                                                                assignment.getGroup().getLeader() != null
+                                                                                ? assignment.getGroup().getLeader()
+                                                                                                .getSodt()
+                                                                                : null)
+                                                .status(assignment.getStatus())
+                                                .role(assignment.getRole())
+                                                .build())
+                                .toList();
+
+                return CitizenSosDetailResponse.builder()
+                                .id(sos.getId())
+                                .trackingCode(sos.getTrackingCode())
+                                .phoneNumber(sos.getSodt())
+                                .victimCount(sos.getVictimCount())
+                                .injured(sos.getInjured())
+                                .trapped(sos.getTrapped())
+                                .vulnerable(sos.getVulnerable())
+                                .description(sos.getMota())
+                                .lat(sos.getLat())
+                                .lon(sos.getLon())
+                                .address(sos.getDiachi())
+                                .status(sos.getStatus())
+                                .createdAt(sos.getCreatedAt())
+                                .assignments(assignments)
+                                .build();
+        }
+
+        //Get detail sos for người không có tài khoản
+        @Transactional(readOnly = true)
+        public CitizenSosDetailResponse getAnonymousSosDetail(
+                        UUID sosId,
+                        String sodt,
+                        String clientDeviceId) {
+
+                SosRequest sos = sosRequestRepository
+                                .findByIdAndSodtAndClientDeviceId(
+                                                sosId,
+                                                sodt,
+                                                clientDeviceId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.SOS_NOT_FOUND));
+
+                List<CitizenAssignmentResponse> assignments = sosAssignmentRepository
+                                .findBySosId(sosId)
+                                .stream()
+                                .map(assignment -> CitizenAssignmentResponse.builder()
+                                                .groupName(assignment.getGroup().getName())
+                                                .groupLeaderName(
+                                                                assignment.getGroup().getLeader() != null
+                                                                                ? assignment.getGroup().getLeader()
+                                                                                                .getHoten()
+                                                                                : null)
+                                                .groupLeaderPhone(
+                                                                assignment.getGroup().getLeader() != null
+                                                                                ? assignment.getGroup().getLeader()
+                                                                                                .getSodt()
+                                                                                : null)
+                                                .status(assignment.getStatus())
+                                                .role(assignment.getRole())
+                                                .build())
+                                .toList();
+
+                return CitizenSosDetailResponse.builder()
+                                .id(sos.getId())
+                                .trackingCode(sos.getTrackingCode())
+                                .phoneNumber(sos.getSodt())
+                                .victimCount(sos.getVictimCount())
+                                .injured(sos.getInjured())
+                                .trapped(sos.getTrapped())
+                                .vulnerable(sos.getVulnerable())
+                                .description(sos.getMota())
+                                .lat(sos.getLat())
+                                .lon(sos.getLon())
+                                .address(sos.getDiachi())
+                                .status(sos.getStatus())
+                                .createdAt(sos.getCreatedAt())
+                                .assignments(assignments)
+                                .build();
         }
 
         // List sos request xếp theo status
