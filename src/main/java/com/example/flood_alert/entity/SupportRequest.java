@@ -6,10 +6,10 @@ import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.example.flood_alert.enums.SupportRequestSource;
 import com.example.flood_alert.enums.SupportRequestStatus;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,6 +18,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -53,7 +54,8 @@ public class SupportRequest extends BaseEntity {
     @Column(nullable = false)
     SupportRequestStatus status;
 
-    @OneToMany(mappedBy= "supportRequest", cascade= CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @OneToMany(mappedBy = "supportRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     List<SupportRequestItem> items = new ArrayList<>();
 
     @Column(nullable = false, length = 500)
@@ -69,4 +71,8 @@ public class SupportRequest extends BaseEntity {
     LocalDateTime reviewedAt;
     @CreationTimestamp
     LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    SupportRequestSource source;
 }

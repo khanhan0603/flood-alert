@@ -8,11 +8,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.enums.RescueGroupStatus;
 import com.example.flood_alert.enums.RescueGroupType;
+import com.example.flood_alert.enums.SupportType;
 
 public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> {
         boolean existsByTeamIdAndName(UUID teamId, String name);
@@ -67,5 +69,22 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
                         RescueGroupStatus status);
 
         boolean existsByTeamIdAndType(UUID teamId, RescueGroupType type);
+
+        // Danh sách các group đang available theo loại yêu cầu hỗ trợ cần
+        List<RescueGroup> findByTeam_IdAndStatusAndHasBoatTrue(
+                        UUID teamId,
+                        RescueGroupStatus status);
+
+        List<RescueGroup> findByTeam_IdAndStatusAndHasMedicalTrue(
+                        UUID teamId,
+                        RescueGroupStatus status);
+
+        List<RescueGroup> findByTeam_IdAndStatusAndHasSearchRescueTrue(
+                        UUID teamId,
+                        RescueGroupStatus status);
+
+        List<RescueGroup> findByTeam_IdAndStatusAndHasLogisticsTrue(
+                        UUID teamId,
+                        RescueGroupStatus status);
 
 }

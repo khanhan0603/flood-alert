@@ -19,10 +19,12 @@ import com.example.flood_alert.dbo.response.GroupLeaderResponse;
 import com.example.flood_alert.dbo.response.GroupMemberResponse;
 import com.example.flood_alert.dbo.response.ListMemberOfGroupResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
+import com.example.flood_alert.dbo.response.SupportCandidateGroupResponse;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueGroupMember;
 import com.example.flood_alert.entity.RescueGroupMemberId;
 import com.example.flood_alert.entity.RescueTeam;
+import com.example.flood_alert.entity.SupportRequestItem;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.RescueGroupStatus;
 import com.example.flood_alert.enums.RescueGroupType;
@@ -32,6 +34,7 @@ import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.RescueGroupMemberRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
+import com.example.flood_alert.repository.SupportRequestItemRepository;
 import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
@@ -49,6 +52,7 @@ public class RescueGroupService {
         RescueGroupMemberRepository rescueGroupMemberRepository;
         UserRepository userRepository;
         AuthenticationService authenticationService;
+        SupportRequestItemRepository supportRequestItemRepository;
 
         public RescueGroupResponse create(
                         UUID teamId,
@@ -333,4 +337,86 @@ public class RescueGroupService {
                 rescueGroupRepository.save(group);
         }
 
+        // Danh sách các group available theo loại hỗ trợ cần
+        @Transactional(readOnly = true)
+        public List<SupportCandidateGroupResponse> getSupportCandidateGroups(UUID supportRequestItemId) {
+
+                // Team Leader đang đăng nhập
+                User currentUser = authenticationService.getCurrentUser();
+
+                // Team Leader
+                RescueTeam myTeam = rescueTeamRepository
+                                .findByLeaderId(currentUser.getId())
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.NO_PERMISSION));
+
+                // Tìm hạng mục hỗ trợ
+                SupportRequestItem item = supportRequestItemRepository
+                                .findById(supportRequestItemId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.SUPPORT_REQUEST_ITEM_NOT_FOUND));
+
+                // Chỉ xem yêu cầu hỗ trợ của Team mình
+                if (!item.getSupportRequest()
+                                .getRequestedBy()
+                                .getTeam()
+                                .getId()
+                                .equals(myTeam.getId())) {
+
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                // Lấy các Group phù hợp với loại hỗ trợ
+                List<RescueGroup> groups;
+
+                switch (item.getSupportType()) {
+
+                        case BOAT ->
+                                groups = rescueGroupRepository.findByTeam_IdAndStatusAndHasBoatTrue(
+                                                myTeam.getId(),
+                                                RescueGroupStatus.AVAILABLE);
+
+                        case MEDICAL ->
+                                groups = rescueGroupRepository.findByTeam_IdAndStatusAndHasMedicalTrue(
+                                                myTeam.getId(),
+                                                RescueGroupStatus.AVAILABLE);
+
+                        case SEARCH_RESCUE ->
+                                groups = rescueGroupRepository.findByTeam_IdAndStatusAndHasSearchRescueTrue(
+                                                myTeam.getId(),
+                                                RescueGroupStatus.AVAILABLE);
+
+                        case LOGISTICS ->
+                                groups = rescueGroupRepository.findByTeam_IdAndStatusAndHasLogisticsTrue(
+                                                myTeam.getId(),
+                                                RescueGroupStatus.AVAILABLE);
+
+                        default ->
+                                throw new AppException(ErrorCode.INVALID_SUPPORT_TYPE);
+                }
+
+                return groups.stream()
+                                .map(group -> {
+
+                                        SupportCandidateGroupResponse response = new SupportCandidateGroupResponse();
+
+                                        response.setId(group.getId());
+                                        response.setGroupName(group.getName());
+
+                                        response.setLeaderName(
+                                                        group.getLeader() != null
+                                                                        ? group.getLeader().getHoten()
+                                                                        : null);
+
+                                        response.setStatus(group.getStatus());
+
+                                        response.setHasBoat(group.isHasBoat());
+                                        response.setHasMedical(group.isHasMedical());
+                                        response.setHasSearchRescue(group.isHasSearchRescue());
+                                        response.setHasLogistics(group.isHasLogistics());
+
+                                        return response;
+                                })
+                                .toList();
+        }
 }

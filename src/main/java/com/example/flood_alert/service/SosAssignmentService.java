@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.AssignGroupRequest;
+import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
 import com.example.flood_alert.dbo.request.FailAssignmentRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
@@ -440,4 +441,5 @@ public class SosAssignmentService {
                 // Cập nhật trạng thái SOS
                 updateSosStatus(assignment.getSos().getId());
         }
+
 }

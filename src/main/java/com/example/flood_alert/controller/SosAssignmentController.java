@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.dbo.request.AssignGroupRequest;
+import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
 import com.example.flood_alert.dbo.request.FailAssignmentRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;

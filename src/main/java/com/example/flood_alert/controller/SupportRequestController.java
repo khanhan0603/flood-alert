@@ -1,9 +1,11 @@
 package com.example.flood_alert.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,10 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.dbo.request.ApproveSupportRequest;
 import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
+import com.example.flood_alert.dbo.request.CreateGroupSupportRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.GroupSupportRequestDetailResponse;
+import com.example.flood_alert.dbo.response.GroupSupportRequestResponse;
 import com.example.flood_alert.dbo.response.ProvinceSupportItemResponse;
+import com.example.flood_alert.dbo.response.SupportCandidateGroupResponse;
 import com.example.flood_alert.dbo.response.SupportMapResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.enums.SupportRequestItemStatus;
@@ -147,6 +153,53 @@ public class SupportRequestController {
                                                 supportRequestService.getSupportItemsByStatus(
                                                                 status,
                                                                 pageable))
+                                .build();
+        }
+
+        // Group Leader gửi yêu cầu hỗ trợ đến Team Leader
+        @PostMapping("/group/{assignmentId}")
+        public ApiResponse<UUID> createGroupSupportRequest(
+                        @PathVariable UUID assignmentId,
+                        @RequestBody @Valid CreateGroupSupportRequest request) {
+
+                return ApiResponse.<UUID>builder()
+                                .result(supportRequestService.createGroupSupportRequest(
+                                                assignmentId,
+                                                request))
+                                .build();
+        }
+
+        // Team Leader xem danh sách yêu cầu hỗ trợ từ các Group trong Team
+        @GetMapping("/group")
+        public ApiResponse<Page<GroupSupportRequestResponse>> getGroupSupportRequests(
+                        @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+                return ApiResponse.<Page<GroupSupportRequestResponse>>builder()
+                                .result(supportRequestService.getGroupSupportRequests(pageable))
+                                .build();
+        }
+
+        // Team Leader xem chi tiết yêu cầu hỗ trợ của Group
+        @GetMapping("/group/{supportRequestId}")
+        public ApiResponse<GroupSupportRequestDetailResponse> getGroupSupportRequestDetail(
+                        @PathVariable UUID supportRequestId) {
+
+                return ApiResponse.<GroupSupportRequestDetailResponse>builder()
+                                .result(supportRequestService.getGroupSupportRequestDetail(
+                                                supportRequestId))
+                                .build();
+        }
+
+        // Team Leader giao nhiệm vụ hỗ trợ cho Group trong Team
+        @PostMapping("/support-request-items/{supportRequestItemId}/assign-group")
+        public ApiResponse<UUID> assignSupportGroup(
+                        @PathVariable UUID supportRequestItemId,
+                        @RequestBody @Valid AssignSupportGroupRequest request) {
+
+                return ApiResponse.<UUID>builder()
+                                .result(supportRequestService.assignSupportGroup(
+                                                supportRequestItemId,
+                                                request))
                                 .build();
         }
 }

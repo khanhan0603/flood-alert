@@ -27,6 +27,7 @@ import com.example.flood_alert.dbo.response.GroupLeaderResponse;
 import com.example.flood_alert.dbo.response.GroupMemberResponse;
 import com.example.flood_alert.dbo.response.ListMemberOfGroupResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
+import com.example.flood_alert.dbo.response.SupportCandidateGroupResponse;
 import com.example.flood_alert.service.RescueGroupService;
 
 import jakarta.validation.Valid;
@@ -127,6 +128,17 @@ public class RescueGroupController {
                 rescueGroupService.updateStatus(groupId, request);
 
                 return ApiResponse.<Void>builder()
+                                .build();
+        }
+
+        // Team Leader xem danh sách Group phù hợp để hỗ trợ
+        @GetMapping("/support-candidates/{supportRequestItemId}")
+        public ApiResponse<List<SupportCandidateGroupResponse>> getSupportCandidateGroups(
+                        @PathVariable UUID supportRequestItemId) {
+
+                return ApiResponse.<List<SupportCandidateGroupResponse>>builder()
+                                .result(rescueGroupService.getSupportCandidateGroups(
+                                                supportRequestItemId))
                                 .build();
         }
 }

@@ -2,6 +2,9 @@ package com.example.flood_alert.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.example.flood_alert.enums.Channel;
 import com.example.flood_alert.enums.NotificationType;
 import com.example.flood_alert.enums.StatusAlert;
@@ -74,7 +77,9 @@ public class Notification extends BaseEntity {
     @JoinColumn(name = "support_request_id")
     SupportRequest supportRequest;
 
+    @CreationTimestamp
     LocalDateTime createdAt;
 
+    @UpdateTimestamp
     LocalDateTime updatedAt;
 }

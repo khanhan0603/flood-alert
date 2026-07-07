@@ -79,6 +79,8 @@ public enum ErrorCode {
     SOS_CANNOT_BE_UPDATED(1069,"Yêu cầu cứu hộ không thể cập nhật!"),
     INVALID_ASSIGNMENT_STATUS(1070,"Trạng thái nhiệm vụ không hợp lệ!"),
     INVALID_GROUP_STATUS(1071,"Trạng thái nhóm cứu hộ không hợp lệ!"),
+    SUPPORT_REQUEST_ITEM_REQUIRED(1072,"Không được để chi tiết yêu cầu hỗ trợ trống!"),
+    INVALID_SUPPORT_TYPE(1073,"Loại hỗ trợ không hợp lệ!"),
     ;
 
     int code;
