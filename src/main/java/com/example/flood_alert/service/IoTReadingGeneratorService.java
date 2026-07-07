@@ -25,6 +25,9 @@ public class IoTReadingGeneratorService {
 
     IoTReadingSensorRepository ioTReadingSensorRepository;
 
+    private static final double MIN_WATER_LEVEL = 0.0;
+    private static final double MAX_WATER_LEVEL = 14.0;
+
     @Transactional
     public void saveReadings(IoTDevice device, LocalDateTime from, LocalDateTime to) {
         log.info("saveReadings START device={} from={} to={}", device.getDeviceCode(), from, to);
@@ -35,6 +38,18 @@ public class IoTReadingGeneratorService {
 
         while (!current.isAfter(to)) {
             double water = generateWaterLevel(current, index);
+
+            // Chỉ nhận dữ liệu hợp lệ: (0, 14], nếu dữ liệu ko hợp lệ sẽ bỏ qua 
+            //code kế mà đi tới lần tiếp theo.
+
+            if (water <= MIN_WATER_LEVEL || water > MAX_WATER_LEVEL) {
+                log.warn("Discard invalid reading. device={} waterLevel={}",
+                        device.getDeviceCode(), water);
+                current = current.plusSeconds(10);
+                index++;
+                continue;
+            }
+
             readings.add(IoTSensorReading.builder()
                     .device(device)
                     .waterLevel(water)
@@ -42,6 +57,7 @@ public class IoTReadingGeneratorService {
                     .status(water >= device.getNguongCanhBao() ? WaterStatus.DANGER : WaterStatus.SAFE)
                     .recordedAt(current)
                     .build());
+
             current = current.plusSeconds(10);
             index++;
         }

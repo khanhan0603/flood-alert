@@ -24,13 +24,13 @@ import com.example.flood_alert.dbo.request.CreateGroupSupportRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequestItem;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
+import com.example.flood_alert.dbo.response.CandidateSupportTeamResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestDetailResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestItemResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestResponse;
 import com.example.flood_alert.dbo.response.ProvinceSupportItemResponse;
 import com.example.flood_alert.dbo.response.RescueTeamSupportResponse;
 import com.example.flood_alert.dbo.response.SosMarkerResponse;
-import com.example.flood_alert.dbo.response.SupportCandidateGroupResponse;
 import com.example.flood_alert.dbo.response.SupportMapResponse;
 import com.example.flood_alert.dbo.response.SupportRequestItemResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
@@ -160,7 +160,6 @@ public class SupportRequestService {
                 UUID provinceId = currentUser
                                 .getArea()
                                 .getId();
-                
 
                 return supportRequestRepository
                                 .findByProvinceAndStatus(
@@ -819,6 +818,99 @@ public class SupportRequestService {
                                 .build();
         }
 
+        // Danh sách các team gợi ý khi province chọn team điều phối
+        @Transactional(readOnly = true)
+        public List<CandidateSupportTeamResponse> getCandidateSupportTeams(
+                        UUID supportRequestItemId) {
+
+                // Province đang đăng nhập
+                User currentUser = authenticationService.getCurrentUser();
+
+                // Tìm Support Item
+                SupportRequestItem item = supportRequestItemRepository
+                                .findById(supportRequestItemId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.SUPPORT_REQUEST_ITEM_NOT_FOUND));
+
+                // Province của SOS
+                UUID provinceId = item.getSupportRequest()
+                                .getSos()
+                                .getArea()
+                                .getParent()
+                                .getId();
+
+                // Chỉ được xem Support Request trong tỉnh mình
+                if (!provinceId.equals(currentUser.getArea().getId())) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                SosRequest sos = item.getSupportRequest().getSos();
+
+                return rescueTeamRepository.findAllSupportTeams(provinceId)
+                                .stream()
+                                .map(team -> {
+
+                                        long availableGroupCount = switch (item.getSupportType()) {
+
+                                                case BOAT -> groupRepository
+                                                                .countByTeamIdAndHasBoatTrueAndStatus(
+                                                                                team.getId(),
+                                                                                RescueGroupStatus.AVAILABLE);
+
+                                                case MEDICAL -> groupRepository
+                                                                .countByTeamIdAndHasMedicalTrueAndStatus(
+                                                                                team.getId(),
+                                                                                RescueGroupStatus.AVAILABLE);
+
+                                                case SEARCH_RESCUE -> groupRepository
+                                                                .countByTeamIdAndHasSearchRescueTrueAndStatus(
+                                                                                team.getId(),
+                                                                                RescueGroupStatus.AVAILABLE);
+
+                                                case LOGISTICS -> groupRepository
+                                                                .countByTeamIdAndHasLogisticsTrueAndStatus(
+                                                                                team.getId(),
+                                                                                RescueGroupStatus.AVAILABLE);
+                                        };
+
+                                        return CandidateSupportTeamResponse.builder()
+                                                        .teamId(team.getId())
+                                                        .teamName(team.getName())
+
+                                                        .leaderName(team.getLeader() != null
+                                                                        ? team.getLeader().getHoten()
+                                                                        : null)
+
+                                                        .leaderPhone(team.getLeader() != null
+                                                                        ? team.getLeader().getSodt()
+                                                                        : null)
+
+                                                        .distanceKm(calculateDistanceKm(
+                                                                        sos.getLat(),
+                                                                        sos.getLon(),
+                                                                        team.getLat(),
+                                                                        team.getLon()))
+
+                                                        .availableGroupCount(availableGroupCount)
+                                                        .build();
+                                })
+
+                                // Chỉ giữ Team có Group phù hợp
+                                .filter(team -> team.getAvailableGroupCount() > 0)
+
+                                // Không hiện Team đang gửi yêu cầu
+                                .filter(team -> !team.getTeamId().equals(
+                                                item.getSupportRequest()
+                                                                .getRequestedBy()
+                                                                .getTeam()
+                                                                .getId()))
+
+                                // Gần nhất lên đầu
+                                .sorted((a, b) -> a.getDistanceKm().compareTo(b.getDistanceKm()))
+
+                                .toList();
+        }
+
         // Group leader gửi yêu cầu hỗ trợ đến team leader
         @Transactional
         public UUID createGroupSupportRequest(
@@ -908,6 +1000,7 @@ public class SupportRequestService {
                 return supportRequest.getId();
         }
 
+        // Team leader xem danh sách support request từ group leader
         @Transactional(readOnly = true)
         public Page<GroupSupportRequestResponse> getGroupSupportRequests(
                         Pageable pageable) {
@@ -1083,7 +1176,5 @@ public class SupportRequestService {
 
                 return assignment.getId();
         }
-
-       
 
 }

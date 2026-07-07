@@ -1,35 +1,34 @@
 package com.example.flood_alert.dbo.response;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.UUID;
-
-import com.example.flood_alert.enums.SupportRequestStatus;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+// Province xem danh sách Team phù hợp để điều phối theo từng Support Item
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class GroupSupportRequestResponse {
+public class CandidateSupportTeamResponse {
 
-    UUID id;
+    UUID teamId;
 
-    String groupName;
+    String teamName;
 
-    String groupLeaderName;
+    String leaderName;
 
-    String groupLeaderPhone;
+    String leaderPhone;
 
-    String reason;
+    BigDecimal distanceKm;
 
-    SupportRequestStatus status;
-
-    LocalDateTime createdAt;
+    Long availableGroupCount;
 }

@@ -136,6 +136,7 @@ public class IoTDeviceService {
                 return device;
         }
 
+        // Nhận dữ liệu từ IoT
         @Transactional
         public IoTReadingSensorResponse readSensorIoT(
                         IoTReadingCreationRequest request) {
@@ -159,7 +160,9 @@ public class IoTDeviceService {
                 Double waterLevel = request.getWaterLevel();
 
                 // validate dữ liệu
-                if (waterLevel == null || waterLevel < 0) {
+                if (waterLevel == null
+                                || waterLevel <= 0
+                                || waterLevel > 14) {
 
                         reading.setValid(false);
                         reading.setStatus(WaterStatus.INVALID);
@@ -250,23 +253,23 @@ public class IoTDeviceService {
                         double lat,
                         double lon) {
 
-                                //Tìm thiet bị gần khu vực người dân nhất
+                // Tìm thiet bị gần khu vực người dân nhất
                 IoTDevice device = ioTDeviceRepository
                                 .findNearestDevice(lat, lon)
                                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
 
-                                //Tính khoảng cách từ device gần nhất đến người dân
+                // Tính khoảng cách từ device gần nhất đến người dân
                 Double distanceMeters = ioTDeviceRepository
                                 .calculateDistance(
                                                 device.getId(),
                                                 lat,
                                                 lon);
 
-                                                //Lấy dữ liệu bất thường nhat cơ bản theo device gần người dân
+                // Lấy dữ liệu bất thường nhat cơ bản theo device gần người dân
                 List<SensorWaterHistoryResponse> histories = ioTReadingSensorRepository
                                 .findByDeviceIdOrderByRecordedAtDesc(
                                                 device.getId(),
-                                                PageRequest.of(0, 360)) //1 giờ dữ liệu tại 10s lấy 1 lần
+                                                PageRequest.of(0, 360)) // 1 giờ dữ liệu tại 10s lấy 1 lần
                                 .stream()
                                 .map(reading -> SensorWaterHistoryResponse.builder()
                                                 .waterLevel(reading.getWaterLevel())

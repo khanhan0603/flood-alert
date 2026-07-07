@@ -73,6 +73,7 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
             sr.id,
             rg.name,
             sr.requestedBy.hoten,
+            sr.requestedBy.sodt,
             sr.reason,
             sr.status,
             sr.createdAt)

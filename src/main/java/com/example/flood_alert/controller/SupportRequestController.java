@@ -23,6 +23,7 @@ import com.example.flood_alert.dbo.request.CreateGroupSupportRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.CandidateSupportTeamResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestDetailResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestResponse;
 import com.example.flood_alert.dbo.response.ProvinceSupportItemResponse;
@@ -138,6 +139,19 @@ public class SupportRequestController {
                                 .<SupportMapResponse>builder()
                                 .result(
                                                 supportRequestService.getCandidateTeams(id))
+                                .build();
+        }
+
+        // Danh sách các team gợi ý cho province điều phối
+        // Province xem danh sách Team phù hợp theo từng hạng mục hỗ trợ
+        @GetMapping("/items/{itemId}/candidate-teams")
+        @PreAuthorize("hasAuthority('SCOPE_PROVINCE_OPERATOR')")
+        public ApiResponse<List<CandidateSupportTeamResponse>> getCandidateSupportTeams(
+                        @PathVariable UUID itemId) {
+
+                return ApiResponse.<List<CandidateSupportTeamResponse>>builder()
+                                .result(
+                                                supportRequestService.getCandidateSupportTeams(itemId))
                                 .build();
         }
 
