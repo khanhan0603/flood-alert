@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.flood_alert.dbo.request.AddGroupMembersRequest;
 import com.example.flood_alert.dbo.request.AssignGroupLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueGroupRequest;
+import com.example.flood_alert.dbo.request.UpdateRescueGroupStatusRequest;
 import com.example.flood_alert.dbo.response.AvailableMemberResponse;
 import com.example.flood_alert.dbo.response.GroupLeaderResponse;
 import com.example.flood_alert.dbo.response.GroupMemberResponse;
@@ -90,9 +91,9 @@ public class RescueGroupService {
                                 .createdAt(LocalDateTime.now())
                                 .updatedAt(LocalDateTime.now())
                                 .build();
-                //Check xem có tạo nhầm nhóm hotline với năng lực ko đc phép ko
+                // Check xem có tạo nhầm nhóm hotline với năng lực ko đc phép ko
                 validateHotlineGroup(group);
-                
+
                 group = rescueGroupRepository.save(group);
 
                 return RescueGroupResponse.builder()
@@ -299,6 +300,37 @@ public class RescueGroupService {
                 }
 
                 rescueGroupMemberRepository.delete(member);
+        }
+
+        // Cập nhật trạng thái nhóm do team leader làm (từ OFFLINE sang AVAILABLE)
+        @Transactional
+        public void updateStatus(
+                        UUID groupId,
+                        UpdateRescueGroupStatusRequest request) {
+
+                // Team Leader đang đăng nhập
+                User currentUser = authenticationService.getCurrentUser();
+
+                // Tìm Group
+                RescueGroup group = rescueGroupRepository.findById(groupId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.RESCUE_GROUP_NOT_FOUND));
+
+                // Chỉ Team Leader của Team được cập nhật
+                if (group.getTeam().getLeader() == null
+                                || !group.getTeam().getLeader().getId().equals(currentUser.getId())) {
+
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                // Không cho cập nhật BUSY thủ công
+                if (request.getStatus() == RescueGroupStatus.BUSY) {
+                        throw new AppException(ErrorCode.INVALID_GROUP_STATUS);
+                }
+
+                group.setStatus(request.getStatus());
+
+                rescueGroupRepository.save(group);
         }
 
 }

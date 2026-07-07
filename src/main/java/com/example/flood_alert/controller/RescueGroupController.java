@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.flood_alert.dbo.request.AddGroupMembersRequest;
 import com.example.flood_alert.dbo.request.AssignGroupLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueGroupRequest;
+import com.example.flood_alert.dbo.request.UpdateRescueGroupStatusRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.AvailableMemberResponse;
 import com.example.flood_alert.dbo.response.GroupLeaderResponse;
@@ -27,6 +29,7 @@ import com.example.flood_alert.dbo.response.ListMemberOfGroupResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.service.RescueGroupService;
 
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -113,5 +116,17 @@ public class RescueGroupController {
                 rescueGroupService.removeMember(groupId, userId);
 
                 return ApiResponse.<Void>builder().build();
+        }
+
+        // Cập nhật trạng thái group do team leader làm (từ OFFLINE qua AVAILABLE)
+        @PatchMapping("/{groupId}/status")
+        public ApiResponse<Void> updateStatus(
+                        @PathVariable UUID groupId,
+                        @Valid @RequestBody UpdateRescueGroupStatusRequest request) {
+
+                rescueGroupService.updateStatus(groupId, request);
+
+                return ApiResponse.<Void>builder()
+                                .build();
         }
 }
