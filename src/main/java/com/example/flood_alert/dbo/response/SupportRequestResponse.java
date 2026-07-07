@@ -36,6 +36,8 @@ public class SupportRequestResponse {
 
     String requestedByName;
 
+    String requestedPhone;
+
     UUID approvedById;
 
     String approvedByName;

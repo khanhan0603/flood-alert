@@ -160,10 +160,12 @@ public class SupportRequestService {
                 UUID provinceId = currentUser
                                 .getArea()
                                 .getId();
+                
 
                 return supportRequestRepository
                                 .findByProvinceAndStatus(
                                                 provinceId,
+                                                SupportRequestSource.TEAM,
                                                 status,
                                                 pageable)
                                 .map(this::toResponse);
@@ -233,6 +235,8 @@ public class SupportRequestService {
                                 .requestedById(request.getRequestedBy().getId())
 
                                 .requestedByName(request.getRequestedBy().getHoten())
+
+                                .requestedPhone(request.getRequestedBy().getSodt())
 
                                 .approvedById(
                                                 request.getApprovedBy() != null
