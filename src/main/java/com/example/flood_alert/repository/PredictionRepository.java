@@ -5,13 +5,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.flood_alert.dbo.response.FloodPredictionResponse;
+import com.example.flood_alert.dbo.response.HighRiskAreaResponse;
 import com.example.flood_alert.entity.FloodPrediction;
+import com.example.flood_alert.enums.RiskLevel;
 
 import jakarta.transaction.Transactional;
 
@@ -109,4 +112,39 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
             @Param("historyId") UUID historyId,
             @Param("startedAt") LocalDateTime startedAt,
             @Param("jobType") String jobType);
+
+    // THỐNG KÊ
+
+    /**
+     * Đếm tổng số khu vực đã được dự báo
+     * trong một phiên chạy AI.
+     */
+    long countByPredictionJobHistoryId(UUID predictionJobHistoryId);
+
+    /**
+     * Đếm số khu vực có mức nguy cơ LOW/MEDIUM/HIGH
+     * theo Lead1 của một phiên chạy AI.
+     */
+    long countByPredictionJobHistoryIdAndLead1(
+            UUID predictionJobHistoryId,
+            RiskLevel riskLevel);
+
+    /**
+     * Lấy Top 10 khu vực có xác suất dự báo
+     * lũ cao nhất theo Lead1.
+     * Chỉ có HIGH
+     */
+    @Query("""
+                SELECT new com.example.flood_alert.dbo.response.HighRiskAreaResponse(
+                    fp.area.tenkhuvuc,
+                    fp.lead1Probability
+                )
+                FROM FloodPrediction fp
+                WHERE fp.predictionJobHistory.id = :predictionJobHistoryId
+                  AND fp.lead1 = com.example.flood_alert.enums.RiskLevel.HIGH
+                ORDER BY fp.lead1Probability DESC
+            """)
+    List<HighRiskAreaResponse> findTopHighRiskAreas(
+            UUID predictionJobHistoryId,
+            Pageable pageable);
 }

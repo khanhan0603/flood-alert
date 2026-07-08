@@ -22,13 +22,9 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(name = "flood_predictions",
-   indexes = {
-        @Index(
-            name = "idx_area_predicted",
-            columnList = "area_id,predicted_at"
-        )
-    })
+@Table(name = "flood_predictions", indexes = {
+        @Index(name = "idx_area_predicted", columnList = "area_id,predicted_at")
+})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -75,4 +71,14 @@ public class FloodPrediction extends BaseEntity {
 
     @Column(name = "weather_to")
     LocalDateTime weatherTo;
+
+    /**
+     * Phiên chạy AI tạo ra bản ghi dự báo này.
+     *
+     * Dữ liệu cũ có thể null do được tạo trước khi bổ sung bảng
+     * PredictionJobHistory.
+     */
+    @ManyToOne
+    @JoinColumn(name = "prediction_job_history_id")
+    PredictionJobHistory predictionJobHistory;
 }
