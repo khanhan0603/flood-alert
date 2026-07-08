@@ -2,6 +2,7 @@ package com.example.flood_alert.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
@@ -9,9 +10,14 @@ import org.springframework.stereotype.Service;
 
 import com.example.flood_alert.dbo.response.AiPredictionStatisticsResponse;
 import com.example.flood_alert.dbo.response.OverviewStatisticsResponse;
+import com.example.flood_alert.entity.PredictionJobHistory;
+import com.example.flood_alert.enums.PredictionJobType;
 import com.example.flood_alert.enums.RiskLevel;
 import com.example.flood_alert.enums.StatusSOS;
+import com.example.flood_alert.exception.AppException;
+import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.IoTDeviceRepository;
+import com.example.flood_alert.repository.PredictionJobHistoryRepository;
 import com.example.flood_alert.repository.PredictionRepository;
 import com.example.flood_alert.repository.RescueGroupMemberRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
@@ -36,6 +42,7 @@ public class StatisticsService {
     RescueGroupMemberRepository rescueGroupMemberRepository;
     IoTDeviceRepository ioTDeviceRepository;
     PredictionRepository predictionRepository;
+    PredictionJobHistoryRepository predictionJobHistoryRepository;
 
     /**
      * Lấy dữ liệu thống kê tổng quan hiển thị trên Dashboard.
@@ -63,12 +70,41 @@ public class StatisticsService {
     }
 
     /**
+     * Lấy thống kê của phiên dự báo AI mới nhất.
+     */
+    public AiPredictionStatisticsResponse getLatestAiPredictionStatistics() {
+
+        PredictionJobHistory history = predictionJobHistoryRepository
+                .findFirstByOrderByStartedAtDesc()
+                .orElseThrow(() -> new AppException(ErrorCode.PREDICTION_JOB_NOT_FOUND));
+
+        return getAiPredictionStatistics(history.getId());
+    }
+
+    /**
+     * Lấy thống kê dự báo AI theo ngày và ca chạy.
+     */
+    public AiPredictionStatisticsResponse getAiPredictionStatistics(
+            LocalDate date,
+            PredictionJobType jobType) {
+
+        PredictionJobHistory history = predictionJobHistoryRepository
+                .findByJobDateAndType(
+                        date,
+                        jobType.name())
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.PREDICTION_JOB_NOT_FOUND));
+
+        return getAiPredictionStatistics(history.getId());
+    }
+
+    /**
      * Thống kê kết quả dự báo lũ của một phiên chạy AI.
      *
      * @param predictionJobHistoryId Id phiên chạy AI.
      * @return Thống kê dự báo.
      */
-    public AiPredictionStatisticsResponse getAiPredictionStatistics(UUID predictionJobHistoryId) {
+    private AiPredictionStatisticsResponse getAiPredictionStatistics(UUID predictionJobHistoryId) {
 
         return AiPredictionStatisticsResponse.builder()
 
@@ -101,9 +137,8 @@ public class StatisticsService {
                                 predictionJobHistoryId,
                                 PageRequest.of(0, 10))
                                 .stream()
-                                .peek(item->item.setProbability(
-                                    toPercent(item.getProbability())
-                                ))
+                                .peek(item -> item.setProbability(
+                                        toPercent(item.getProbability())))
                                 .toList())
 
                 .build();

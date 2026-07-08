@@ -1,16 +1,17 @@
 package com.example.flood_alert.controller;
 
-import java.util.UUID;
+import java.time.LocalDate;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.dbo.response.AiPredictionStatisticsResponse;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.OverviewStatisticsResponse;
+import com.example.flood_alert.enums.PredictionJobType;
 import com.example.flood_alert.service.StatisticsService;
 
 import lombok.AccessLevel;
@@ -45,19 +46,30 @@ public class StatisticsController {
     }
 
     /**
-     * Thống kê kết quả dự báo lũ theo một phiên chạy AI.
-     *
-     * @param predictionJobHistoryId Id phiên chạy AI.
-     * @return Thống kê dự báo lũ.
+     * Lấy thống kê dự báo lũ của phiên AI mới nhất.
      */
-    @GetMapping("/ai-predictions/{predictionJobHistoryId}")
+    @GetMapping("/ai-predictions/latest")
+    public ApiResponse<AiPredictionStatisticsResponse> getLatestAiPredictionStatistics() {
+
+        return ApiResponse.<AiPredictionStatisticsResponse>builder()
+                .message("Lấy thống kê dự báo lũ mới nhất thành công.")
+                .result(statisticsService.getLatestAiPredictionStatistics())
+                .build();
+    }
+
+    /**
+     * Lấy thống kê dự báo lũ theo ngày và ca chạy.
+     */
+    @GetMapping("/ai-predictions")
     public ApiResponse<AiPredictionStatisticsResponse> getAiPredictionStatistics(
-            @PathVariable UUID predictionJobHistoryId) {
+            @RequestParam LocalDate date,
+            @RequestParam PredictionJobType jobType) {
 
         return ApiResponse.<AiPredictionStatisticsResponse>builder()
                 .message("Lấy thống kê dự báo lũ thành công.")
                 .result(statisticsService.getAiPredictionStatistics(
-                        predictionJobHistoryId))
+                        date,
+                        jobType))
                 .build();
     }
 }
