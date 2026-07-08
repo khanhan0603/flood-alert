@@ -198,10 +198,21 @@ public class PredictionSchedulerService {
                 successBatch,
                 failedBatch);
         try {
-            // Lưu db
+            // Lưu db history ca chạy
             predictionJobHistoryRepository.save(history);
 
-            log.info("Prediction job history saved.");
+            log.info("Prediction job history saved. id={}", history.getId());
+
+            //Link ca chạy sang flood_prediction
+            int linked = predictionRepository.linkPredictionJobHistory(
+                    history.getId(),
+                    history.getStartedAt(),
+                    history.getJobType().name());
+
+            log.info(
+                    "Linked {} flood predictions to prediction history {}",
+                    linked,
+                    history.getId());
 
         } catch (Exception ex) {
             // Lỗi lưu db
