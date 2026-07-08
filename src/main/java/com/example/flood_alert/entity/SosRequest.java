@@ -177,4 +177,14 @@ public class SosRequest extends BaseEntity {
     // Sinh tự động, gồm 6 ký tự và duy nhất trong toàn hệ thống.
     @Column(name = "tracking_code", length = 6, nullable = false, unique = true)
     String trackingCode;
+
+    /**
+     * Phiên chạy AI tạo ra bản ghi dự báo này.
+     *
+     * Dữ liệu cũ có thể null do được tạo trước khi bổ sung bảng
+     * PredictionJobHistory.
+     */
+    @ManyToOne
+    @JoinColumn(name = "prediction_job_history_id")
+    PredictionJobHistory predictionJobHistory;
 }
