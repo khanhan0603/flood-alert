@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import com.example.flood_alert.dbo.response.AiIotStatisticsResponse;
 import com.example.flood_alert.dbo.response.AiPredictionStatisticsResponse;
 import com.example.flood_alert.dbo.response.OverviewStatisticsResponse;
 import com.example.flood_alert.entity.PredictionJobHistory;
@@ -16,6 +17,7 @@ import com.example.flood_alert.enums.RiskLevel;
 import com.example.flood_alert.enums.StatusSOS;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
+import com.example.flood_alert.repository.AreaRiskSnapshotRepository;
 import com.example.flood_alert.repository.IoTDeviceRepository;
 import com.example.flood_alert.repository.PredictionJobHistoryRepository;
 import com.example.flood_alert.repository.PredictionRepository;
@@ -43,6 +45,7 @@ public class StatisticsService {
     IoTDeviceRepository ioTDeviceRepository;
     PredictionRepository predictionRepository;
     PredictionJobHistoryRepository predictionJobHistoryRepository;
+    AreaRiskSnapshotRepository areaRiskSnapshotRepository;
 
     /**
      * Lấy dữ liệu thống kê tổng quan hiển thị trên Dashboard.
@@ -76,9 +79,15 @@ public class StatisticsService {
 
         PredictionJobHistory history = predictionJobHistoryRepository
                 .findFirstByOrderByStartedAtDesc()
-                .orElseThrow(() -> new AppException(ErrorCode.PREDICTION_JOB_NOT_FOUND));
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.PREDICTION_JOB_NOT_FOUND));
 
-        return getAiPredictionStatistics(history.getId());
+        AiPredictionStatisticsResponse response = getAiPredictionStatistics(history.getId());
+
+        response.setJobDate(history.getStartedAt().toLocalDate());
+        response.setJobType(history.getJobType());
+
+        return response;
     }
 
     /**
@@ -95,7 +104,12 @@ public class StatisticsService {
                 .orElseThrow(() -> new AppException(
                         ErrorCode.PREDICTION_JOB_NOT_FOUND));
 
-        return getAiPredictionStatistics(history.getId());
+        AiPredictionStatisticsResponse response = getAiPredictionStatistics(history.getId());
+
+        response.setJobDate(history.getStartedAt().toLocalDate());
+        response.setJobType(history.getJobType());
+
+        return response;
     }
 
     /**
@@ -130,7 +144,6 @@ public class StatisticsService {
                         predictionRepository.countByPredictionJobHistoryIdAndLead1(
                                 predictionJobHistoryId,
                                 RiskLevel.HIGH))
-
                 // Top khu vực có xác suất ngập cao nhất.
                 .topHighRiskAreas(
                         predictionRepository.findTopHighRiskAreas(
@@ -154,5 +167,51 @@ public class StatisticsService {
         return BigDecimal.valueOf(probability * 100)
                 .setScale(2, RoundingMode.HALF_UP)
                 .doubleValue();
+    }
+
+    /**
+     * Thống kê nguy cơ lũ hiện tại dựa trên dữ liệu AI + IoT.
+     */
+    public AiIotStatisticsResponse getAiIotStatistics() {
+
+        return AiIotStatisticsResponse.builder()
+
+                // Tổng số khu vực đã có snapshot mới nhất.
+                .totalAreas(
+                        areaRiskSnapshotRepository.countLatestSnapshots())
+
+                // Số khu vực nguy cơ thấp.
+                .lowRiskAreas(
+                        areaRiskSnapshotRepository.countLatestSnapshotsByRiskLevel(
+                                RiskLevel.LOW))
+
+                // Số khu vực nguy cơ trung bình.
+                .mediumRiskAreas(
+                        areaRiskSnapshotRepository.countLatestSnapshotsByRiskLevel(
+                                RiskLevel.MEDIUM))
+
+                // Số khu vực nguy cơ cao.
+                .highRiskAreas(
+                        areaRiskSnapshotRepository.countLatestSnapshotsByRiskLevel(
+                                RiskLevel.HIGH))
+
+                // Top 10 khu vực nguy cơ cao nhất.
+                .topHighRiskAreas(
+                        areaRiskSnapshotRepository.findTopHighRiskAreas(
+                                PageRequest.of(0, 10))
+                                .stream()
+                                .peek(item -> {
+
+                                    // Chuyển xác suất AI từ 0-1 sang %
+                                    item.setPredictionProbability(
+                                            toPercent(item.getPredictionProbability()));
+
+                                    // Chuyển danger ratio từ 0-1 sang %
+                                    item.setDangerRatio(
+                                            toPercent(item.getDangerRatio()));
+                                })
+                                .toList())
+
+                .build();
     }
 }

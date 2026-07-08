@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.flood_alert.dbo.response.AiIotStatisticsResponse;
 import com.example.flood_alert.dbo.response.AiPredictionStatisticsResponse;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.OverviewStatisticsResponse;
@@ -70,6 +71,18 @@ public class StatisticsController {
                 .result(statisticsService.getAiPredictionStatistics(
                         date,
                         jobType))
+                .build();
+    }
+
+    /**
+     * Thống kê nguy cơ lũ hiện tại dựa trên dữ liệu AI + IoT.
+     */
+    @GetMapping("/ai-iot")
+    public ApiResponse<AiIotStatisticsResponse> getAiIotStatistics() {
+
+        return ApiResponse.<AiIotStatisticsResponse>builder()
+                .message("Lấy thống kê AI + IoT thành công.")
+                .result(statisticsService.getAiIotStatistics())
                 .build();
     }
 }

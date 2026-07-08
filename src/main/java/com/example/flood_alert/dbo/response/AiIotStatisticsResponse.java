@@ -1,9 +1,6 @@
 package com.example.flood_alert.dbo.response;
 
-import java.time.LocalDate;
 import java.util.List;
-
-import com.example.flood_alert.enums.PredictionJobType;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -13,17 +10,17 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 /**
- * Thống kê kết quả dự báo lũ của một phiên chạy AI.
+ * Thống kê nguy cơ lũ hiện tại dựa trên dữ liệu AI + IoT.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AiPredictionStatisticsResponse {
+public class AiIotStatisticsResponse {
 
     /**
-     * Tổng số khu vực đã được dự báo.
+     * Tổng số khu vực đã có snapshot mới nhất.
      */
     long totalAreas;
 
@@ -41,18 +38,9 @@ public class AiPredictionStatisticsResponse {
      * Số khu vực nguy cơ cao.
      */
     long highRiskAreas;
-    /**
-     * Ngày chạy phiên AI.
-     */
-    LocalDate jobDate;
 
     /**
-     * Ca chạy AI.
+     * Top khu vực nguy cơ cao nhất hiện tại.
      */
-    PredictionJobType jobType;
-
-    /**
-     * Top khu vực có xác suất lũ cao nhất.
-     */
-    List<HighRiskAreaResponse> topHighRiskAreas;
+    List<HighRiskSnapshotResponse> topHighRiskAreas;
 }
