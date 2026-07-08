@@ -3,6 +3,8 @@ package com.example.flood_alert.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Service;
 import com.example.flood_alert.dbo.response.AiIotStatisticsResponse;
 import com.example.flood_alert.dbo.response.AiPredictionStatisticsResponse;
 import com.example.flood_alert.dbo.response.OverviewStatisticsResponse;
+import com.example.flood_alert.dbo.response.SosChartResponse;
+import com.example.flood_alert.dbo.response.SosStatisticsResponse;
 import com.example.flood_alert.entity.PredictionJobHistory;
 import com.example.flood_alert.enums.PredictionJobType;
 import com.example.flood_alert.enums.RiskLevel;
@@ -212,6 +216,70 @@ public class StatisticsService {
                                 })
                                 .toList())
 
+                .build();
+    }
+
+    /**
+     * Thống kê yêu cầu cứu hộ theo khoảng thời gian.
+     */
+    public SosStatisticsResponse getSosStatistics(
+            LocalDate from,
+            LocalDate to) {
+
+        LocalDateTime fromDateTime = from.atStartOfDay();
+
+        // Để query dạng >= from và < to
+        LocalDateTime toDateTime = to.plusDays(1).atStartOfDay();
+
+        List<SosChartResponse> chart = sosRequestRepository
+                .getSosChart(fromDateTime, toDateTime)
+                .stream()
+                .map(this::mapToSosChartResponse)
+                .toList();
+
+        return SosStatisticsResponse.builder()
+
+                // Tổng số SOS.
+                .totalSos(
+                        sosRequestRepository.countByCreatedAtBetween(
+                                fromDateTime,
+                                toDateTime))
+
+                // Đã hoàn thành.
+                .completedSos(
+                        sosRequestRepository.countByStatusAndCreatedAtBetween(
+                                StatusSOS.DONE.name(),
+                                fromDateTime,
+                                toDateTime))
+
+                // Đang xử lý.
+                .processingSos(
+                        sosRequestRepository.countByStatusAndCreatedAtBetween(
+                                StatusSOS.PROCESSING.name(),
+                                fromDateTime,
+                                toDateTime))
+
+                // Đã hủy.
+                .cancelledSos(
+                        sosRequestRepository.countByStatusAndCreatedAtBetween(
+                                StatusSOS.CANCELED.name(),
+                                fromDateTime,
+                                toDateTime))
+
+                // Biểu đồ.
+                .chart(chart)
+
+                .build();
+    }
+
+    /**
+     * Mapping dữ liệu native query sang DTO biểu đồ.
+     */
+    private SosChartResponse mapToSosChartResponse(Object[] row) {
+
+        return SosChartResponse.builder()
+                .date(((java.sql.Date) row[0]).toLocalDate())
+                .totalSos(((Number) row[1]).longValue())
                 .build();
     }
 }

@@ -12,6 +12,7 @@ import com.example.flood_alert.dbo.response.AiIotStatisticsResponse;
 import com.example.flood_alert.dbo.response.AiPredictionStatisticsResponse;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.OverviewStatisticsResponse;
+import com.example.flood_alert.dbo.response.SosStatisticsResponse;
 import com.example.flood_alert.enums.PredictionJobType;
 import com.example.flood_alert.service.StatisticsService;
 
@@ -50,6 +51,7 @@ public class StatisticsController {
      * Lấy thống kê dự báo lũ của phiên AI mới nhất.
      */
     @GetMapping("/ai-predictions/latest")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public ApiResponse<AiPredictionStatisticsResponse> getLatestAiPredictionStatistics() {
 
         return ApiResponse.<AiPredictionStatisticsResponse>builder()
@@ -62,6 +64,7 @@ public class StatisticsController {
      * Lấy thống kê dự báo lũ theo ngày và ca chạy.
      */
     @GetMapping("/ai-predictions")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public ApiResponse<AiPredictionStatisticsResponse> getAiPredictionStatistics(
             @RequestParam LocalDate date,
             @RequestParam PredictionJobType jobType) {
@@ -78,11 +81,27 @@ public class StatisticsController {
      * Thống kê nguy cơ lũ hiện tại dựa trên dữ liệu AI + IoT.
      */
     @GetMapping("/ai-iot")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public ApiResponse<AiIotStatisticsResponse> getAiIotStatistics() {
 
         return ApiResponse.<AiIotStatisticsResponse>builder()
                 .message("Lấy thống kê AI + IoT thành công.")
                 .result(statisticsService.getAiIotStatistics())
+                .build();
+    }
+
+    /**
+     * Thống kê yêu cầu cứu hộ theo khoảng thời gian.
+     */
+    @GetMapping("/sos")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+    public ApiResponse<SosStatisticsResponse> getSosStatistics(
+            @RequestParam LocalDate from,
+            @RequestParam LocalDate to) {
+
+        return ApiResponse.<SosStatisticsResponse>builder()
+                .message("Lấy thống kê yêu cầu cứu hộ thành công.")
+                .result(statisticsService.getSosStatistics(from, to))
                 .build();
     }
 }
