@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,6 +57,7 @@ public class HotlineController {
          * Operator tạo SOS thay người dân sau khi tiếp nhận cuộc gọi Hotline.
          */
         @PostMapping("/sos")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<SosResponse> createHotlineSos(
                         @RequestBody @Valid CreateHotlineSosRequest request) {
 
@@ -66,6 +68,7 @@ public class HotlineController {
 
         // Danh sách cuộc gọi chờ, chỉ xem cuộc gọi đang chờ.
         @GetMapping("/call-events")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Page<CallEventResponse>> getPendingCallEvents(
 
                         @PageableDefault(size = 20) Pageable pageable) {
@@ -79,6 +82,7 @@ public class HotlineController {
          * Xem chi tiết một cuộc gọi Hotline.
          */
         @GetMapping("/call-events/{id}")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<CallEventResponse> getCallEvent(
                         @PathVariable UUID id) {
 
@@ -89,6 +93,7 @@ public class HotlineController {
 
         // Danh sách lịch sử để tra cứu, chỉ xem lịch sử (MATCHED, STALE).
         @GetMapping("/history")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Page<CallEventResponse>> getHistory(
 
                         @RequestParam CallEventStatus status,
@@ -109,6 +114,7 @@ public class HotlineController {
          * - Mã tracking
          */
         @GetMapping("/sos/search")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Page<SosResponse>> searchHotlineSos(
 
                         SearchHotlineSosRequest request,
@@ -138,6 +144,7 @@ public class HotlineController {
          * Danh sách các SOS do Operator nhập tay.
          */
         @GetMapping("/manual-sos")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Page<SosResponse>> getManualHotlineSos(
 
                         @PageableDefault(size = 20) Pageable pageable) {
@@ -151,6 +158,7 @@ public class HotlineController {
          * Hotline cập nhật thông tin SOS.
          */
         @PutMapping("/sos/{id}")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<SosResponse> updateHotlineSos(
                         @PathVariable UUID id,
                         @RequestBody @Valid UpdateHotlineSosRequest request) {

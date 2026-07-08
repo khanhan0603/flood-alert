@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,6 +43,7 @@ public class RescueTeamController {
         RescueTeamService rescueTeamService;
 
         @PostMapping
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
         public ApiResponse<RescueTeamResponse> create(
                         @RequestBody @Valid CreateRescueTeamRequest request) {
                 return ApiResponse.<RescueTeamResponse>builder()
@@ -50,6 +52,7 @@ public class RescueTeamController {
         }
 
         @PostMapping(value = "/{teamId}/import-rescuers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
         public ApiResponse<ImportRescuerResponse> importRescuers(
                         @PathVariable UUID teamId,
                         @RequestParam("file") MultipartFile file) {
@@ -61,6 +64,7 @@ public class RescueTeamController {
         }
 
         @PutMapping("/{teamId}/leader")
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
         public ApiResponse<TeamLeaderResponse> assignLeader(
                         @PathVariable UUID teamId,
                         @RequestBody AssignTeamLeaderRequest request) {

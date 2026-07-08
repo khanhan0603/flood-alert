@@ -37,6 +37,7 @@ public class SosAssignmentController {
 
         // Giao nhiệm vụ cho group
         @PostMapping
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<UUID> assignGroup(
                         @RequestBody AssignGroupRequest request) {
 
@@ -47,6 +48,7 @@ public class SosAssignmentController {
 
         // Group leader xem các trạng thái nhiệm vụ
         @GetMapping("/{id}/available-statuses")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<List<AssignmentStatusOptionResponse>> getAvailableStatuses(
                         @PathVariable UUID id) {
 
@@ -81,6 +83,7 @@ public class SosAssignmentController {
 
         // Group leader báo fail
         @PatchMapping("/{assignmentId}/failed")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Void> failed(
                         @PathVariable UUID assignmentId,
                         @Valid @RequestBody FailAssignmentRequest request) {

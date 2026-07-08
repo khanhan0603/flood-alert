@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -43,6 +44,7 @@ public class RescueGroupController {
         RescueGroupService rescueGroupService;
 
         @PostMapping("/team/{teamId}")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<RescueGroupResponse> create(@PathVariable UUID teamId,
                         @RequestBody CreateRescueGroupRequest request) {
                 return ApiResponse.<RescueGroupResponse>builder()
@@ -54,6 +56,7 @@ public class RescueGroupController {
         }
 
         @GetMapping("/team/{teamId}/available-members")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<List<AvailableMemberResponse>> getAvailableMembers(
                         @PathVariable UUID teamId) {
 
@@ -66,6 +69,7 @@ public class RescueGroupController {
         }
 
         @PutMapping("/{groupId}/members")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<List<GroupMemberResponse>> addMembers(
                         @PathVariable UUID groupId,
                         @RequestBody AddGroupMembersRequest request) {
@@ -81,6 +85,7 @@ public class RescueGroupController {
 
         // Pick group leader
         @PutMapping("/{groupId}/leader")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<GroupLeaderResponse> assignLeader(
                         @PathVariable UUID groupId,
                         @RequestBody AssignGroupLeaderRequest request) {
@@ -110,6 +115,7 @@ public class RescueGroupController {
 
         // Loại thành viên ra khỏi nhóm, team leader mới được làm
         @DeleteMapping("/{groupId}/members/{userId}")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Void> removeMember(
                         @PathVariable UUID groupId,
                         @PathVariable UUID userId) {
@@ -121,6 +127,7 @@ public class RescueGroupController {
 
         // Cập nhật trạng thái group do team leader làm (từ OFFLINE qua AVAILABLE)
         @PatchMapping("/{groupId}/status")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Void> updateStatus(
                         @PathVariable UUID groupId,
                         @Valid @RequestBody UpdateRescueGroupStatusRequest request) {
@@ -133,6 +140,7 @@ public class RescueGroupController {
 
         // Team Leader xem danh sách Group phù hợp để hỗ trợ
         @GetMapping("/support-candidates/{supportRequestItemId}")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<List<SupportCandidateGroupResponse>> getSupportCandidateGroups(
                         @PathVariable UUID supportRequestItemId) {
 

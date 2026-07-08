@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -57,6 +58,7 @@ public class SosRequestController {
 
         // Update cho người dân đã có tài khoản
         @PutMapping("/{sosId}")
+        @PreAuthorize("hasAuthority('SCOPE_CITIZEN')")
         public ApiResponse<SosResponse> update(
                         @PathVariable UUID sosId,
                         @RequestBody @Valid UpdateSosRequest request,
@@ -88,6 +90,7 @@ public class SosRequestController {
 
         // Người dân xem chi tiết SOS của mình
         @GetMapping("/my/{sosId}")
+        @PreAuthorize("hasAuthority('SCOPE_CITIZEN')")
         public ApiResponse<CitizenSosDetailResponse> getMySosDetail(
                         @PathVariable UUID sosId) {
 
@@ -112,6 +115,7 @@ public class SosRequestController {
 
         // List sos request xếp theo status
         @GetMapping("/my-sos")
+        @PreAuthorize("hasAuthority('SCOPE_CITIZEN')")
         public ApiResponse<Page<SosResponse>> getMySos(
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "10") int size) {
@@ -147,6 +151,7 @@ public class SosRequestController {
 
         // Dashboard cho team leader
         @GetMapping("/{teamId}/team/summary")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<TeamDashboardResponse> getMyDashboard(@PathVariable UUID teamId) {
 
                 return ApiResponse
@@ -158,6 +163,7 @@ public class SosRequestController {
 
         // Danh sách các sos thuộc từng trạng thái của team
         @GetMapping("/team/{status}")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Page<SosResponse>> getMyTeamSosByStatus(
                         @PathVariable StatusSOS status,
                         @PageableDefault(size = 20) Pageable pageable) {
@@ -169,6 +175,7 @@ public class SosRequestController {
 
         // Danh sách các sos của team
         @GetMapping("/team")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Page<SosResponse>> getMyTeamSos(
                         @PageableDefault(size = 20) Pageable pageable) {
 
@@ -180,6 +187,7 @@ public class SosRequestController {
 
         // Chi tiết sos
         @GetMapping("/{id}")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<SosDetailResponse> getDetail(
                         @PathVariable UUID id) {
 
@@ -207,6 +215,7 @@ public class SosRequestController {
 
         // Cancel người có tài khoản
         @PatchMapping("/{sosId}/cancel")
+        @PreAuthorize("hasAuthority('SCOPE_CITIZEN')")
         public ApiResponse<Void> cancel(
                         @PathVariable UUID sosId) {
 

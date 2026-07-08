@@ -27,7 +27,6 @@ import com.example.flood_alert.dbo.response.CandidateSupportTeamResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestDetailResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestResponse;
 import com.example.flood_alert.dbo.response.ProvinceSupportItemResponse;
-import com.example.flood_alert.dbo.response.SupportCandidateGroupResponse;
 import com.example.flood_alert.dbo.response.SupportMapResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.enums.SupportRequestItemStatus;
@@ -172,6 +171,7 @@ public class SupportRequestController {
 
         // Group Leader gửi yêu cầu hỗ trợ đến Team Leader
         @PostMapping("/group/{assignmentId}")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<UUID> createGroupSupportRequest(
                         @PathVariable UUID assignmentId,
                         @RequestBody @Valid CreateGroupSupportRequest request) {
@@ -185,6 +185,7 @@ public class SupportRequestController {
 
         // Team Leader xem danh sách yêu cầu hỗ trợ từ các Group trong Team
         @GetMapping("/group")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Page<GroupSupportRequestResponse>> getGroupSupportRequests(
                         @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
@@ -195,6 +196,7 @@ public class SupportRequestController {
 
         // Team Leader xem chi tiết yêu cầu hỗ trợ của Group
         @GetMapping("/group/{supportRequestId}")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<GroupSupportRequestDetailResponse> getGroupSupportRequestDetail(
                         @PathVariable UUID supportRequestId) {
 
@@ -206,6 +208,7 @@ public class SupportRequestController {
 
         // Team Leader giao nhiệm vụ hỗ trợ cho Group trong Team
         @PostMapping("/support-request-items/{supportRequestItemId}/assign-group")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<UUID> assignSupportGroup(
                         @PathVariable UUID supportRequestItemId,
                         @RequestBody @Valid AssignSupportGroupRequest request) {
