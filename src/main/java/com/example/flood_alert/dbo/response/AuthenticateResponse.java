@@ -2,6 +2,7 @@ package com.example.flood_alert.dbo.response;
 
 import java.util.UUID;
 
+import com.example.flood_alert.enums.RescueGroupType;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.AccessLevel;
@@ -34,4 +35,6 @@ public class AuthenticateResponse {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     Boolean isGroupLeader;
+
+    RescueGroupType groupType;
 }

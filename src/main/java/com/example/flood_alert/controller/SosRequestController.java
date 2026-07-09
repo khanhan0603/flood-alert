@@ -187,7 +187,7 @@ public class SosRequestController {
 
         // Chi tiết sos
         @GetMapping("/{id}")
-        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER') or hasAuthority('SCOPE_PROVINCE_OPERATOR')")
         public ApiResponse<SosDetailResponse> getDetail(
                         @PathVariable UUID id) {
 

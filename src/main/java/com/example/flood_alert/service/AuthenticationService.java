@@ -26,11 +26,13 @@ import com.example.flood_alert.dbo.response.IntrospectResponse;
 import com.example.flood_alert.entity.InvalidatedToken;
 import com.example.flood_alert.entity.RefreshToken;
 import com.example.flood_alert.entity.User;
+import com.example.flood_alert.enums.RescueGroupType;
 import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.InvalidatedTokenRepository;
 import com.example.flood_alert.repository.RefreshTokenRepository;
+import com.example.flood_alert.repository.RescueGroupMemberRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.UserRepository;
@@ -61,6 +63,7 @@ public class AuthenticationService {
     RescueTeamRepository rescueTeamRepository;
     RescueGroupRepository rescueGroupRepository;
     RefreshTokenRepository refreshTokenRepository;
+    RescueGroupMemberRepository rescueGroupMemberRepository;
 
     @NonFinal
     @Value("${jwt.signedKey}")
@@ -159,6 +162,14 @@ public class AuthenticationService {
             isGroupLeader = rescueGroupRepository.existsByLeaderId(user.getId());
         }
 
+        RescueGroupType groupType = null;
+
+        if (user.getRole() == Role.RESCUER) {
+            groupType = rescueGroupMemberRepository
+                    .findGroupTypeByUserId(user.getId())
+                    .orElse(null);
+        }
+
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
@@ -189,11 +200,12 @@ public class AuthenticationService {
                         : null)
                 .isTeamLeader(isTeamLeader)
                 .isGroupLeader(isGroupLeader)
+                .groupType(groupType)
                 .build();
 
     }
 
-    //Hàm lấy người dùng nếu có đăng nhập trên hệ thống phục vụ tạo sos
+    // Hàm lấy người dùng nếu có đăng nhập trên hệ thống phục vụ tạo sos
     public User getCurrentUserOrNull() {
 
         Authentication authentication = SecurityContextHolder

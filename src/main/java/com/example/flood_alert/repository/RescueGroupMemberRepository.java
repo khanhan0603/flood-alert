@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import com.example.flood_alert.dbo.response.ListMemberOfGroupResponse;
 import com.example.flood_alert.entity.RescueGroupMember;
 import com.example.flood_alert.entity.RescueGroupMemberId;
+import com.example.flood_alert.enums.RescueGroupType;
 
 public interface RescueGroupMemberRepository extends JpaRepository<RescueGroupMember, RescueGroupMemberId> {
     // Kiểm tra nhóm cứu hộ đã có người này chưa
@@ -41,10 +42,24 @@ public interface RescueGroupMemberRepository extends JpaRepository<RescueGroupMe
                     END,
                     u.hoten
             """)
-    Page<ListMemberOfGroupResponse> findMembersByGroupId(UUID groupId,Pageable pageable);
+    Page<ListMemberOfGroupResponse> findMembersByGroupId(UUID groupId, Pageable pageable);
 
     Optional<RescueGroupMember> findByUserId(UUID userId);
 
-    //Kiểm tra xem user có trong group ko, và lấy entity để delete
-    Optional<RescueGroupMember> findByGroup_IdAndUser_Id(UUID groupId,UUID userId);
+    // Kiểm tra xem user có trong group ko, và lấy entity để delete
+    Optional<RescueGroupMember> findByGroup_IdAndUser_Id(UUID groupId, UUID userId);
+
+    //Tìm group type theo mã người dugf
+    @Query("""
+            select rg.type
+            from RescueGroup rg
+            where rg.leader.id = :userId
+               or exists (
+                    select 1
+                    from RescueGroupMember rgm
+                    where rgm.group = rg
+                      and rgm.user.id = :userId
+               )
+            """)
+    Optional<RescueGroupType> findGroupTypeByUserId(UUID userId);
 }
