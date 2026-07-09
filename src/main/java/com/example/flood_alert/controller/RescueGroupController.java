@@ -56,7 +56,7 @@ public class RescueGroupController {
         }
 
         @GetMapping("/team/{teamId}/available-members")
-        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER','SCOPE_ADMIN')")
         public ApiResponse<List<AvailableMemberResponse>> getAvailableMembers(
                         @PathVariable UUID teamId) {
 
