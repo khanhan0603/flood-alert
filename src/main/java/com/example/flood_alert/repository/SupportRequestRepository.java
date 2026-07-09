@@ -48,7 +48,7 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
         // Danh sách yêu cầu hỗ trợ theo Id yêu cầu
         List<SupportRequest> findByRequestedById(UUID requetedById);
 
-        Page<SupportRequest> findByRequesterTeamId(
+        Page<SupportRequest> findByRequestedByTeamId(
                         UUID teamId,
                         Pageable pageable);
 

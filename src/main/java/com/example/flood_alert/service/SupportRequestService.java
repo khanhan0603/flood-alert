@@ -1192,7 +1192,7 @@ public class SupportRequestService {
                                                 ErrorCode.NO_PERMISSION));
 
                 return supportRequestRepository
-                                .findByRequesterTeamId(
+                                .findByRequestedByTeamId(
                                                 myTeam.getId(),
                                                 pageable)
                                 .map(this::toTeamSupportRequestResponse);
