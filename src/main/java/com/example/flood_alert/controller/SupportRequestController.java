@@ -29,6 +29,7 @@ import com.example.flood_alert.dbo.response.GroupSupportRequestResponse;
 import com.example.flood_alert.dbo.response.ProvinceSupportItemResponse;
 import com.example.flood_alert.dbo.response.SupportMapResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
+import com.example.flood_alert.dbo.response.TeamSupportRequestResponse;
 import com.example.flood_alert.enums.SupportRequestItemStatus;
 import com.example.flood_alert.enums.SupportRequestStatus;
 import com.example.flood_alert.service.SupportRequestService;
@@ -217,6 +218,19 @@ public class SupportRequestController {
                                 .result(supportRequestService.assignSupportGroup(
                                                 supportRequestItemId,
                                                 request))
+                                .build();
+        }
+
+        // Team Leader xem các yêu cầu hỗ trợ do Team mình gửi
+        @GetMapping("/my-created")
+        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
+        public ApiResponse<Page<TeamSupportRequestResponse>> getMyCreatedSupportRequests(
+                        @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+                return ApiResponse.<Page<TeamSupportRequestResponse>>builder()
+                                .result(
+                                                supportRequestService.getMyCreatedSupportRequests(
+                                                                pageable))
                                 .build();
         }
 }

@@ -24,6 +24,7 @@ import com.example.flood_alert.dbo.request.CreateGroupSupportRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.CreateSupportRequestItem;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
+import com.example.flood_alert.dbo.response.AssignedGroupResponse;
 import com.example.flood_alert.dbo.response.CandidateSupportTeamResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestDetailResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestItemResponse;
@@ -34,6 +35,8 @@ import com.example.flood_alert.dbo.response.SosMarkerResponse;
 import com.example.flood_alert.dbo.response.SupportMapResponse;
 import com.example.flood_alert.dbo.response.SupportRequestItemResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
+import com.example.flood_alert.dbo.response.TeamSupportRequestItemResponse;
+import com.example.flood_alert.dbo.response.TeamSupportRequestResponse;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
@@ -1175,6 +1178,82 @@ public class SupportRequestService {
                 notificationManagerService.notifyAssignmentAssigned(assignment);
 
                 return assignment.getId();
+        }
+
+        @Transactional(readOnly = true)
+        public Page<TeamSupportRequestResponse> getMyCreatedSupportRequests(
+                        Pageable pageable) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                RescueTeam myTeam = rescueTeamRepository
+                                .findByLeaderId(currentUser.getId())
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.NO_PERMISSION));
+
+                return supportRequestRepository
+                                .findByRequesterTeamId(
+                                                myTeam.getId(),
+                                                pageable)
+                                .map(this::toTeamSupportRequestResponse);
+        }
+
+        private TeamSupportRequestResponse toTeamSupportRequestResponse(
+                        SupportRequest request) {
+
+                return TeamSupportRequestResponse.builder()
+                                .id(request.getId())
+                                .sosId(request.getSos().getId())
+                                .status(request.getStatus())
+                                .reason(request.getReason())
+                                .createdAt(request.getCreatedAt())
+                                .reviewedAt(request.getReviewedAt())
+
+                                .items(
+                                                request.getItems()
+                                                                .stream()
+                                                                .map(this::toTeamSupportRequestItemResponse)
+                                                                .toList())
+
+                                .build();
+        }
+
+        private TeamSupportRequestItemResponse toTeamSupportRequestItemResponse(
+                        SupportRequestItem item) {
+
+                List<AssignedGroupResponse> assignedGroups = sosAssignmentRepository
+                                .findBySupportRequestId(item.getId())
+                                .stream()
+                                .map(assignment -> AssignedGroupResponse.builder()
+                                                .groupId(assignment.getGroup().getId())
+                                                .groupName(assignment.getGroup().getName())
+                                                .status(assignment.getStatus())
+                                                .build())
+                                .toList();
+
+                return TeamSupportRequestItemResponse.builder()
+                                .id(item.getId())
+
+                                .supportType(item.getSupportType())
+
+                                .status(item.getStatus())
+
+                                .requiredGroupCount(item.getRequiredGroupCount())
+
+                                .assignedGroupCount(item.getAssignedGroupCount())
+
+                                .assignedTeamName(
+                                                item.getAssignedTeam() != null
+                                                                ? item.getAssignedTeam().getName()
+                                                                : null)
+
+                                .provinceNote(item.getProvinceNote())
+
+                                .teamResponse(item.getTeamResponse())
+
+                                .assignedGroups(assignedGroups)
+
+                                .build();
         }
 
 }
