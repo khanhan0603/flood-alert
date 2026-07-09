@@ -66,7 +66,7 @@ public interface SosAssignmentRepository extends JpaRepository<SosAssignment, UU
   @Query("""
           SELECT sa
           FROM SosAssignment sa
-          WHERE sa.supportRequestItem.supportRequest.id = :supportRequestId
+          WHERE sa.supportRequestItem.id = :supportRequestItemId
       """)
-  List<SosAssignment> findBySupportRequestId(UUID supportRequestId);
+  List<SosAssignment> findBySupportRequestItemId(UUID supportRequestItemId);
 }

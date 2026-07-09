@@ -1222,7 +1222,7 @@ public class SupportRequestService {
                         SupportRequestItem item) {
 
                 List<AssignedGroupResponse> assignedGroups = sosAssignmentRepository
-                                .findBySupportRequestId(item.getId())
+                                .findBySupportRequestItemId(item.getId())
                                 .stream()
                                 .map(assignment -> AssignedGroupResponse.builder()
                                                 .groupId(assignment.getGroup().getId())
