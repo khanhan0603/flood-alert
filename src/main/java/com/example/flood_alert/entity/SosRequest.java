@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.example.flood_alert.enums.DispatcherType;
 import com.example.flood_alert.enums.EnvironmentRisk;
 import com.example.flood_alert.enums.LocationSource;
 import com.example.flood_alert.enums.Priority;
@@ -177,4 +178,14 @@ public class SosRequest extends BaseEntity {
     // Sinh tự động, gồm 6 ký tự và duy nhất trong toàn hệ thống.
     @Column(name = "tracking_code", length = 6, nullable = false, unique = true)
     String trackingCode;
+
+    //Người cụ thể đang điều phối sos
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dispatcher_user_id")
+    User dispatcherUser;
+
+    //Vai trò của người đang điều phối sos
+    @Enumerated(EnumType.STRING)
+    @Column(name = "dispatcher_type")
+    DispatcherType dispatcherType;
 }

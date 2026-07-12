@@ -25,9 +25,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
+import com.example.flood_alert.dbo.request.UpdateRescueTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
+import com.example.flood_alert.dbo.response.RescueTeamLeaderResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
 import com.example.flood_alert.dbo.response.RowError;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
@@ -42,6 +44,7 @@ import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
+import com.example.flood_alert.mapper.RescueTeamMapper;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
@@ -63,6 +66,7 @@ public class RescueTeamService {
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
     AuthenticationService authenticationService;
+    RescueTeamMapper rescueTeamMapper;
 
     @Transactional
     public RescueTeamResponse create(CreateRescueTeamRequest request) {
@@ -521,5 +525,82 @@ public class RescueTeamService {
         user.setTeam(null);
 
         userRepository.save(user);
+    }
+
+    // Cập nhật team leader và team deputy
+    @Transactional // Toàn bộ quá trình cập nhật Leader/Deputy nằm trong một transaction
+    public RescueTeamLeaderResponse updateLeader(
+            UUID teamId,
+            UpdateRescueTeamLeaderRequest request) {
+
+        // Tìm Rescue Team cần cập nhật
+        RescueTeam rescueTeam = rescueTeamRepository.findById(teamId)
+                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+        // Tìm Leader mới theo leaderId
+        User leader = userRepository.findById(request.getLeaderId())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Chỉ RESCUER mới được làm Leader
+        if (leader.getRole() != Role.RESCUER) {
+            throw new AppException(ErrorCode.USER_IS_NOT_RESCUER);
+        }
+
+        // Leader phải là thành viên của Team này
+        if (leader.getTeam() == null
+                || !leader.getTeam().getId().equals(teamId)) {
+            throw new AppException(ErrorCode.RESCUER_NOT_IN_TEAM);
+        }
+
+        // Leader không được giữ chức Leader hoặc Deputy của Team khác
+        if (rescueTeamRepository.existsByLeaderIdAndIdNot(leader.getId(), teamId)
+                || rescueTeamRepository.existsByDeputyLeaderIdAndIdNot(leader.getId(), teamId)) {
+            throw new AppException(ErrorCode.USER_ALREADY_IS_TEAM_LEADER_OR_DEPUTY);
+        }
+
+        // Mặc định Team có thể chưa có Deputy
+        User deputyLeader = null;
+
+        // Nếu request có Deputy thì tiến hành kiểm tra
+        if (request.getDeputyLeaderId() != null) {
+
+            // Tìm Deputy theo id
+            deputyLeader = userRepository.findById(request.getDeputyLeaderId())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+            // Deputy cũng phải có role RESCUER
+            if (deputyLeader.getRole() != Role.RESCUER) {
+                throw new AppException(ErrorCode.USER_IS_NOT_RESCUER);
+            }
+
+            // Deputy phải thuộc Team hiện tại
+            if (deputyLeader.getTeam() == null
+                    || !deputyLeader.getTeam().getId().equals(teamId)) {
+                throw new AppException(ErrorCode.RESCUER_NOT_IN_TEAM);
+            }
+
+            // Không cho phép cùng một người vừa là Leader vừa là Deputy
+            if (leader.getId().equals(deputyLeader.getId())) {
+                throw new AppException(ErrorCode.LEADER_AND_DEPUTY_CANNOT_BE_THE_SAME);
+            }
+
+            // Deputy cũng không được giữ chức Leader hoặc Deputy ở Team khác
+            if (rescueTeamRepository.existsByLeaderIdAndIdNot(deputyLeader.getId(), teamId)
+                    || rescueTeamRepository.existsByDeputyLeaderIdAndIdNot(deputyLeader.getId(), teamId)) {
+                throw new AppException(ErrorCode.USER_ALREADY_IS_TEAM_LEADER_OR_DEPUTY);
+            }
+        }
+
+        // Cập nhật Leader mới
+        rescueTeam.setLeader(leader);
+
+        // Cập nhật Deputy mới (có thể null)
+        rescueTeam.setDeputyLeader(deputyLeader);
+
+        // Lưu thay đổi xuống database
+        rescueTeamRepository.save(rescueTeam);
+
+        // Chuyển Entity sang Response DTO để trả về cho FE
+        return rescueTeamMapper.toLeaderResponse(rescueTeam);
     }
 }

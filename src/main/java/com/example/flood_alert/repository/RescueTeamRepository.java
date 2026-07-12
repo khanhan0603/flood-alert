@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.antlr.v4.runtime.atn.SemanticContext.AND;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -91,4 +92,12 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
             WHERE rt.area.parent.id = :provinceId
             """)
     List<RescueTeam> findAllSupportTeams(UUID provinceId);
+
+    //Kiểm tra người này có phải là leader của team khác ko
+    // WHERE leader_id = :leaderId
+    //   AND id <> :teamId
+    boolean existsByLeaderIdAndIdNot(UUID leaderId, UUID teamId);
+
+    //Kiem tra nguoi nay co phai deputy leader cua team khac khong
+    boolean existsByDeputyLeaderIdAndIdNot(UUID deputyLeaderId, UUID teamId);
 }

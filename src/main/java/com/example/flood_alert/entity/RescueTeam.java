@@ -44,11 +44,16 @@ public class RescueTeam extends BaseEntity {
     @JoinColumn(name = "leader_id")
     User leader;
 
+    // Phó trưởng nhóm
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deputy_leader_id")
+    User deputyLeader;
+
     // Số điện thoại khẩn
     @Column(name = "emergency_phone", length = 20)
     String emergencyPhone;
 
-    //Lat,lon -> vị trí trụ sở chính của team
+    // Lat,lon -> vị trí trụ sở chính của team
     @Column(name = "caller_lat", precision = 10, scale = 7, nullable = false)
     BigDecimal lat;
 

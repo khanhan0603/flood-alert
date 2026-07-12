@@ -21,10 +21,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
+import com.example.flood_alert.dbo.request.UpdateRescueTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
+import com.example.flood_alert.dbo.response.RescueTeamLeaderResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderResponse;
@@ -63,18 +65,18 @@ public class RescueTeamController {
                                 .build();
         }
 
-        @PutMapping("/{teamId}/leader")
-        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-        public ApiResponse<TeamLeaderResponse> assignLeader(
-                        @PathVariable UUID teamId,
-                        @RequestBody AssignTeamLeaderRequest request) {
+        // @PutMapping("/{teamId}/leader")
+        // @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+        // public ApiResponse<TeamLeaderResponse> assignLeader(
+        //                 @PathVariable UUID teamId,
+        //                 @RequestBody AssignTeamLeaderRequest request) {
 
-                return ApiResponse.<TeamLeaderResponse>builder()
-                                .result(rescueTeamService.assignLeader(
-                                                teamId,
-                                                request))
-                                .build();
-        }
+        //         return ApiResponse.<TeamLeaderResponse>builder()
+        //                         .result(rescueTeamService.assignLeader(
+        //                                         teamId,
+        //                                         request))
+        //                         .build();
+        // }
 
         // Danh sách leader theo khu vực
         @GetMapping("/leader/{areaId}")
@@ -131,7 +133,7 @@ public class RescueTeamController {
                                 .build();
         }
 
-        //Xóa member ra khỏi team, ko xóa group leader
+        // Xóa member ra khỏi team, ko xóa group leader
         @DeleteMapping("/{teamId}/members/{userId}")
         public ApiResponse<Void> deleteMember(
                         @PathVariable UUID teamId,
@@ -142,4 +144,15 @@ public class RescueTeamController {
                 return ApiResponse.<Void>builder().build();
         }
 
+        // Cập nhật đội trưởng và đội phó
+        @PutMapping("/{teamId}/leader")
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+        public ApiResponse<RescueTeamLeaderResponse> updateLeader(
+                        @PathVariable UUID teamId,
+                        @Valid @RequestBody UpdateRescueTeamLeaderRequest request) {
+
+                return ApiResponse.<RescueTeamLeaderResponse>builder()
+                                .result(rescueTeamService.updateLeader(teamId, request))
+                                .build();
+        }
 }

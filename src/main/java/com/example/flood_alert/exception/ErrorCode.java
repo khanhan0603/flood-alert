@@ -81,6 +81,8 @@ public enum ErrorCode {
     INVALID_GROUP_STATUS(1071,"Trạng thái nhóm cứu hộ không hợp lệ!"),
     SUPPORT_REQUEST_ITEM_REQUIRED(1072,"Không được để chi tiết yêu cầu hỗ trợ trống!"),
     INVALID_SUPPORT_TYPE(1073,"Loại hỗ trợ không hợp lệ!"),
+    USER_ALREADY_IS_TEAM_LEADER_OR_DEPUTY(1074,"Người dùng đã là đội trưởng hoặc phó đội trưởng của đội khác!"),
+    LEADER_AND_DEPUTY_CANNOT_BE_THE_SAME(1075,"Người này có thể đã là đội trưởng!"),
     ;
 
     int code;
