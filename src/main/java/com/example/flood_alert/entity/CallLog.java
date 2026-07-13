@@ -2,6 +2,9 @@ package com.example.flood_alert.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.example.flood_alert.enums.CallResult;
 import com.example.flood_alert.enums.CallType;
 
@@ -82,4 +85,12 @@ public class CallLog extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "support_request_id")
     SupportRequest supportRequest;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    LocalDateTime updatedAt;
 }

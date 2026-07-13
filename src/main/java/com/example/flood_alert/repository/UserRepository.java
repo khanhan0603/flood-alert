@@ -76,6 +76,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
         Page<User> findByRole(Role role, Pageable pageable);
 
         // Danh sách điều hành cấp tỉnh phục vụ cho hàm notification
+        @Query("""
+          SELECT u
+          FROM User u
+          WHERE u.role = :role AND
+                u.area.id = :areaId AND
+                u.trangthai = :trangthai
+          ORDER BY u.id ASC  
+        """)
         List<User> findByRoleAndArea_IdAndTrangthai(
                         Role role,
                         UUID areaId,

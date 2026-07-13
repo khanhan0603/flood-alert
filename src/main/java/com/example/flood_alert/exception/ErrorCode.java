@@ -83,6 +83,13 @@ public enum ErrorCode {
     INVALID_SUPPORT_TYPE(1073,"Loại hỗ trợ không hợp lệ!"),
     USER_ALREADY_IS_TEAM_LEADER_OR_DEPUTY(1074,"Người dùng đã là đội trưởng hoặc phó đội trưởng của đội khác!"),
     LEADER_AND_DEPUTY_CANNOT_BE_THE_SAME(1075,"Người này có thể đã là đội trưởng!"),
+    TEAM_LEADER_NOT_FOUND(1076,"Không tìm thấy đội trưởng!"),
+    CALL_TASK_NOT_FOUND(1077,"Không tìm thấy tác vụ cuộc gọi!"),
+    CALL_TASK_FINISHED(1078,"Tác vụ này đã hoàn thành!"),
+    DEPUTY_LEADER_NOT_FOUND(1079,"Không tìm thấy phó đội trưởng!"),
+    PROVINCE_OPERATOR_NOT_FOUND(1080,"Không tìm thấy danh sách lực lượng điều phối cấp tỉnh!"),
+    INVALID_CALL_TARGET(1081,"Đối tượng gọi không hợp lệ!"),
+    NOTIFICATION_NOT_FOUND(1082,"Không tìm thấy thông báo!"),
     ;
 
     int code;

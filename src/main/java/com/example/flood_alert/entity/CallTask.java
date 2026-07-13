@@ -1,5 +1,10 @@
 package com.example.flood_alert.entity;
 
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.example.flood_alert.enums.CallTargetType;
 import com.example.flood_alert.enums.CallTaskStatus;
 
@@ -21,9 +26,7 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(
-    name = "call_tasks",
-    indexes = {
+@Table(name = "call_tasks", indexes = {
         // Tìm CallTask theo SOS
         @Index(name = "idx_call_task_sos_request", columnList = "sos_request_id"),
 
@@ -35,8 +38,7 @@ import lombok.experimental.FieldDefaults;
 
         // Kiểm tra các cuộc gọi đang xử lý của một User
         @Index(name = "idx_call_task_target_user", columnList = "target_user_id")
-    }
-)
+})
 @Getter
 @Setter
 @Builder
@@ -44,6 +46,13 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CallTask extends BaseEntity {
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    LocalDateTime updatedAt;
 
     // Người hiện tại hệ thống đang gọi
     @ManyToOne(fetch = FetchType.LAZY)
@@ -70,7 +79,7 @@ public class CallTask extends BaseEntity {
 
     // Bước hiện tại của Call Workflow
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false,length = 40)
+    @Column(name = "status", nullable = false, length = 40)
     CallTaskStatus status;
 
     // Liên kết với SOS nếu đây là CallTask của SOS

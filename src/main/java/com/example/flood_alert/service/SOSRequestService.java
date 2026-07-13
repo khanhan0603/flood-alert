@@ -621,7 +621,7 @@ public class SOSRequestService {
                                 .build();
         }
 
-        //Get detail sos for người không có tài khoản
+        // Get detail sos for người không có tài khoản
         @Transactional(readOnly = true)
         public CitizenSosDetailResponse getAnonymousSosDetail(
                         UUID sosId,

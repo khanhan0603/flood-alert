@@ -17,11 +17,13 @@ import com.example.flood_alert.dbo.request.EmergencyContactRequest;
 import com.example.flood_alert.dbo.request.SearchHotlineSosRequest;
 import com.example.flood_alert.dbo.request.UpdateHotlineSosRequest;
 import com.example.flood_alert.dbo.response.CallEventResponse;
+import com.example.flood_alert.dbo.response.CreateHotlineSosResponse;
 import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
 import com.example.flood_alert.dbo.response.StatusOptionResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
+import com.example.flood_alert.entity.CallTask;
 import com.example.flood_alert.entity.EmergencyCallEvent;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosRequest;
@@ -35,6 +37,7 @@ import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.enums.StatusSOS;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
+import com.example.flood_alert.mapper.CallTaskMapper;
 import com.example.flood_alert.mapper.EmergencyCallEventMapper;
 import com.example.flood_alert.mapper.SosRequestMapper;
 import com.example.flood_alert.repository.AreaRepository;
@@ -85,6 +88,8 @@ public class HotlineService {
 
         EmergencyCallEventMapper emergencyCallEventMapper;
         TrackingCodeGenerator trackingCodeGenerator;
+        CallWorkflowService callWorkflowService;
+        CallTaskMapper callTaskMapper;
 
         // Lấy số điện thoại liên hệ của đội gần người dân nhất
         @Transactional
@@ -123,7 +128,7 @@ public class HotlineService {
         }
 
         @Transactional
-        public SosResponse createHotlineSos(CreateHotlineSosRequest request) {
+        public CreateHotlineSosResponse createHotlineSos(CreateHotlineSosRequest request) {
 
                 validateCreateHotlineSosRequest(request);
 
@@ -189,11 +194,17 @@ public class HotlineService {
                                         ACTIVE_STATUSES);
                 }
 
+                //trường hợp đã có SOS đang hoạt động thì không tạo CallTask mới, 
+                //nên initialCallTask sẽ là null.
                 if (activeSos.isPresent()) {
 
-                        SosResponse response = sosRequestMapper.toResponse(activeSos.get());
+                        SosResponse sosResponse = sosRequestMapper.toResponse(activeSos.get());
+                        sosResponse.setAlreadyExists(true);
 
-                        response.setAlreadyExists(true);
+                        CreateHotlineSosResponse response = CreateHotlineSosResponse.builder()
+                                        .sos(sosResponse)
+                                        .initialCallTask(null)
+                                        .build();
 
                         return response;
                 }
@@ -342,6 +353,9 @@ public class HotlineService {
                         emergencyCallEventRepository.save(callEvent);
                 }
 
+                // Tạo CallTask duy nhất
+                CallTask callTask = callWorkflowService.createInitialCallTask(sos);
+
                 // Gửi thông báo
                 if (team.getLeader() != null) {
 
@@ -351,9 +365,13 @@ public class HotlineService {
                 }
 
                 // response
-                SosResponse response = sosRequestMapper.toResponse(sos);
+                SosResponse sosResponse = sosRequestMapper.toResponse(sos);
+                sosResponse.setAlreadyExists(false);
 
-                response.setAlreadyExists(false);
+                CreateHotlineSosResponse response = new CreateHotlineSosResponse();
+
+                response.setSos(sosResponse);
+                response.setInitialCallTask(callTaskMapper.toResponse(callTask));
 
                 return response;
         }

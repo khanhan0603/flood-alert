@@ -22,6 +22,7 @@ import com.example.flood_alert.dbo.request.SearchHotlineSosRequest;
 import com.example.flood_alert.dbo.request.UpdateHotlineSosRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.CallEventResponse;
+import com.example.flood_alert.dbo.response.CreateHotlineSosResponse;
 import com.example.flood_alert.dbo.response.EmergencyContactResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
 import com.example.flood_alert.dbo.response.StatusOptionResponse;
@@ -58,10 +59,10 @@ public class HotlineController {
          */
         @PostMapping("/sos")
         @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
-        public ApiResponse<SosResponse> createHotlineSos(
+        public ApiResponse<CreateHotlineSosResponse> createHotlineSos(
                         @RequestBody @Valid CreateHotlineSosRequest request) {
 
-                return ApiResponse.<SosResponse>builder()
+                return ApiResponse.<CreateHotlineSosResponse>builder()
                                 .result(hotlineService.createHotlineSos(request))
                                 .build();
         }
