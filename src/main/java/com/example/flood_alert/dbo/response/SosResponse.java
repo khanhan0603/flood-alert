@@ -3,6 +3,7 @@ package com.example.flood_alert.dbo.response;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.example.flood_alert.enums.DispatcherType;
 import com.example.flood_alert.enums.EnvironmentRisk;
 import com.example.flood_alert.enums.Priority;
 import com.example.flood_alert.enums.SosSource;
@@ -41,6 +42,13 @@ public class SosResponse {
     UUID callEventId;
     
     String trackingCode;
+
+    // Người đang điều phối
+    UUID dispatcherUserId;
+
+    String dispatcherName;
+
+    DispatcherType dispatcherType;
 
     LocalDateTime createdAt;
 }

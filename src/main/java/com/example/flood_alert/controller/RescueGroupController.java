@@ -140,7 +140,6 @@ public class RescueGroupController {
 
         // Team Leader xem danh sách Group phù hợp để hỗ trợ
         @GetMapping("/support-candidates/{supportRequestItemId}")
-        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<List<SupportCandidateGroupResponse>> getSupportCandidateGroups(
                         @PathVariable UUID supportRequestItemId) {
 

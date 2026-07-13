@@ -175,7 +175,6 @@ public class SosRequestController {
 
         // Danh sách các sos của team
         @GetMapping("/team")
-        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Page<SosResponse>> getMyTeamSos(
                         @PageableDefault(size = 20) Pageable pageable) {
 

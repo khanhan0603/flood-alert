@@ -31,6 +31,7 @@ import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.EnvironmentRisk;
 import com.example.flood_alert.enums.LocationSource;
 import com.example.flood_alert.enums.Priority;
+import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.enums.SosSource;
 import com.example.flood_alert.enums.StatusSOS;
 import com.example.flood_alert.exception.AppException;
@@ -708,43 +709,48 @@ public class SOSRequestService {
                 return page.map(sosRequestMapper::toResponse);
         }
 
-        // Dashboard cho team leader
+        // Dashboard cho Team Leader
         @Cacheable(value = "team-dashboard", key = "#teamId")
         @Transactional(readOnly = true)
         public TeamDashboardResponse getTeamDashboard(UUID teamId) {
-                // Test Redis
-                log.info("LOAD DASHBOARD FROM DB");
 
                 User currentUser = authenticationService.getCurrentUser();
+                RescueTeam team = currentUser.getTeam();
 
-                RescueTeam team = rescueTeamRepository
-                                .findByLeaderId(currentUser.getId())
-                                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
+                if (team == null) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
 
-                long pending = sosRequestRepository
-                                .countByTeamIdAndStatus(
-                                                teamId,
-                                                StatusSOS.PENDING);
+                // Nếu KHÔNG phải Team Leader thì mới cấm
+                if (team.getLeader() == null
+                                || !team.getLeader().getId().equals(currentUser.getId())) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
 
-                long assigned = sosRequestRepository
-                                .countByTeamIdAndStatus(
-                                                teamId,
-                                                StatusSOS.ASSIGNED);
+                // Chỉ được xem dashboard của Team mình
+                if (!team.getId().equals(teamId)) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
 
-                long processing = sosRequestRepository
-                                .countByTeamIdAndStatus(
-                                                teamId,
-                                                StatusSOS.PROCESSING);
+                long pending = sosRequestRepository.countByTeamIdAndStatus(
+                                teamId,
+                                StatusSOS.PENDING);
 
-                long done = sosRequestRepository
-                                .countByTeamIdAndStatus(
-                                                teamId,
-                                                StatusSOS.DONE);
+                long assigned = sosRequestRepository.countByTeamIdAndStatus(
+                                teamId,
+                                StatusSOS.ASSIGNED);
 
-                long canceled = sosRequestRepository
-                                .countByTeamIdAndStatus(
-                                                teamId,
-                                                StatusSOS.CANCELED);
+                long processing = sosRequestRepository.countByTeamIdAndStatus(
+                                teamId,
+                                StatusSOS.PROCESSING);
+
+                long done = sosRequestRepository.countByTeamIdAndStatus(
+                                teamId,
+                                StatusSOS.DONE);
+
+                long canceled = sosRequestRepository.countByTeamIdAndStatus(
+                                teamId,
+                                StatusSOS.CANCELED);
 
                 return TeamDashboardResponse.builder()
                                 .pendingStatus(StatusSOS.PENDING)
@@ -766,18 +772,45 @@ public class SOSRequestService {
                                 .build();
         }
 
-        // Lấy danh sách SOS của team mình
+        // Lấy danh sách SOS
         @Transactional(readOnly = true)
         public Page<SosResponse> getMyTeamSos(Pageable pageable) {
 
                 User currentUser = authenticationService.getCurrentUser();
 
-                RescueTeam team = rescueTeamRepository
-                                .findByLeaderId(currentUser.getId())
-                                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
+                // Province Operator chỉ xem các SOS mình đang điều phối
+                if (currentUser.getRole() == Role.PROVINCE_OPERATOR) {
 
-                return sosRequestRepository.findActiveByTeamId(team.getId(), pageable)
-                                .map(sosRequestMapper::toResponse);
+                        return sosRequestRepository
+                                        .findActiveByDispatcherUserId(currentUser.getId(), pageable)
+                                        .map(sosRequestMapper::toResponse);
+                }
+
+                RescueTeam team = currentUser.getTeam();
+
+                if (team == null) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                // Team Leader xem toàn bộ SOS của Team
+                if (team.getLeader() != null
+                                && team.getLeader().getId().equals(currentUser.getId())) {
+
+                        return sosRequestRepository
+                                        .findActiveByTeamId(team.getId(), pageable)
+                                        .map(sosRequestMapper::toResponse);
+                }
+
+                // Deputy Leader chỉ xem SOS mình đang điều phối
+                if (team.getDeputyLeader() != null
+                                && team.getDeputyLeader().getId().equals(currentUser.getId())) {
+
+                        return sosRequestRepository
+                                        .findActiveByDispatcherUserId(currentUser.getId(), pageable)
+                                        .map(sosRequestMapper::toResponse);
+                }
+
+                throw new AppException(ErrorCode.NO_PERMISSION);
         }
 
         // Xem chi tiết sos

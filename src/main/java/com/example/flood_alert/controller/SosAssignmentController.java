@@ -17,6 +17,7 @@ import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
 import com.example.flood_alert.dbo.request.FailAssignmentRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.AssignCandidateGroupResponse;
 import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
 import com.example.flood_alert.dbo.response.GroupAssignmentResponse;
 import com.example.flood_alert.service.SosAssignmentService;
@@ -37,7 +38,6 @@ public class SosAssignmentController {
 
         // Giao nhiệm vụ cho group
         @PostMapping
-        @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<UUID> assignGroup(
                         @RequestBody AssignGroupRequest request) {
 
@@ -93,6 +93,16 @@ public class SosAssignmentController {
                                 request);
 
                 return ApiResponse.<Void>builder()
+                                .build();
+        }
+
+        // Danh sách Group có thể giao thực hiện SOS
+        @GetMapping("/assign-candidates/{sosId}")
+        public ApiResponse<List<AssignCandidateGroupResponse>> getAssignCandidateGroups(
+                        @PathVariable UUID sosId) {
+
+                return ApiResponse.<List<AssignCandidateGroupResponse>>builder()
+                                .result(sosAssignmentService.getAssignCandidateGroups(sosId))
                                 .build();
         }
 }

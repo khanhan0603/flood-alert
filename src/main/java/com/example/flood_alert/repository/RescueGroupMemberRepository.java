@@ -62,4 +62,6 @@ public interface RescueGroupMemberRepository extends JpaRepository<RescueGroupMe
                )
             """)
     Optional<RescueGroupType> findGroupTypeByUserId(UUID userId);
+
+    Integer countByGroup_Id(UUID groupId);
 }

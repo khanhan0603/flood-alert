@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.entity.RescueGroup;
@@ -84,5 +85,15 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
      List<RescueGroup> findByTeam_IdAndStatusAndHasLogisticsTrue(
                UUID teamId,
                RescueGroupStatus status);
+
+     // Danh sách group để giao nhiệm vụ
+     @Query("""
+                   SELECT rg
+                   FROM RescueGroup rg
+                   WHERE rg.team.id = :teamId
+                     AND rg.status = com.example.flood_alert.enums.RescueGroupStatus.AVAILABLE
+                   ORDER BY rg.name ASC
+               """)
+     List<RescueGroup> findAvailableByTeamId(@Param("teamId") UUID teamId);
 
 }
