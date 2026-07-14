@@ -316,7 +316,7 @@ public class SupportRequestService {
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
-                validateSupportDispatcherPermission(supportRequest,currentUser);
+                validateSupportDispatcherPermission(supportRequest, currentUser);
 
                 // Map các item theo id để tìm nhanh
                 Map<UUID, SupportRequestItem> itemMap = supportRequest.getItems()
@@ -1206,14 +1206,42 @@ public class SupportRequestService {
 
                 // Cập nhật hạng mục hỗ trợ
                 item.setAssignedGroupCount(item.getAssignedGroupCount() + 1);
-                item.setStatus(SupportRequestItemStatus.APPROVED);
+                // Nếu đã phân công đủ Group thì Item chuyển APPROVED
+                if (item.getAssignedGroupCount() >= item.getRequiredGroupCount()) {
+                        item.setStatus(SupportRequestItemStatus.APPROVED);
+                }
 
                 supportRequestItemRepository.save(item);
+
+                // Kiểm tra toàn bộ Support Request
+                updateSupportRequestStatus(item.getSupportRequest());
 
                 // Thông báo Group Leader có nhiệm vụ hỗ trợ mới
                 notificationManagerService.notifyAssignmentAssigned(assignment);
 
                 return assignment.getId();
+        }
+
+        /**
+         * Cập nhật trạng thái Support Request.
+         *
+         * Nếu tất cả hạng mục hỗ trợ đã được Team Leader phân công đủ số Group
+         * thì Support Request chuyển sang APPROVED.
+         */
+        private void updateSupportRequestStatus(SupportRequest supportRequest) {
+
+                boolean allAssigned = supportRequest.getItems().stream()
+                                .allMatch(item -> item.getAssignedGroupCount() != null
+                                                && item.getRequiredGroupCount() != null
+                                                && item.getAssignedGroupCount() >= item.getRequiredGroupCount());
+
+                if (!allAssigned) {
+                        return;
+                }
+
+                supportRequest.setStatus(SupportRequestStatus.APPROVED);
+
+                supportRequestRepository.save(supportRequest);
         }
 
         @Transactional(readOnly = true)
