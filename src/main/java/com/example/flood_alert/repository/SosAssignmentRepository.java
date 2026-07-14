@@ -69,4 +69,7 @@ public interface SosAssignmentRepository extends JpaRepository<SosAssignment, UU
           WHERE sa.supportRequestItem.id = :supportRequestItemId
       """)
   List<SosAssignment> findBySupportRequestItemId(UUID supportRequestItemId);
+
+  //Danh sách group mới gọi thất bại
+  Optional<SosAssignment> findFirstBySos_IdAndGroup_IdOrderByAssignedAtDesc(UUID sosId,UUID groupId);
 }

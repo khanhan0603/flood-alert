@@ -7,20 +7,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.UpdateCallResultRequest;
+import com.example.flood_alert.dbo.response.AssignmentResponse;
 import com.example.flood_alert.dbo.response.CallResultResponse;
 import com.example.flood_alert.dbo.response.CallTaskResponse;
+import com.example.flood_alert.dbo.response.SosAssignmentResponse;
 import com.example.flood_alert.dbo.response.UpdateCallResultResponse;
 import com.example.flood_alert.entity.CallLog;
 import com.example.flood_alert.entity.CallTask;
+import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.User;
+import com.example.flood_alert.enums.AssignmentStatus;
 import com.example.flood_alert.enums.CallResult;
 import com.example.flood_alert.enums.CallTargetType;
 import com.example.flood_alert.enums.CallTaskStatus;
 import com.example.flood_alert.enums.CallType;
 import com.example.flood_alert.enums.DispatcherType;
+import com.example.flood_alert.enums.RescueGroupStatus;
 import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
@@ -28,6 +33,8 @@ import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.mapper.CallTaskMapper;
 import com.example.flood_alert.repository.CallLogRepository;
 import com.example.flood_alert.repository.CallTaskRepository;
+import com.example.flood_alert.repository.RescueGroupRepository;
+import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
 import com.example.flood_alert.repository.UserRepository;
 
@@ -50,6 +57,8 @@ public class CallWorkflowService {
     UserRepository userRepository;
     AlarmService alarmService;
     NotificationService notificationService;
+    SosAssignmentRepository sosAssignmentRepository;
+    RescueGroupRepository rescueGroupRepository;
 
     /**
      * Khởi tạo Call Workflow đầu tiên sau khi Hotline tạo SOS
@@ -150,6 +159,8 @@ public class CallWorkflowService {
             case DEPUTY_LEADER -> moveToFirstProvinceOperator(callTask);
 
             case PROVINCE_OPERATOR -> moveToNextProvinceOperator(callTask);
+
+            case GROUP_LEADER -> handleGroupLeaderCallFailed(callTask);
 
             default -> throw new AppException(ErrorCode.INVALID_CALL_TARGET);
         }
@@ -334,8 +345,22 @@ public class CallWorkflowService {
                 .timeoutSeconds(DEFAULT_TIMEOUT_SECONDS)
                 .status(CallTaskStatus.CALLING_GROUP_LEADER)
                 .sosRequest(assignment.getSos())
+                .assignment(assignment)
                 .build();
 
         return callTaskRepository.save(callTask);
+    }
+
+    //Xử lý cuộc gọi group leader không thành công
+    private void handleGroupLeaderCallFailed(CallTask callTask){
+        SosAssignment assignment=callTask.getAssignment();
+
+        RescueGroup group=assignment.getGroup();
+        group.setStatus(RescueGroupStatus.AVAILABLE);
+
+        notificationService.createGroupLeaderCallFailedPopup(assignment);
+
+        rescueGroupRepository.save(group);
+        callTask.setStatus(CallTaskStatus.FAILED);
     }
 }

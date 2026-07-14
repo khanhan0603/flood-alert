@@ -18,6 +18,7 @@ import com.example.flood_alert.dbo.request.FailAssignmentRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.AssignCandidateGroupResponse;
+import com.example.flood_alert.dbo.response.AssignmentResponse;
 import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
 import com.example.flood_alert.dbo.response.GroupAssignmentResponse;
 import com.example.flood_alert.service.SosAssignmentService;
@@ -38,10 +39,10 @@ public class SosAssignmentController {
 
         // Giao nhiệm vụ cho group
         @PostMapping
-        public ApiResponse<UUID> assignGroup(
+        public ApiResponse<AssignmentResponse> assignGroup(
                         @RequestBody AssignGroupRequest request) {
 
-                return ApiResponse.<UUID>builder()
+                return ApiResponse.<AssignmentResponse>builder()
                                 .result(sosAssignmentService.assignGroup(request))
                                 .build();
         }

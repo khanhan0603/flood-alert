@@ -38,4 +38,6 @@ public interface CallTaskRepository extends JpaRepository<CallTask, UUID> {
     // Kiểm tra support request này còn Call Workflow đang chạy hay không.
     boolean existsBySupportRequestIdAndStatusIn(UUID supportRequestId, Collection<CallTaskStatus> statuses);
 
+    Optional<CallTask> findFirstByAssignment_IdOrderByCreatedAtDesc(UUID assignmentId);
+
 }

@@ -2,6 +2,7 @@ package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,9 +14,11 @@ import com.example.flood_alert.dbo.request.AssignGroupRequest;
 import com.example.flood_alert.dbo.request.FailAssignmentRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.AssignCandidateGroupResponse;
+import com.example.flood_alert.dbo.response.AssignmentResponse;
 import com.example.flood_alert.dbo.response.AssignmentStatusOptionResponse;
 import com.example.flood_alert.dbo.response.GroupAssignmentResponse;
 import com.example.flood_alert.dbo.response.SupportGroupResponse;
+import com.example.flood_alert.entity.CallTask;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
@@ -24,12 +27,16 @@ import com.example.flood_alert.entity.SupportRequestItem;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.AssignmentRole;
 import com.example.flood_alert.enums.AssignmentStatus;
+import com.example.flood_alert.enums.CallTargetType;
+import com.example.flood_alert.enums.CallTaskStatus;
 import com.example.flood_alert.enums.RescueGroupStatus;
 import com.example.flood_alert.enums.StatusSOS;
 import com.example.flood_alert.enums.SupportRequestItemStatus;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.mapper.AssignCandidateGroupMapper;
+import com.example.flood_alert.mapper.CallTaskMapper;
+import com.example.flood_alert.repository.CallTaskRepository;
 import com.example.flood_alert.repository.RescueGroupMemberRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
@@ -59,11 +66,13 @@ public class SosAssignmentService {
         AssignCandidateGroupMapper assignCandidateGroupMapper;
         RescueGroupMemberRepository rescueGroupMemberRepository;
         CallWorkflowService callWorkflowService;
+        CallTaskMapper callTaskMapper;
+        CallTaskRepository callTaskRepository;
 
         // Dispatcher giao nhiệm vụ cho Rescue Group
         @CacheEvict(value = "team-dashboard", allEntries = true)
         @Transactional
-        public UUID assignGroup(AssignGroupRequest request) {
+        public AssignmentResponse assignGroup(AssignGroupRequest request) {
 
                 User currentUser = authenticationService.getCurrentUser();
 
@@ -98,7 +107,7 @@ public class SosAssignmentService {
 
                 sosAssignmentRepository.save(assignment);
                 // Tạo Call Workflow gọi Group Leader
-                callWorkflowService.startGroupLeaderCallWorkFlow(assignment);
+                CallTask callTask = callWorkflowService.startGroupLeaderCallWorkFlow(assignment);
                 // SOS chuyển sang ASSIGNED
                 if (sos.getStatus() == StatusSOS.PENDING) {
                         sos.setStatus(StatusSOS.ASSIGNED);
@@ -109,9 +118,14 @@ public class SosAssignmentService {
                 group.setStatus(RescueGroupStatus.BUSY);
                 rescueGroupRepository.save(group);
 
-                return assignment.getId();
+                return AssignmentResponse.builder()
+                                .assignmentId(assignment.getId())
+                                .callTask(callTaskMapper.toResponse(callTask))
+                                .build();
         }
 
+        // Danh sách các group để giao nhiệm vụ, có đánh dấu group đã từng gọi
+        // thất bại và đưa group đó xuống dưới
         @Transactional(readOnly = true)
         public List<AssignCandidateGroupResponse> getAssignCandidateGroups(UUID sosId) {
 
@@ -127,17 +141,43 @@ public class SosAssignmentService {
                                 sos.getTeam().getId());
 
                 return groups.stream()
-                                .map(group -> {
-
-                                        AssignCandidateGroupResponse response = assignCandidateGroupMapper
-                                                        .toResponse(group);
-
-                                        response.setMemberCount(
-                                                        rescueGroupMemberRepository.countByGroup_Id(group.getId()));
-
-                                        return response;
-                                })
+                                .map(group -> buildAssignCandidateResponse(sos, group))
+                                .sorted(Comparator.comparing(AssignCandidateGroupResponse::getCallFailed))
                                 .toList();
+        }
+
+        // Chuyển một RescueGroup thành dữ liệu trả về cho FE
+        private AssignCandidateGroupResponse buildAssignCandidateResponse(
+                        SosRequest sos,
+                        RescueGroup group) {
+
+                AssignCandidateGroupResponse response = assignCandidateGroupMapper.toResponse(group);
+
+                // Số lượng thành viên trong group
+                response.setMemberCount(
+                                rescueGroupMemberRepository.countByGroup_Id(group.getId()));
+
+                // Trạng thái gọi thất bại
+                response.setCallFailed(isCallFailed(sos.getId(), group.getId()));
+
+                return response;
+        }
+
+        private boolean isCallFailed(UUID sosId, UUID groupId) {
+
+                return sosAssignmentRepository
+                                .findFirstBySos_IdAndGroup_IdOrderByAssignedAtDesc(sosId, groupId)
+                                .map(this::isLatestGroupLeaderCallFailed)
+                                .orElse(false);
+        }
+
+        private boolean isLatestGroupLeaderCallFailed(SosAssignment assignment) {
+
+                return callTaskRepository
+                                .findFirstByAssignment_IdOrderByCreatedAtDesc(assignment.getId())
+                                .map(callTask -> callTask.getTargetType() == CallTargetType.GROUP_LEADER
+                                                && callTask.getStatus() == CallTaskStatus.FAILED)
+                                .orElse(false);
         }
 
         /**

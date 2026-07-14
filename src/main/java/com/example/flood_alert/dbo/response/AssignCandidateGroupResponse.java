@@ -30,4 +30,7 @@ public class AssignCandidateGroupResponse {
     UUID leaderId;
 
     String leaderName;
+
+    // Group đã từng gọi thất bại trong SOS hiện tại
+    Boolean callFailed;
 }

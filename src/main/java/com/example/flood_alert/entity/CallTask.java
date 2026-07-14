@@ -33,6 +33,9 @@ import lombok.experimental.FieldDefaults;
         // Tìm CallTask theo Support Request
         @Index(name = "idx_call_task_support_request", columnList = "support_request_id"),
 
+        //Tìm CallTask theo assigment
+        @Index(name="idx_call_task_assignment", columnList = "assignment_id"),
+
         // Scheduler thường tìm các task theo trạng thái
         @Index(name = "idx_call_task_status", columnList = "status"),
 
@@ -91,4 +94,9 @@ public class CallTask extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "support_request_id")
     SupportRequest supportRequest;
+
+    //Liên kết với assignment nếu đây là CallTask của assignment
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignment_id")
+    SosAssignment assignment;
 }

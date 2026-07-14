@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.flood_alert.dbo.response.PopupNotificationResponse;
 import com.example.flood_alert.entity.Notification;
 import com.example.flood_alert.entity.RescueTeam;
+import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.entity.UserFcmToken;
@@ -281,5 +282,23 @@ public class NotificationService {
         notification.setStatus(StatusAlert.SENT);
 
         notificationRepository.save(notification);
+    }
+
+
+    //pop up cho dispatcher chọn group khác
+    public void createGroupLeaderCallFailedPopup(SosAssignment assignment){
+        SosRequest sos = assignment.getSos();
+        
+        User dispatcher=sos.getDispatcherUser();
+
+        String title="🚨 Không liên lạc được với Trưởng nhóm cứu hộ";
+
+        String message=String.format(
+        """
+        Không liên lạc được với Trưởng nhóm của nhóm %s sau 3 lần gọi.
+
+        Vui lòng chọn nhóm cứu hộ khác để tiếp tục điều phối SOS %s.
+        """,assignment.getGroup().getName(),sos.getTrackingCode());
+        createNotification(dispatcher, title, message,NotificationType.CALL_WORKFLOW_FAILED , Channel.POPUP, sos);
     }
 }

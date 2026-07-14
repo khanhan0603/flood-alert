@@ -39,7 +39,8 @@ import lombok.experimental.FieldDefaults;
 
         @Index(name = "idx_support_status", columnList = "status"),
         @Index(name = "idx_support_requested_by", columnList = "requested_by"),
-        @Index(name = "idx_support_sos", columnList = "sos_id")
+        @Index(name = "idx_support_sos", columnList = "sos_id"),
+        @Index(name="idx_support_request_dispatcher", columnList = "dispatcher_user_id")
 })
 public class SupportRequest extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
@@ -75,4 +76,9 @@ public class SupportRequest extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     SupportRequestSource source;
+
+    // Province Operator đang điều phối yêu cầu hỗ trợ
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dispatcher_user_id")
+    User dispatcherUser;
 }
