@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -23,7 +22,6 @@ import lombok.experimental.FieldDefaults;
 
 @Entity
 @Table(name = "alarms", indexes = {
-        @Index(name = "idx_alarm_status", columnList = "status"),
         @Index(name = "idx_alarm_sos", columnList = "sos_request_id"),
         @Index(name = "idx_alarm_call_task", columnList = "call_task_id")
 })
