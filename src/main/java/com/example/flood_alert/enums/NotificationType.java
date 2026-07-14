@@ -5,13 +5,14 @@ public enum NotificationType {
 
     // SOS
     SOS_ASSIGNED,
-    SOS_OVERDUE,
 
     // Assignment
     ASSIGNMENT_FAILED,
 
     // Support Request
     SUPPORT_REQUEST_CREATED,      // Team Leader gửi yêu cầu chi viện
+
+    SUPPORT_REQUEST_CLAIMED,      // Province nhận yêu cầu
 
     SUPPORT_REQUEST_APPROVED,     // Province duyệt
 

@@ -91,6 +91,8 @@ public enum ErrorCode {
     INVALID_CALL_TARGET(1081,"Đối tượng gọi không hợp lệ!"),
     NOTIFICATION_NOT_FOUND(1082,"Không tìm thấy thông báo!"),
     GROUP_LEADER_NOT_FOUND(1083,"Không tìm thấy nhóm trưởng phụ trách nhiệm vụ này!"),
+    SUPPORT_REQUEST_ALREADY_CLAIMED(1084,"Yêu cầu hỗ trợ đã có người nhận điều phối!"),
+    SOS_ALREADY_CLAIMED(1085,"Yêu cầu cứu hộ đã có người nhận điều phối!"),
     ;
 
     int code;

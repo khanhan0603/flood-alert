@@ -15,6 +15,7 @@ import com.example.flood_alert.entity.Notification;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
+import com.example.flood_alert.entity.SupportRequest;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.entity.UserFcmToken;
 import com.example.flood_alert.enums.Channel;
@@ -210,7 +211,7 @@ public class NotificationService {
                     message,
                     NotificationType.CALL_WORKFLOW_FAILED,
                     Channel.POPUP,
-                    sos);
+                    sos,null,null);
 
             createNotification(
                     receiver,
@@ -218,7 +219,7 @@ public class NotificationService {
                     message,
                     NotificationType.CALL_WORKFLOW_FAILED,
                     Channel.WEB_PUSH,
-                    sos);
+                    sos,null,null);
 
             createNotification(
                     receiver,
@@ -226,18 +227,19 @@ public class NotificationService {
                     message,
                     NotificationType.CALL_WORKFLOW_FAILED,
                     Channel.EMAIL,
-                    sos);
+                    sos,null,null);
         }
     }
 
-    // Hàm tạo noti cho failed SOS
     private void createNotification(
             User user,
             String title,
             String message,
             NotificationType type,
             Channel channel,
-            SosRequest sos) {
+            SosRequest sos,
+            SosAssignment assignment,
+            SupportRequest supportRequest) {
 
         Notification notification = Notification.builder()
                 .title(title)
@@ -247,6 +249,8 @@ public class NotificationService {
                 .status(StatusAlert.PENDING)
                 .user(user)
                 .sos(sos)
+                .assignment(assignment)
+                .supportRequest(supportRequest)
                 .build();
 
         notificationRepository.save(notification);
@@ -284,21 +288,47 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
-
-    //pop up cho dispatcher chọn group khác
-    public void createGroupLeaderCallFailedPopup(SosAssignment assignment){
+    // pop up cho dispatcher chọn group khác
+    public void createGroupLeaderCallFailedPopup(SosAssignment assignment) {
         SosRequest sos = assignment.getSos();
-        
-        User dispatcher=sos.getDispatcherUser();
 
-        String title="🚨 Không liên lạc được với Trưởng nhóm cứu hộ";
+        User dispatcher = sos.getDispatcherUser();
 
-        String message=String.format(
-        """
-        Không liên lạc được với Trưởng nhóm của nhóm %s sau 3 lần gọi.
+        String title = "🚨 Không liên lạc được với Trưởng nhóm cứu hộ";
 
-        Vui lòng chọn nhóm cứu hộ khác để tiếp tục điều phối SOS %s.
-        """,assignment.getGroup().getName(),sos.getTrackingCode());
-        createNotification(dispatcher, title, message,NotificationType.CALL_WORKFLOW_FAILED , Channel.POPUP, sos);
+        String message = String.format(
+                """
+                        Không liên lạc được với Trưởng nhóm của nhóm %s sau 3 lần gọi.
+
+                        Vui lòng chọn nhóm cứu hộ khác để tiếp tục điều phối SOS %s.
+                        """, assignment.getGroup().getName(), sos.getTrackingCode());
+        createNotification(dispatcher, title, message, NotificationType.CALL_WORKFLOW_FAILED, Channel.POPUP, assignment.getSos(),assignment, null);
     }
+
+    // Pop up cho province ko gọi được khi support request
+    public void createSupportRequestWorkflowFailedPopup(SupportRequest supportRequest) {
+        UUID areaId = supportRequest.getSos().getArea().getParent().getId();
+
+        List<User> provinceOperators = userRepository.findByRoleAndArea_IdAndTrangthai(Role.PROVINCE_OPERATOR, areaId,
+                Status.ACTIVE);
+
+        if (provinceOperators.isEmpty()) {
+            throw new AppException(ErrorCode.PROVINCE_OPERATOR_NOT_FOUND);
+        }
+
+        String title = "🚨 Không liên lạc được với Lực lượng cứu hộ cấp tỉnh";
+
+        String message = String.format(
+                """
+                        Không liên lạc được với Lực lượng cúu hộ cấp tỉnh sau 3 lần gọi.
+
+                        Vui lòng xử lý khẩn cấp yêu cầu cứu hộ của đội %s gấp!!!
+                        """, supportRequest.getSos().getTeam().getName());
+
+        for (User u : provinceOperators) {
+            createNotification(u, title, message, NotificationType.CALL_WORKFLOW_FAILED, Channel.POPUP, supportRequest.getSos(),null,supportRequest);
+        }
+    }
+
+    
 }

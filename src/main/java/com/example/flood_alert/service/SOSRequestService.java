@@ -25,9 +25,11 @@ import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.dbo.response.TeamDashboardResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
+import com.example.flood_alert.entity.CallTask;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.User;
+import com.example.flood_alert.enums.DispatcherType;
 import com.example.flood_alert.enums.EnvironmentRisk;
 import com.example.flood_alert.enums.LocationSource;
 import com.example.flood_alert.enums.Priority;
@@ -86,6 +88,7 @@ public class SOSRequestService {
         List<StatusSOS> ACTIVE_STATUSES = List.of(
                         StatusSOS.PENDING,
                         StatusSOS.PROCESSING);
+        NotificationManagerService notificationManagerService;
 
         @Transactional
         @CacheEvict(value = "team-dashboard", allEntries = true)
@@ -948,5 +951,56 @@ public class SOSRequestService {
                 response.setAlreadyExists(false);
 
                 return response;
+        }
+
+        @Transactional
+        public void claimDispatcher(UUID sosId) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                SosRequest sos = sosRequestRepository.findById(sosId)
+                                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
+
+                // Đã có Dispatcher
+                if (sos.getDispatcherUser() != null) {
+                        throw new AppException(ErrorCode.SOS_ALREADY_CLAIMED);
+                }
+
+                RescueTeam team = sos.getTeam();
+
+                // Team Leader
+                if (team.getLeader() != null
+                                && team.getLeader().getId().equals(currentUser.getId())) {
+
+                        sos.setDispatcherUser(currentUser);
+                        sos.setDispatcherType(DispatcherType.TEAM_LEADER);
+                }
+
+                // Deputy Leader
+                else if (team.getDeputyLeader() != null
+                                && team.getDeputyLeader().getId().equals(currentUser.getId())) {
+
+                        sos.setDispatcherUser(currentUser);
+                        sos.setDispatcherType(DispatcherType.DEPUTY_LEADER);
+                }
+
+                // Province Operator
+                else if (currentUser.getRole() == Role.PROVINCE_OPERATOR
+                                && currentUser.getArea().getId()
+                                                .equals(sos.getArea().getParent().getId())) {
+
+                        sos.setDispatcherUser(currentUser);
+                        sos.setDispatcherType(DispatcherType.PROVINCE_OPERATOR);
+                }
+
+                // Không thuộc đối tượng được nhận điều phối
+                else {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                sosRequestRepository.save(sos);
+
+                // Thông báo Team Leader đã có người nhận điều phối
+                notificationManagerService.notifySosDispatcherClaimed(sos);
         }
 }

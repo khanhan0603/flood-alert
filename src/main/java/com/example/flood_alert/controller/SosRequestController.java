@@ -237,4 +237,15 @@ public class SosRequestController {
                                 .result(sosRequestService.getByTrackingCode(trackingCode))
                                 .build();
         }
+
+        // Nhận điều phối sau call workflow thất bại
+        @PutMapping("/{sosId}/claim-dispatcher")
+        @PreAuthorize("hasAuthority('SCOPE_PROVINCE_OPERATOR')or hasAuthority('SCOPE_RESCUER')")
+        public ApiResponse<Void> claimDispatcher(
+                        @PathVariable UUID sosId) {
+
+                sosRequestService.claimDispatcher(sosId);
+
+                return ApiResponse.<Void>builder().build();
+        }
 }

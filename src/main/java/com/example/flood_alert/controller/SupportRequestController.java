@@ -24,6 +24,7 @@ import com.example.flood_alert.dbo.request.CreateSupportRequest;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.CandidateSupportTeamResponse;
+import com.example.flood_alert.dbo.response.CreateSupportRequestResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestDetailResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestResponse;
 import com.example.flood_alert.dbo.response.ProvinceSupportItemResponse;
@@ -51,10 +52,10 @@ public class SupportRequestController {
         // Team Leader tạo yêu cầu chi viện
         @PostMapping
         @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
-        public ApiResponse<UUID> create(
+        public ApiResponse<CreateSupportRequestResponse> create(
                         @RequestBody @Valid CreateSupportRequest request) {
 
-                return ApiResponse.<UUID>builder()
+                return ApiResponse.<CreateSupportRequestResponse>builder()
                                 .result(supportRequestService.create(request))
                                 .build();
         }
@@ -232,5 +233,16 @@ public class SupportRequestController {
                                                 supportRequestService.getMyCreatedSupportRequests(
                                                                 pageable))
                                 .build();
+        }
+
+        // Province nhận điều phối support
+        @PutMapping("/{supportRequestId}/claim-dispatcher")
+        @PreAuthorize("hasAuthority('SCOPE_PROVINCE_OPERATOR')")
+        public ApiResponse<Void> claimDispatcher(
+                        @PathVariable UUID supportRequestId) {
+
+                supportRequestService.claimDispatcher(supportRequestId);
+
+                return ApiResponse.<Void>builder().build();
         }
 }

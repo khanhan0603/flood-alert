@@ -7,10 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.UpdateCallResultRequest;
-import com.example.flood_alert.dbo.response.AssignmentResponse;
 import com.example.flood_alert.dbo.response.CallResultResponse;
 import com.example.flood_alert.dbo.response.CallTaskResponse;
-import com.example.flood_alert.dbo.response.SosAssignmentResponse;
 import com.example.flood_alert.dbo.response.UpdateCallResultResponse;
 import com.example.flood_alert.entity.CallLog;
 import com.example.flood_alert.entity.CallTask;
@@ -18,8 +16,8 @@ import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
+import com.example.flood_alert.entity.SupportRequest;
 import com.example.flood_alert.entity.User;
-import com.example.flood_alert.enums.AssignmentStatus;
 import com.example.flood_alert.enums.CallResult;
 import com.example.flood_alert.enums.CallTargetType;
 import com.example.flood_alert.enums.CallTaskStatus;
@@ -34,8 +32,8 @@ import com.example.flood_alert.mapper.CallTaskMapper;
 import com.example.flood_alert.repository.CallLogRepository;
 import com.example.flood_alert.repository.CallTaskRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
-import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
+import com.example.flood_alert.repository.SupportRequestRepository;
 import com.example.flood_alert.repository.UserRepository;
 
 import lombok.AccessLevel;
@@ -57,8 +55,9 @@ public class CallWorkflowService {
     UserRepository userRepository;
     AlarmService alarmService;
     NotificationService notificationService;
-    SosAssignmentRepository sosAssignmentRepository;
+    SupportRequestRepository supportRequestRepository;
     RescueGroupRepository rescueGroupRepository;
+    NotificationManagerService notificationManagerService;
 
     /**
      * Khởi tạo Call Workflow đầu tiên sau khi Hotline tạo SOS
@@ -110,34 +109,41 @@ public class CallWorkflowService {
 
         callTask.setStatus(CallTaskStatus.SUCCESS);
 
-        SosRequest sos = callTask.getSosRequest();
+        if (callTask.getSosRequest() != null) {
 
-        if (sos == null) {
-            return;
+            SosRequest sos = callTask.getSosRequest();
+
+            switch (callTask.getTargetType()) {
+
+                case TEAM_LEADER -> {
+                    sos.setDispatcherUser(callTask.getTargetUser());
+                    sos.setDispatcherType(DispatcherType.TEAM_LEADER);
+                }
+
+                case DEPUTY_LEADER -> {
+                    sos.setDispatcherUser(callTask.getTargetUser());
+                    sos.setDispatcherType(DispatcherType.DEPUTY_LEADER);
+                }
+
+                case PROVINCE_OPERATOR -> {
+                    sos.setDispatcherUser(callTask.getTargetUser());
+                    sos.setDispatcherType(DispatcherType.PROVINCE_OPERATOR);
+                }
+
+                default ->
+                    throw new AppException(ErrorCode.INVALID_CALL_TARGET);
+            }
+
+            sosRequestRepository.save(sos);
+
+        } else {
+
+            SupportRequest supportRequest = callTask.getSupportRequest();
+
+            supportRequest.setDispatcherUser(callTask.getTargetUser());
+
+            supportRequestRepository.save(supportRequest);
         }
-
-        switch (callTask.getTargetType()) {
-
-            case TEAM_LEADER -> {
-                sos.setDispatcherUser(callTask.getTargetUser());
-                sos.setDispatcherType(DispatcherType.TEAM_LEADER);
-            }
-
-            case DEPUTY_LEADER -> {
-                sos.setDispatcherUser(callTask.getTargetUser());
-                sos.setDispatcherType(DispatcherType.DEPUTY_LEADER);
-            }
-
-            case PROVINCE_OPERATOR -> {
-                sos.setDispatcherUser(callTask.getTargetUser());
-                sos.setDispatcherType(DispatcherType.PROVINCE_OPERATOR);
-            }
-
-            default ->
-                throw new AppException(ErrorCode.INVALID_CALL_TARGET);
-        }
-
-        sosRequestRepository.save(sos);
     }
 
     // Xử lý cuộc gọi không thành công
@@ -206,7 +212,23 @@ public class CallWorkflowService {
     // Chuyển sang operator tiếp theo
     private void moveToNextProvinceOperator(CallTask callTask) {
 
-        UUID areaId = callTask.getSosRequest().getArea().getParent().getId();
+        UUID areaId;
+
+        if (callTask.getSosRequest() != null) {
+
+            areaId = callTask.getSosRequest()
+                    .getArea()
+                    .getParent()
+                    .getId();
+
+        } else {
+
+            areaId = callTask.getSupportRequest()
+                    .getSos()
+                    .getArea()
+                    .getParent()
+                    .getId();
+        }
 
         List<User> operators = userRepository.findByRoleAndArea_IdAndTrangthai(
                 Role.PROVINCE_OPERATOR,
@@ -255,13 +277,21 @@ public class CallWorkflowService {
         // Kết thúc Call Workflow
         callTask.setStatus(CallTaskStatus.FAILED);
 
-        SosRequest sos = callTask.getSosRequest();
+        if (callTask.getSosRequest() != null) {
 
-        // 1. Tạo Alarm
-        alarmService.createCallWorkflowFailedAlarm(callTask);
+            // Alarm SOS
+            alarmService.createCallWorkflowFailedAlarm(callTask);
 
-        // 2. Tạo Notification
-        notificationService.createCallWorkflowFailedNotifications(sos);
+            notificationService.createCallWorkflowFailedNotifications(
+                    callTask.getSosRequest());
+
+        } else {
+
+            //pop up cho toàn bộ province
+            notificationService.createSupportRequestWorkflowFailedPopup(callTask.getSupportRequest());
+            //web push + email cho team leader
+            notificationManagerService.notifySupportRequestWorkflowFailed(callTask.getSupportRequest());
+        }
     }
 
     // Lưu call log
@@ -329,16 +359,16 @@ public class CallWorkflowService {
                         .build());
     }
 
-    //Hàm tạo call task đến group leader xác nhận nhận nhiệm vụ
+    // Hàm tạo call task đến group leader xác nhận nhận nhiệm vụ
     @Transactional
-    public CallTask startGroupLeaderCallWorkFlow(SosAssignment assignment){
-        User groupLeader=assignment.getGroup().getLeader();
+    public CallTask startGroupLeaderCallWorkFlow(SosAssignment assignment) {
+        User groupLeader = assignment.getGroup().getLeader();
 
-        if(groupLeader==null){
+        if (groupLeader == null) {
             throw new AppException(ErrorCode.GROUP_LEADER_NOT_FOUND);
         }
 
-        CallTask callTask=CallTask.builder()
+        CallTask callTask = CallTask.builder()
                 .targetUser(groupLeader)
                 .targetType(CallTargetType.GROUP_LEADER)
                 .retryCount(0)
@@ -351,16 +381,44 @@ public class CallWorkflowService {
         return callTaskRepository.save(callTask);
     }
 
-    //Xử lý cuộc gọi group leader không thành công
-    private void handleGroupLeaderCallFailed(CallTask callTask){
-        SosAssignment assignment=callTask.getAssignment();
+    // Xử lý cuộc gọi group leader không thành công
+    private void handleGroupLeaderCallFailed(CallTask callTask) {
+        SosAssignment assignment = callTask.getAssignment();
 
-        RescueGroup group=assignment.getGroup();
+        RescueGroup group = assignment.getGroup();
         group.setStatus(RescueGroupStatus.AVAILABLE);
 
         notificationService.createGroupLeaderCallFailedPopup(assignment);
 
         rescueGroupRepository.save(group);
         callTask.setStatus(CallTaskStatus.FAILED);
+    }
+
+    // Tạo call task support request
+    @Transactional
+    public CallTask startSupportRequestCallWorkflow(SupportRequest supportRequest) {
+        // Lấy province của sos
+        UUID provinceId = supportRequest.getSos().getArea().getParent().getId();
+
+        // Danh sách province operator
+        List<User> provinceOperators = userRepository.findByRoleAndArea_IdAndTrangthai(Role.PROVINCE_OPERATOR,
+                provinceId, Status.ACTIVE);
+
+        if (provinceOperators.isEmpty()) {
+            throw new AppException(ErrorCode.PROVINCE_OPERATOR_NOT_FOUND);
+        }
+
+        User provinceOperator = provinceOperators.get(0);
+
+        CallTask callTask = CallTask.builder()
+                .supportRequest(supportRequest)
+                .targetUser(provinceOperator)
+                .targetType(CallTargetType.PROVINCE_OPERATOR)
+                .retryCount(0)
+                .timeoutSeconds(30)
+                .status(CallTaskStatus.CALLING_PROVINCE)
+                .build();
+
+        return callTaskRepository.save(callTask);
     }
 }

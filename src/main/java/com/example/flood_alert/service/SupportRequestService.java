@@ -26,6 +26,7 @@ import com.example.flood_alert.dbo.request.CreateSupportRequestItem;
 import com.example.flood_alert.dbo.request.RejectAssignedSupportRequest;
 import com.example.flood_alert.dbo.response.AssignedGroupResponse;
 import com.example.flood_alert.dbo.response.CandidateSupportTeamResponse;
+import com.example.flood_alert.dbo.response.CreateSupportRequestResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestDetailResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestItemResponse;
 import com.example.flood_alert.dbo.response.GroupSupportRequestResponse;
@@ -37,6 +38,7 @@ import com.example.flood_alert.dbo.response.SupportRequestItemResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.dbo.response.TeamSupportRequestItemResponse;
 import com.example.flood_alert.dbo.response.TeamSupportRequestResponse;
+import com.example.flood_alert.entity.CallTask;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
@@ -48,12 +50,14 @@ import com.example.flood_alert.enums.AssignmentRole;
 import com.example.flood_alert.enums.AssignmentStatus;
 import com.example.flood_alert.enums.MarkerType;
 import com.example.flood_alert.enums.RescueGroupStatus;
+import com.example.flood_alert.enums.Role;
 import com.example.flood_alert.enums.SupportRequestItemStatus;
 import com.example.flood_alert.enums.SupportRequestSource;
 import com.example.flood_alert.enums.SupportRequestStatus;
 import com.example.flood_alert.enums.SupportType;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
+import com.example.flood_alert.mapper.CallTaskMapper;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.SosAssignmentRepository;
@@ -79,9 +83,11 @@ public class SupportRequestService {
         AuthenticationService authenticationService;
         SupportRequestItemRepository supportRequestItemRepository;
         NotificationManagerService notificationManagerService;
+        CallWorkflowService callWorkflowService;
+        CallTaskMapper callTaskMapper;
 
         // Tạo yêu cầu hỗ trợ cứu hộ, teamleader tạo
-        public UUID create(CreateSupportRequest request) {
+        public CreateSupportRequestResponse create(CreateSupportRequest request) {
                 // Tìm thông tin người gửi yêu cầu
                 User currentUser = authenticationService.getCurrentUser();
 
@@ -89,20 +95,9 @@ public class SupportRequestService {
                 SosRequest sos = sosRequestRepository.findById(request.getSosId())
                                 .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
 
-                // Nếu người dùng ko có team
-                if (currentUser.getTeam() == null) {
-                        throw new AppException(ErrorCode.NO_PERMISSION);
-                }
+                // Chỉ Dispatcher hiện tại mới được tạo Support Request
+                validateDispatcherPermission(sos, currentUser);
 
-                // Kiểm tra người dùng hiện tại có phải leader của team đó ko
-                RescueTeam team = rescueTeamRepository
-                                .findByLeaderId(currentUser.getId())
-                                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
-
-                // Kiểm tra sos có thuộc team của leader đó ko
-                if (!sos.getTeam().getId().equals(team.getId())) {
-                        throw new AppException(ErrorCode.NO_PERMISSION);
-                }
                 // kiểm tra sos request có tạo yêu cầu hỗ trợ và đang đợi duyệt ko
                 if (supportRequestRepository.existsBySosIdAndStatus(
                                 request.getSosId(),
@@ -147,9 +142,43 @@ public class SupportRequestService {
                                 .toList();
                 supportRequest.setItems(items);
                 supportRequestRepository.save(supportRequest);
-                // Thông báo đến điều hành cấp tỉnh
-                notificationManagerService.notifyProvinceSupportRequest(supportRequest);
-                return supportRequest.getId();
+                // Tạo Calltask đến province
+                CallTask callTask = callWorkflowService.startSupportRequestCallWorkflow(supportRequest);
+                return CreateSupportRequestResponse.builder()
+                                .supportRequestId(supportRequest.getId())
+                                .callTask(callTaskMapper.toResponse(callTask))
+                                .build();
+        }
+
+        /**
+         * Kiểm tra quyền điều phối SOS.
+         *
+         * Quy tắc:
+         * - Nếu chưa có Dispatcher => Team Leader được điều phối.
+         * - Nếu đã có Dispatcher => chỉ Dispatcher được điều phối.
+         */
+        private void validateDispatcherPermission(
+                        SosRequest sos,
+                        User currentUser) {
+
+                // Chưa có người nhận điều phối
+                if (sos.getDispatcherUser() == null) {
+
+                        RescueTeam team = sos.getTeam();
+
+                        if (team.getLeader() == null
+                                        || !team.getLeader().getId().equals(currentUser.getId())) {
+
+                                throw new AppException(ErrorCode.NO_PERMISSION);
+                        }
+
+                        return;
+                }
+
+                // Đã có Dispatcher
+                if (!sos.getDispatcherUser().getId().equals(currentUser.getId())) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
         }
 
         // Hiển thị danh sách các yêu cầu chi viện lên dashboard cho province leader
@@ -257,6 +286,21 @@ public class SupportRequestService {
                                 .build();
         }
 
+        /**
+         * Kiểm tra quyền điều phối Support Request.
+         * chỉ Dispatcher mới được xử lý.
+         */
+        private void validateSupportDispatcherPermission(
+                        SupportRequest supportRequest,
+                        User currentUser) {
+
+                if (supportRequest.getDispatcherUser() == null
+                                || !supportRequest.getDispatcherUser().getId().equals(currentUser.getId())) {
+
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+        }
+
         // Chấp nhận yêu cầu hỗ trợ (có hỗ trợ assign lại khi team reject)
         @Transactional
         public void approve(
@@ -272,15 +316,7 @@ public class SupportRequestService {
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
-                // Kiểm tra SOS có thuộc tỉnh mà Province đang quản lý không
-                if (!supportRequest.getSos()
-                                .getArea()
-                                .getParent()
-                                .getId()
-                                .equals(currentUser.getArea().getId())) {
-
-                        throw new AppException(ErrorCode.NO_PERMISSION);
-                }
+                validateSupportDispatcherPermission(supportRequest,currentUser);
 
                 // Map các item theo id để tìm nhanh
                 Map<UUID, SupportRequestItem> itemMap = supportRequest.getItems()
@@ -1254,6 +1290,42 @@ public class SupportRequestService {
                                 .assignedGroups(assignedGroups)
 
                                 .build();
+        }
+
+        @Transactional
+        public void claimDispatcher(UUID supportRequestId) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                // Chỉ Province Operator mới được nhận điều phối
+                if (currentUser.getRole() != Role.PROVINCE_OPERATOR) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                SupportRequest supportRequest = supportRequestRepository.findById(supportRequestId)
+                                .orElseThrow(() -> new AppException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
+
+                // Đã có người điều phối
+                if (supportRequest.getDispatcherUser() != null) {
+                        throw new AppException(ErrorCode.SUPPORT_REQUEST_ALREADY_CLAIMED);
+                }
+
+                // Chỉ Province Operator cùng tỉnh mới được nhận
+                UUID provinceId = supportRequest.getSos()
+                                .getArea()
+                                .getParent()
+                                .getId();
+
+                if (!provinceId.equals(currentUser.getArea().getId())) {
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                supportRequest.setDispatcherUser(currentUser);
+
+                supportRequestRepository.save(supportRequest);
+
+                // Thông báo cho Team Leader đã có Province Operator nhận điều phối
+                notificationManagerService.notifySupportRequestClaimed(supportRequest);
         }
 
 }

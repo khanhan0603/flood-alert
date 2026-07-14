@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.Notification;
 import com.example.flood_alert.entity.SosAssignment;
+import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.SupportRequest;
 import com.example.flood_alert.entity.SupportRequestItem;
 import com.example.flood_alert.entity.User;
@@ -441,5 +442,162 @@ public class NotificationManagerService {
 
                 notificationEmailProcessor.processPendingEmails();
                 notificationWebPushProcessor.processPendingPushNotifications();
+        }
+
+        // Thông báo cho người tạo Support Request khi không Province Operator nào phản
+        // hồi
+        @Transactional
+        public void notifySupportRequestWorkflowFailed(
+                        SupportRequest supportRequest) {
+
+                User requester = supportRequest.getRequestedBy();
+
+                String title = "Yêu cầu hỗ trợ chưa có người tiếp nhận";
+
+                String message = """
+                                Hiện chưa có Province Operator nào phản hồi yêu cầu hỗ trợ của bạn.
+
+                                Hệ thống đã gửi thông báo đến các Province Operator để chủ động nhận điều phối.
+
+                                Vui lòng theo dõi quá trình xử lý.
+                                """;
+
+                List<Notification> notifications = new ArrayList<>();
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(requester)
+                                                .title(title)
+                                                .message(message)
+                                                .type(NotificationType.CALL_WORKFLOW_FAILED)
+                                                .channel(Channel.EMAIL)
+                                                .status(StatusAlert.PENDING)
+                                                .supportRequest(supportRequest)
+                                                .sos(supportRequest.getSos())
+                                                .build());
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(requester)
+                                                .title(title)
+                                                .message(message)
+                                                .type(NotificationType.CALL_WORKFLOW_FAILED)
+                                                .channel(Channel.WEB_PUSH)
+                                                .status(StatusAlert.PENDING)
+                                                .supportRequest(supportRequest)
+                                                .sos(supportRequest.getSos())
+                                                .build());
+
+                notificationRepository.saveAll(notifications);
+
+                notificationEmailProcessor.processPendingEmails();
+
+                notificationWebPushProcessor.processPendingPushNotifications();
+        }
+
+        // Gửi thông báo cho team leader đã có province nhận điều phối
+        public void notifySupportRequestClaimed(SupportRequest supportRequest) {
+                User teamLeader = supportRequest.getRequestedBy();
+
+                String title = "Yêu cầu hỗ trợ đã được nhận điều phối";
+                String message = String.format("""
+                                 Lực lượng điều phối cấp tỉnh %s đã nhận điều phối yêu cầu hỗ trợ.
+
+                                 Vui lòng theo dõi quá trình điều phối.
+                                """, supportRequest.getRequestedBy().getHoten());
+
+                List<Notification> notifications = new ArrayList<>();
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(teamLeader)
+                                                .title(title)
+                                                .message(message)
+                                                .type(NotificationType.SUPPORT_REQUEST_CLAIMED)
+                                                .channel(Channel.EMAIL)
+                                                .status(StatusAlert.PENDING)
+                                                .supportRequest(supportRequest)
+                                                .sos(supportRequest.getSos())
+                                                .build());
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(teamLeader)
+                                                .title(title)
+                                                .message(message)
+                                                .type(NotificationType.SUPPORT_REQUEST_CLAIMED)
+                                                .channel(Channel.WEB_PUSH)
+                                                .status(StatusAlert.PENDING)
+                                                .supportRequest(supportRequest)
+                                                .sos(supportRequest.getSos())
+                                                .build());
+
+                notificationRepository.saveAll(notifications);
+
+                notificationEmailProcessor.processPendingEmails();
+                notificationWebPushProcessor.processPendingPushNotifications();
+        }
+
+        // Thông báo đến team leader đã có người nhận điều phối yêu cầu cứu hộ
+        @Transactional
+        public void notifySosDispatcherClaimed(SosRequest sos) {
+
+                User teamLeader = sos.getTeam().getLeader();
+
+                if (teamLeader == null) {
+                        return;
+                }
+
+                // Nếu là team leader nhận điều phối thì ko cần gửi cho team leader
+                if (teamLeader.getId().equals(sos.getDispatcherUser().getId())) {
+                        return;
+                }
+
+                String dispatcherName = sos.getDispatcherUser().getHoten();
+
+                String dispatcherRole = switch (sos.getDispatcherType()) {
+                        case TEAM_LEADER -> "Đội trưởng";
+                        case DEPUTY_LEADER -> "Đội phó";
+                        case PROVINCE_OPERATOR -> "Điều phối viên cấp tỉnh";
+                };
+
+                String title = "SOS đã có người nhận điều phối";
+
+                String message = String.format(
+                                "%s %s đã tiếp nhận điều phối yêu cầu cứu hộ.",
+                                dispatcherRole,
+                                dispatcherName);
+
+                List<Notification> notifications = new ArrayList<>();
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(teamLeader)
+                                                .title(title)
+                                                .message(message)
+                                                .type(NotificationType.SOS_ASSIGNED)
+                                                .channel(Channel.EMAIL)
+                                                .status(StatusAlert.PENDING)
+                                                .supportRequest(null)
+                                                .sos(sos)
+                                                .build());
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(teamLeader)
+                                                .title(title)
+                                                .message(message)
+                                                .type(NotificationType.SOS_ASSIGNED)
+                                                .channel(Channel.WEB_PUSH)
+                                                .status(StatusAlert.PENDING)
+                                                .supportRequest(null)
+                                                .sos(sos)
+                                                .build());
+
+                notificationRepository.saveAll(notifications);
+
+                notificationEmailProcessor.processPendingEmails();
+                notificationWebPushProcessor.processPendingPushNotifications();
+
         }
 }
