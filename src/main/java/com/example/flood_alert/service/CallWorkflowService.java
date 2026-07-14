@@ -13,6 +13,7 @@ import com.example.flood_alert.dbo.response.UpdateCallResultResponse;
 import com.example.flood_alert.entity.CallLog;
 import com.example.flood_alert.entity.CallTask;
 import com.example.flood_alert.entity.RescueTeam;
+import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.CallResult;
@@ -315,5 +316,26 @@ public class CallWorkflowService {
                         .value(CallResult.FAILED.name())
                         .label("Cuộc gọi lỗi")
                         .build());
+    }
+
+    //Hàm tạo call task đến group leader xác nhận nhận nhiệm vụ
+    @Transactional
+    public CallTask startGroupLeaderCallWorkFlow(SosAssignment assignment){
+        User groupLeader=assignment.getGroup().getLeader();
+
+        if(groupLeader==null){
+            throw new AppException(ErrorCode.GROUP_LEADER_NOT_FOUND);
+        }
+
+        CallTask callTask=CallTask.builder()
+                .targetUser(groupLeader)
+                .targetType(CallTargetType.GROUP_LEADER)
+                .retryCount(0)
+                .timeoutSeconds(DEFAULT_TIMEOUT_SECONDS)
+                .status(CallTaskStatus.CALLING_GROUP_LEADER)
+                .sosRequest(assignment.getSos())
+                .build();
+
+        return callTaskRepository.save(callTask);
     }
 }

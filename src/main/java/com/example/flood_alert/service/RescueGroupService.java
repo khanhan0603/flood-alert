@@ -14,7 +14,6 @@ import com.example.flood_alert.dbo.request.AddGroupMembersRequest;
 import com.example.flood_alert.dbo.request.AssignGroupLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueGroupRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueGroupStatusRequest;
-import com.example.flood_alert.dbo.response.AssignCandidateGroupResponse;
 import com.example.flood_alert.dbo.response.AvailableMemberResponse;
 import com.example.flood_alert.dbo.response.GroupLeaderResponse;
 import com.example.flood_alert.dbo.response.GroupMemberResponse;
@@ -25,7 +24,6 @@ import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueGroupMember;
 import com.example.flood_alert.entity.RescueGroupMemberId;
 import com.example.flood_alert.entity.RescueTeam;
-import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.SupportRequestItem;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.RescueGroupStatus;
@@ -322,9 +320,9 @@ public class RescueGroupService {
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.RESCUE_GROUP_NOT_FOUND));
 
-                // Chỉ Team Leader của Team được cập nhật
-                if (group.getTeam().getLeader() == null
-                                || !group.getTeam().getLeader().getId().equals(currentUser.getId())) {
+                // Chỉ Group Leader được cập nhật
+                if (group.getLeader() == null
+                                || !group.getLeader().getId().equals(currentUser.getId())) {
 
                         throw new AppException(ErrorCode.NO_PERMISSION);
                 }

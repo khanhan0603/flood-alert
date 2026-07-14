@@ -90,6 +90,7 @@ public enum ErrorCode {
     PROVINCE_OPERATOR_NOT_FOUND(1080,"Không tìm thấy danh sách lực lượng điều phối cấp tỉnh!"),
     INVALID_CALL_TARGET(1081,"Đối tượng gọi không hợp lệ!"),
     NOTIFICATION_NOT_FOUND(1082,"Không tìm thấy thông báo!"),
+    GROUP_LEADER_NOT_FOUND(1083,"Không tìm thấy nhóm trưởng phụ trách nhiệm vụ này!"),
     ;
 
     int code;

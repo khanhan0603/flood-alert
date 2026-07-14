@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.AssignGroupRequest;
-import com.example.flood_alert.dbo.request.AssignSupportGroupRequest;
 import com.example.flood_alert.dbo.request.FailAssignmentRequest;
 import com.example.flood_alert.dbo.request.UpdateAssignmentStatusRequest;
 import com.example.flood_alert.dbo.response.AssignCandidateGroupResponse;
@@ -59,6 +58,7 @@ public class SosAssignmentService {
         NotificationManagerService notificationManagerService;
         AssignCandidateGroupMapper assignCandidateGroupMapper;
         RescueGroupMemberRepository rescueGroupMemberRepository;
+        CallWorkflowService callWorkflowService;
 
         // Dispatcher giao nhiệm vụ cho Rescue Group
         @CacheEvict(value = "team-dashboard", allEntries = true)
@@ -97,7 +97,8 @@ public class SosAssignmentService {
                                 .build();
 
                 sosAssignmentRepository.save(assignment);
-
+                // Tạo Call Workflow gọi Group Leader
+                callWorkflowService.startGroupLeaderCallWorkFlow(assignment);
                 // SOS chuyển sang ASSIGNED
                 if (sos.getStatus() == StatusSOS.PENDING) {
                         sos.setStatus(StatusSOS.ASSIGNED);
