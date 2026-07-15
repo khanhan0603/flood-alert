@@ -87,6 +87,7 @@ public class SupportRequestService {
         CallTaskMapper callTaskMapper;
 
         // Tạo yêu cầu hỗ trợ cứu hộ, teamleader tạo
+        @Transactional
         public CreateSupportRequestResponse create(CreateSupportRequest request) {
                 // Tìm thông tin người gửi yêu cầu
                 User currentUser = authenticationService.getCurrentUser();
