@@ -1,5 +1,6 @@
 package com.example.flood_alert.dbo.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -15,12 +16,12 @@ import lombok.NoArgsConstructor;
 public class IoTAggregateResponse {
     UUID area_id;
     String tenkhuvuc;
-    Double avgWater;;
-    Double maxWater;
-    Double minWater;
-    Double currentWater;
+    BigDecimal avgWater;;
+    BigDecimal maxWater;
+    BigDecimal minWater;
+    BigDecimal currentWater;
     Integer totalDeviceCount;
-    Double waterRiseRatePerMinute;
+    BigDecimal waterRiseRatePerMinute;
     Double dangerRatio;
     Integer dangerDurationMinutes;
     LocalDateTime recordedAt;

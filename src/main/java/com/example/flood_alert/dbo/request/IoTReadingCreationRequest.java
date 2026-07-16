@@ -1,4 +1,5 @@
 package com.example.flood_alert.dbo.request;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import lombok.AccessLevel;
@@ -15,6 +16,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class IoTReadingCreationRequest {
     String deviceCode;
-    Double waterLevel;
+    BigDecimal waterLevel;
     LocalDateTime recordedAt;
 }

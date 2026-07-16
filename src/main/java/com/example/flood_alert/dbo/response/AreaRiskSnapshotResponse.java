@@ -1,5 +1,6 @@
 package com.example.flood_alert.dbo.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public class AreaRiskSnapshotResponse {
     Double predictionProbability;
     Double dangerRatio;
     Integer dangerDurationMinutes;
-    Double waterRiseRatePerMinute;
+    BigDecimal waterRiseRatePerMinute;
     Integer dangerAggregateCount;
     Double dangerPercent;
     RiskLevel predictionRiskLevel;

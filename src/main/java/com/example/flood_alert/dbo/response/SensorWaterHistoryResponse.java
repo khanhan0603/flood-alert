@@ -1,5 +1,6 @@
 package com.example.flood_alert.dbo.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import lombok.AccessLevel;
@@ -13,7 +14,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SensorWaterHistoryResponse {
-    Double waterLevel;
+    BigDecimal waterLevel;
 
     LocalDateTime recordedAt;
 }

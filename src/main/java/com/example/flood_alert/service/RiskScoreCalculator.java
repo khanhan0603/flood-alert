@@ -1,5 +1,6 @@
 package com.example.flood_alert.service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -130,12 +131,12 @@ public class RiskScoreCalculator {
         Collections.reverse(last5);
 
         for (int i = 1; i < last5.size(); i++) {
-            Double previous = last5.get(i - 1).getCurrentWater();
-            Double current = last5.get(i).getCurrentWater();
+            BigDecimal previous = last5.get(i - 1).getCurrentWater();
+            BigDecimal current = last5.get(i).getCurrentWater();
 
             if (previous == null || current == null)
                 return false;
-            if (current < previous)
+            if (current.compareTo(previous) < 0)
                 return false;
         }
 

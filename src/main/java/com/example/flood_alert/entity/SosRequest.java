@@ -113,7 +113,8 @@ public class SosRequest extends BaseEntity {
     // 11.5
     // nghĩa là:
     // 11.5 cm/phút
-    Double snapshotWaterRise;
+    @Column(precision = 10, scale = 2)
+    BigDecimal snapshotWaterRise;
 
     // Snapshot tỉ lệ cảm biến vượt ngưỡng
     Double snapshotDangerRatio;
@@ -179,12 +180,12 @@ public class SosRequest extends BaseEntity {
     @Column(name = "tracking_code", length = 6, nullable = false, unique = true)
     String trackingCode;
 
-    //Người cụ thể đang điều phối sos
+    // Người cụ thể đang điều phối sos
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dispatcher_user_id")
     User dispatcherUser;
 
-    //Vai trò của người đang điều phối sos
+    // Vai trò của người đang điều phối sos
     @Enumerated(EnumType.STRING)
     @Column(name = "dispatcher_type")
     DispatcherType dispatcherType;

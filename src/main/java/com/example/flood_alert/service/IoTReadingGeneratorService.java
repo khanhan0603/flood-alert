@@ -1,5 +1,7 @@
 package com.example.flood_alert.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +27,8 @@ public class IoTReadingGeneratorService {
 
     IoTReadingSensorRepository ioTReadingSensorRepository;
 
-    private static final double MIN_WATER_LEVEL = 0.0;
-    private static final double MAX_WATER_LEVEL = 14.0;
+    private static final BigDecimal MIN_WATER_LEVEL = BigDecimal.ZERO;
+    private static final BigDecimal MAX_WATER_LEVEL = BigDecimal.valueOf(14);
 
     @Transactional
     public void saveReadings(IoTDevice device, LocalDateTime from, LocalDateTime to) {
@@ -37,12 +39,13 @@ public class IoTReadingGeneratorService {
         long index = 0;
 
         while (!current.isAfter(to)) {
-            double water = generateWaterLevel(current, index);
+            BigDecimal water = generateWaterLevel(current, index);
 
-            // Chỉ nhận dữ liệu hợp lệ: (0, 14], nếu dữ liệu ko hợp lệ sẽ bỏ qua 
-            //code kế mà đi tới lần tiếp theo.
+            // Chỉ nhận dữ liệu hợp lệ: (0, 14], nếu dữ liệu ko hợp lệ sẽ bỏ qua
+            // code kế mà đi tới lần tiếp theo.
 
-            if (water <= MIN_WATER_LEVEL || water > MAX_WATER_LEVEL) {
+            if (water.compareTo(MIN_WATER_LEVEL) <= 0
+                    || water.compareTo(MAX_WATER_LEVEL) > 0) {
                 log.warn("Discard invalid reading. device={} waterLevel={}",
                         device.getDeviceCode(), water);
                 current = current.plusSeconds(10);
@@ -54,7 +57,10 @@ public class IoTReadingGeneratorService {
                     .device(device)
                     .waterLevel(water)
                     .valid(true)
-                    .status(water >= device.getNguongCanhBao() ? WaterStatus.DANGER : WaterStatus.SAFE)
+                    .status(
+                            water.compareTo(BigDecimal.valueOf(device.getNguongCanhBao())) >= 0
+                                    ? WaterStatus.DANGER
+                                    : WaterStatus.SAFE)
                     .recordedAt(current)
                     .build());
 
@@ -67,7 +73,7 @@ public class IoTReadingGeneratorService {
         log.info("saveReadings DONE");
     }
 
-    private double generateWaterLevel(
+    private BigDecimal generateWaterLevel(
             LocalDateTime time,
             long index) {
 
@@ -85,6 +91,8 @@ public class IoTReadingGeneratorService {
             floodBoost = 4;
         }
 
-        return Math.round(Math.max(0, baseWater + naturalWave + noise + floodBoost) * 100.0) / 100.0;
+        return BigDecimal.valueOf(
+                Math.max(0, baseWater + naturalWave + noise + floodBoost))
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }

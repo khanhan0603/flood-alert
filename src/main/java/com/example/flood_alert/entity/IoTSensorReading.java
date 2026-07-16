@@ -1,5 +1,6 @@
 package com.example.flood_alert.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.example.flood_alert.enums.WaterStatus;
@@ -32,14 +33,14 @@ public class IoTSensorReading extends BaseEntity {
     @JoinColumn(name = "device_id", nullable = false)
     IoTDevice device;
 
-    @Column(nullable = false)
-    Double waterLevel;
+    @Column(nullable = false, precision = 10, scale = 2)
+    BigDecimal waterLevel;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     WaterStatus status;
 
-    @Column(nullable = false, name="is_valid")
+    @Column(nullable = false, name = "is_valid")
     Boolean valid;
 
     @Column(nullable = false)

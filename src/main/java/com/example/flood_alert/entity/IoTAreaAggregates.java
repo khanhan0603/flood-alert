@@ -1,5 +1,6 @@
 package com.example.flood_alert.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -26,39 +27,39 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "iot_area_aggregates", uniqueConstraints = @UniqueConstraint(name = "uk_area_recorded_at", columnNames = {
-        "area_id", "recorded_at" }), indexes = {
-                @Index(name = "idx_area_recorded_at", columnList = "area_id, recorded_at")
-        })
+                "area_id", "recorded_at" }), indexes = {
+                                @Index(name = "idx_area_recorded_at", columnList = "area_id, recorded_at")
+                })
 public class IoTAreaAggregates extends BaseEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "area_id")
-    Area area;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "area_id")
+        Area area;
 
-    @Column(name = "avg_water")
-    Double avgWater;
+        @Column(precision = 10, scale = 2)
+        BigDecimal avgWater;
 
-    @Column(name = "max_water")
-    Double maxWater;
+        @Column(precision = 10, scale = 2)
+        BigDecimal minWater;
 
-    @Column(name = "min_water")
-    Double minWater;
+        @Column(precision = 10, scale = 2)
+        BigDecimal maxWater;
 
-    @Column(name = "current_water")
-    double currentWater;
+        @Column(precision = 10, scale = 2)
+        BigDecimal currentWater;
 
-    @Column(name = "total_device_count")
-    Integer totalDeviceCount;
+        @Column(name = "total_device_count")
+        Integer totalDeviceCount;
 
-    @Column(name = "water_rise_rate_per_minute")
-    Double waterRiseRatePerMinute;
+        @Column(precision = 10, scale = 2)
+        BigDecimal waterRiseRatePerMinute;
 
-    @Column(name = "danger_ratio")
-    Double dangerRatio;
+        @Column(name = "danger_ratio")
+        Double dangerRatio;
 
-    @Column(name = "danger_duration_minutes")
-    Integer dangerDurationMinutes;
+        @Column(name = "danger_duration_minutes")
+        Integer dangerDurationMinutes;
 
-    @Column(name = "recorded_at")
-    LocalDateTime recordedAt;
+        @Column(name = "recorded_at")
+        LocalDateTime recordedAt;
 
 }

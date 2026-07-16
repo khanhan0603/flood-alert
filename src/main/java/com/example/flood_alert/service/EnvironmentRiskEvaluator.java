@@ -1,5 +1,7 @@
 package com.example.flood_alert.service;
 
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Component;
 
 import com.example.flood_alert.entity.AreaRiskSnapshot;
@@ -7,7 +9,7 @@ import com.example.flood_alert.enums.EnvironmentRisk;
 
 @Component
 public class EnvironmentRiskEvaluator {
-    //Ngưỡng mực nước cực đoan: tăng 10cm/phút
+    // Ngưỡng mực nước cực đoan: tăng 10cm/phút
     private static final double EXTREME_WATER_RISE = 10.0;
 
     // Ngưỡng thời gian danger cực đoan: 90 phút
@@ -21,7 +23,9 @@ public class EnvironmentRiskEvaluator {
         }
 
         // Escalate khi cực đoan
-        if ((snapshot.getWaterRiseRatePerMinute() != null && snapshot.getWaterRiseRatePerMinute() >= EXTREME_WATER_RISE)
+        if ((snapshot.getWaterRiseRatePerMinute() != null
+                && snapshot.getWaterRiseRatePerMinute()
+                        .compareTo(BigDecimal.valueOf(EXTREME_WATER_RISE)) >= 0)
                 || (snapshot.getDangerDurationMinutes() != null
                         && snapshot.getDangerDurationMinutes() >= EXTREME_DANGER_DURATION)) {
 

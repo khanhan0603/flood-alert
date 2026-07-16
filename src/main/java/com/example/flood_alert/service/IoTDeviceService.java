@@ -1,5 +1,6 @@
 package com.example.flood_alert.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -157,12 +158,12 @@ public class IoTDeviceService {
                 // update last seen
                 device.setLastSeenAt(LocalDateTime.now());
 
-                Double waterLevel = request.getWaterLevel();
+                BigDecimal waterLevel = request.getWaterLevel();
 
                 // validate dữ liệu
                 if (waterLevel == null
-                                || waterLevel <= 0
-                                || waterLevel > 14) {
+                                || waterLevel.compareTo(BigDecimal.ZERO) <= 0
+                                || waterLevel.compareTo(BigDecimal.valueOf(14)) > 0) {
 
                         reading.setValid(false);
                         reading.setStatus(WaterStatus.INVALID);
@@ -180,7 +181,8 @@ public class IoTDeviceService {
 
                         Double threshold = device.getNguongCanhBao();
 
-                        if (threshold != null && waterLevel >= threshold) {
+                        if (threshold != null
+                                        && waterLevel.compareTo(BigDecimal.valueOf(threshold)) >= 0) {
                                 reading.setStatus(WaterStatus.DANGER);
                         } else {
                                 reading.setStatus(WaterStatus.SAFE);

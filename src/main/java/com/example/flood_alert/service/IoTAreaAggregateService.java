@@ -1,5 +1,7 @@
 package com.example.flood_alert.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -71,17 +73,23 @@ public class IoTAreaAggregateService {
 
                 log.info("AREA={} WINDOW_RECORDS={}", areaId, readings.size());
 
-                double minWater = readings.stream()
-                                .mapToDouble(IoTSensorReading::getWaterLevel)
-                                .min().orElse(0.0);
+                BigDecimal minWater = BigDecimal.valueOf(
+                                readings.stream()
+                                                .mapToDouble(r -> r.getWaterLevel().doubleValue())
+                                                .min()
+                                                .orElse(0.0));
                 // avgWater (trung bình mực nước mới nhất)
-                double avgWater = readings.stream()
-                                .mapToDouble(IoTSensorReading::getWaterLevel)
-                                .average().orElse(0.0);
+                BigDecimal avgWater = BigDecimal.valueOf(
+                                readings.stream()
+                                                .mapToDouble(r -> r.getWaterLevel().doubleValue())
+                                                .average()
+                                                .orElse(0.0));
 
-                double maxWater = readings.stream()
-                                .mapToDouble(IoTSensorReading::getWaterLevel)
-                                .max().orElse(0.0);
+                BigDecimal maxWater = BigDecimal.valueOf(
+                                readings.stream()
+                                                .mapToDouble(r -> r.getWaterLevel().doubleValue())
+                                                .max()
+                                                .orElse(0.0));
 
                 // currentWater và dangerRatio đều từ latestByDevice trong window
                 Map<UUID, IoTSensorReading> latestByDevice = readings.stream()
@@ -90,15 +98,19 @@ public class IoTAreaAggregateService {
                                                 r -> r,
                                                 (r1, r2) -> r1.getRecordedAt().isAfter(r2.getRecordedAt()) ? r1 : r2));
                 // currentWater: lấy reading mới nhất của từng device TRONG window
-                double currentWater = latestByDevice.values().stream()
-                                .mapToDouble(IoTSensorReading::getWaterLevel)
-                                .average().orElse(0.0);
+                BigDecimal currentWater = BigDecimal.valueOf(
+                                latestByDevice.values().stream()
+                                                .mapToDouble(r -> r.getWaterLevel().doubleValue())
+                                                .average()
+                                                .orElse(0.0));
                 // totalDeviceCount = số device có data trong window
                 int totalDeviceCount = latestByDevice.size();
                 // Đếm số device vượt ngưỡng
                 long dangerDeviceCount = latestByDevice.values().stream()
                                 .filter(r -> r.getDevice().getNguongCanhBao() != null
-                                                && r.getWaterLevel() >= r.getDevice().getNguongCanhBao())
+                                                && r.getWaterLevel().compareTo(
+                                                                BigDecimal.valueOf(
+                                                                                r.getDevice().getNguongCanhBao())) >= 0)
                                 .count();
                 // dangerReadingCount/totalDeviceCount
                 double dangerRatio = totalDeviceCount == 0
@@ -119,26 +131,32 @@ public class IoTAreaAggregateService {
                 }
 
                 // waterRiseRatePerMinute — tái sử dụng prev, không query thêm
-                double waterRiseRatePerMinute;
+                BigDecimal waterRiseRatePerMinute;
                 if (prev.isPresent()) {
-                        waterRiseRatePerMinute = currentWater - prev.get().getCurrentWater();
+                        waterRiseRatePerMinute = currentWater.subtract(prev.get().getCurrentWater());
                 } else {
                         // Chỉ tạo readingsByDevice khi thực sự cần
                         Map<UUID, List<IoTSensorReading>> readingsByDevice = readings.stream()
                                         .collect(Collectors.groupingBy(r -> r.getDevice().getId()));
-                        waterRiseRatePerMinute = readingsByDevice.values().stream()
-                                        .mapToDouble(deviceReadings -> {
-                                                List<IoTSensorReading> sorted = deviceReadings.stream()
-                                                                .sorted(Comparator.comparing(
-                                                                                IoTSensorReading::getRecordedAt))
-                                                                .toList();
-                                                if (sorted.size() < 2)
-                                                        return 0.0;
-                                                return sorted.get(sorted.size() - 1).getWaterLevel()
-                                                                - sorted.get(0).getWaterLevel();
-                                        })
-                                        .average()
-                                        .orElse(0.0);
+                        waterRiseRatePerMinute = BigDecimal.valueOf(
+                                        readingsByDevice.values().stream()
+                                                        .mapToDouble(deviceReadings -> {
+                                                                List<IoTSensorReading> sorted = deviceReadings.stream()
+                                                                                .sorted(Comparator.comparing(
+                                                                                                IoTSensorReading::getRecordedAt))
+                                                                                .toList();
+
+                                                                if (sorted.size() < 2) {
+                                                                        return 0.0;
+                                                                }
+
+                                                                return sorted.get(sorted.size() - 1)
+                                                                                .getWaterLevel()
+                                                                                .subtract(sorted.get(0).getWaterLevel())
+                                                                                .doubleValue();
+                                                        })
+                                                        .average()
+                                                        .orElse(0.0));
                 }
 
                 log.info("AREA={} waterRiseRatePerMinute={}", areaId, waterRiseRatePerMinute);
@@ -244,17 +262,22 @@ public class IoTAreaAggregateService {
 
                 log.info("AREA={} WINDOW_RECORDS={}", areaId, readings.size());
 
-                double minWater = readings.stream()
-                                .mapToDouble(IoTSensorReading::getWaterLevel)
-                                .min().orElse(0.0);
+                BigDecimal minWater = BigDecimal.valueOf(
+                                readings.stream()
+                                                .mapToDouble(r -> r.getWaterLevel().doubleValue())
+                                                .min()
+                                                .orElse(0.0));
 
-                double avgWater = readings.stream()
-                                .mapToDouble(IoTSensorReading::getWaterLevel)
-                                .average().orElse(0.0);
-
-                double maxWater = readings.stream()
-                                .mapToDouble(IoTSensorReading::getWaterLevel)
-                                .max().orElse(0.0);
+                BigDecimal avgWater = BigDecimal.valueOf(
+                                readings.stream()
+                                                .mapToDouble(r -> r.getWaterLevel().doubleValue())
+                                                .average()
+                                                .orElse(0.0));
+                BigDecimal maxWater = BigDecimal.valueOf(
+                                readings.stream()
+                                                .mapToDouble(r -> r.getWaterLevel().doubleValue())
+                                                .max()
+                                                .orElse(0.0));
 
                 // ✅ Dùng chung latestByDevice cho cả currentWater, totalDeviceCount,
                 // dangerRatio
@@ -264,15 +287,19 @@ public class IoTAreaAggregateService {
                                                 r -> r,
                                                 (r1, r2) -> r1.getRecordedAt().isAfter(r2.getRecordedAt()) ? r1 : r2));
 
-                double currentWater = latestByDevice.values().stream()
-                                .mapToDouble(IoTSensorReading::getWaterLevel)
-                                .average().orElse(0.0);
+                BigDecimal currentWater = BigDecimal.valueOf(
+                                latestByDevice.values().stream()
+                                                .mapToDouble(r -> r.getWaterLevel().doubleValue())
+                                                .average()
+                                                .orElse(0.0));
 
                 int totalDeviceCount = latestByDevice.size();
 
                 long dangerDeviceCount = latestByDevice.values().stream()
                                 .filter(r -> r.getDevice().getNguongCanhBao() != null
-                                                && r.getWaterLevel() >= r.getDevice().getNguongCanhBao())
+                                                && r.getWaterLevel().compareTo(
+                                                                BigDecimal.valueOf(
+                                                                                r.getDevice().getNguongCanhBao())) >= 0)
                                 .count();
 
                 double dangerRatio = totalDeviceCount == 0
@@ -295,26 +322,31 @@ public class IoTAreaAggregateService {
                 }
 
                 // waterRiseRatePerMinute — tái sử dụng prev, không query thêm
-                double waterRiseRatePerMinute;
+                BigDecimal waterRiseRatePerMinute;
                 if (prev.isPresent()) {
-                        waterRiseRatePerMinute = currentWater - prev.get().getCurrentWater();
+                        waterRiseRatePerMinute = currentWater.subtract(prev.get().getCurrentWater());
                 } else {
                         // Chỉ tạo readingsByDevice khi thực sự cần
                         Map<UUID, List<IoTSensorReading>> readingsByDevice = readings.stream()
                                         .collect(Collectors.groupingBy(r -> r.getDevice().getId()));
-                        waterRiseRatePerMinute = readingsByDevice.values().stream()
-                                        .mapToDouble(deviceReadings -> {
-                                                List<IoTSensorReading> sorted = deviceReadings.stream()
-                                                                .sorted(Comparator.comparing(
-                                                                                IoTSensorReading::getRecordedAt))
-                                                                .toList();
-                                                if (sorted.size() < 2)
-                                                        return 0.0;
-                                                return sorted.get(sorted.size() - 1).getWaterLevel()
-                                                                - sorted.get(0).getWaterLevel();
-                                        })
-                                        .average()
-                                        .orElse(0.0);
+                        waterRiseRatePerMinute = BigDecimal.valueOf(
+                                        readingsByDevice.values().stream()
+                                                        .mapToDouble(deviceReadings -> {
+                                                                List<IoTSensorReading> sorted = deviceReadings.stream()
+                                                                                .sorted(Comparator.comparing(
+                                                                                                IoTSensorReading::getRecordedAt))
+                                                                                .toList();
+
+                                                                return sorted.size() < 2
+                                                                                ? 0.0
+                                                                                : sorted.get(sorted.size() - 1)
+                                                                                                .getWaterLevel()
+                                                                                                .subtract(sorted.get(0)
+                                                                                                                .getWaterLevel())
+                                                                                                .doubleValue();
+                                                        })
+                                                        .average()
+                                                        .orElse(0.0));
                 }
                 log.info("AREA={} waterRiseRatePerMinute={}", areaId, waterRiseRatePerMinute);
 

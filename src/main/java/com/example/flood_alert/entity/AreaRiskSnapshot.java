@@ -1,5 +1,6 @@
 package com.example.flood_alert.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.example.flood_alert.enums.RiskLevel;
@@ -57,7 +58,7 @@ public class AreaRiskSnapshot extends BaseEntity {
     //đã nguy hiểm liên tục bao lâu
     Integer dangerDurationMinutes;
     //nước đang tăng nhanh hay chậm
-    Double waterRiseRatePerMinute;
+    BigDecimal waterRiseRatePerMinute;
     //Số lượng dữ liệu tổng hợp là nguy hiểm trong 30 phút gần nhất.
     @Column(nullable = false)
     Integer dangerAggregateCount;

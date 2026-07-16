@@ -52,24 +52,11 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
 
     // List team by area level 1
     @Query("""
-                SELECT new com.example.flood_alert.dbo.response.RescueTeamResponse(
-                    rt.id,
-                    rt.name,
-                    rt.description,
-                    rt.area.id,
-                    rt.area.tenkhuvuc,
-                    rt.leader.id,
-                    rt.leader.hoten,
-                    rt.deputyLeader.id,
-                    rt.deputyLeader.hoten,
-                    rt.lat,
-                    rt.lon,
-                    rt.emergencyPhone
-                )
+                SELECT rt
                 FROM RescueTeam rt
                 WHERE rt.area.parent.id = :areaId
             """)
-    Page<RescueTeamResponse> findByAreaId(UUID areaId, Pageable pageable);
+    Page<RescueTeam> findByAreaId(UUID areaId, Pageable pageable);
 
     // Số team phụ trách của tỉnh
     @Query("""
