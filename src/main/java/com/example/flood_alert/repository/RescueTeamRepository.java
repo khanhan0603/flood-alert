@@ -39,6 +39,8 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
                     rt.area.tenkhuvuc,
                     rt.leader.id,
                     rt.leader.hoten,
+                    rt.deputyLeader.id,
+                    rt.deputyLeader.hoten,
                     rt.lat,
                     rt.lon,
                     rt.emergencyPhone

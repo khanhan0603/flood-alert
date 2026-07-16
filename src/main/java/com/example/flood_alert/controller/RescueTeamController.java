@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
@@ -29,7 +28,6 @@ import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamLeaderResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
-import com.example.flood_alert.dbo.response.TeamLeaderResponse;
 import com.example.flood_alert.service.RescueTeamService;
 
 import jakarta.validation.Valid;

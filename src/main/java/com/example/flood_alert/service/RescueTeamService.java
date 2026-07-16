@@ -478,6 +478,12 @@ public class RescueTeamService {
                 .leaderName(team.getLeader() != null
                         ? team.getLeader().getHoten()
                         : null)
+                .deputyId(team.getDeputyLeader()!=null
+                            ? team.getDeputyLeader().getId()
+                            : null)
+                .deputyName(team.getDeputyLeader()!=null
+                            ? team.getDeputyLeader().getHoten()
+                            : null)       
                 .emergencyPhone(team.getEmergencyPhone())
                 .lat(team.getLat())
                 .lon(team.getLon())
