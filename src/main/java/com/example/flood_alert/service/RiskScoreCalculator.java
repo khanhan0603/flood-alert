@@ -74,6 +74,17 @@ public class RiskScoreCalculator {
             return RiskLevel.LOW;
         }
 
+        // Lấy aggregate mới nhất
+        IoTAreaAggregates latest = aggregates.get(0);
+
+        // Nếu duy trì trạng thái nguy hiểm từ 2 phút trở lên => HIGH
+        if (latest.getDangerRatio() != null
+                && latest.getDangerRatio() >= DANGER_RATIO_THRESHOLD
+                && latest.getDangerDurationMinutes() != null
+                && latest.getDangerDurationMinutes() >= 2) {
+            return RiskLevel.HIGH;
+        }
+
         long dangerCount = aggregates.stream()
                 .filter(a -> a.getDangerRatio() != null
                         && a.getDangerRatio() >= DANGER_RATIO_THRESHOLD)
@@ -122,7 +133,7 @@ public class RiskScoreCalculator {
         if (aggregates.size() < 2)
             return false;
 
-        //lấy tối đa 5, không hardcode subList(0, 5)
+        // lấy tối đa 5, không hardcode subList(0, 5)
         int trendWindow = Math.min(5, aggregates.size());
         List<IoTAreaAggregates> last5 = new ArrayList<>(
                 aggregates.subList(0, trendWindow));
