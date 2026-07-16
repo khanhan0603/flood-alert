@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.antlr.v4.runtime.atn.SemanticContext.AND;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -59,6 +58,8 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
                     rt.area.tenkhuvuc,
                     rt.leader.id,
                     rt.leader.hoten,
+                    rt.deputyLeader.id,
+                    rt.deputyLeader.hoten,
                     rt.lat,
                     rt.lon,
                     rt.emergencyPhone

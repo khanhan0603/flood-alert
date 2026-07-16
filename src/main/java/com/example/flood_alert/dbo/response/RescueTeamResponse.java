@@ -23,6 +23,10 @@ public class RescueTeamResponse {
 
     String leaderName;
 
+    UUID deputyId;
+
+    String deputyName;
+
     BigDecimal lat;
 
     BigDecimal lon;
