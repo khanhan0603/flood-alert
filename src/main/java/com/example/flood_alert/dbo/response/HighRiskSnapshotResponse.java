@@ -1,5 +1,7 @@
 package com.example.flood_alert.dbo.response;
 
+import java.math.BigDecimal;
+
 import com.example.flood_alert.enums.RiskLevel;
 
 import lombok.AccessLevel;
@@ -41,6 +43,6 @@ public class HighRiskSnapshotResponse {
      * Tốc độ mực nước tăng trung bình
      * (cm/phút).
      */
-    Double waterRiseRatePerMinute;
+    BigDecimal waterRiseRatePerMinute;
 
 }
