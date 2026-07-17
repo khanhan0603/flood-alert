@@ -18,6 +18,7 @@ import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.SupportRequest;
 import com.example.flood_alert.entity.User;
+import com.example.flood_alert.enums.AssignmentStatus;
 import com.example.flood_alert.enums.CallResult;
 import com.example.flood_alert.enums.CallTargetType;
 import com.example.flood_alert.enums.CallTaskStatus;
@@ -29,9 +30,11 @@ import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.mapper.CallTaskMapper;
+import com.example.flood_alert.mapper.SosAssignmentMapper;
 import com.example.flood_alert.repository.CallLogRepository;
 import com.example.flood_alert.repository.CallTaskRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
+import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
 import com.example.flood_alert.repository.SupportRequestRepository;
 import com.example.flood_alert.repository.UserRepository;
@@ -58,6 +61,7 @@ public class CallWorkflowService {
     SupportRequestRepository supportRequestRepository;
     RescueGroupRepository rescueGroupRepository;
     NotificationManagerService notificationManagerService;
+    SosAssignmentRepository sosAssignmentRepository;
 
     /**
      * Khởi tạo Call Workflow đầu tiên sau khi Hotline tạo SOS
@@ -108,6 +112,15 @@ public class CallWorkflowService {
     private void handleAnswered(CallTask callTask) {
 
         callTask.setStatus(CallTaskStatus.SUCCESS);
+        // Assignment
+        if (callTask.getAssignment() != null) {
+
+            SosAssignment assignment = callTask.getAssignment();
+            assignment.setStatus(AssignmentStatus.ACKNOWLEDGED);
+
+            sosAssignmentRepository.save(assignment);
+            return;
+        }
 
         if (callTask.getSosRequest() != null) {
 
@@ -287,9 +300,9 @@ public class CallWorkflowService {
 
         } else {
 
-            //pop up cho toàn bộ province
+            // pop up cho toàn bộ province
             notificationService.createSupportRequestWorkflowFailedPopup(callTask.getSupportRequest());
-            //web push + email cho team leader
+            // web push + email cho team leader
             notificationManagerService.notifySupportRequestWorkflowFailed(callTask.getSupportRequest());
         }
     }
