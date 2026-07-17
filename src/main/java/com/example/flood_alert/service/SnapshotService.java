@@ -1,7 +1,6 @@
 package com.example.flood_alert.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -12,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
 import com.example.flood_alert.dbo.response.AreaRiskSnapshotResponse;
@@ -88,9 +89,18 @@ public class SnapshotService {
                 AreaRiskSnapshot savedSnapshot = areaRiskSnapshotRepository.save(snapshot);
                 log.info("Snapshot saved. Call AlertService");
 
-                alertService.processSnapshot(savedSnapshot);
-
-                log.info("AlertService finished");
+                TransactionSynchronizationManager.registerSynchronization(
+                                new TransactionSynchronization() {
+                                        @Override
+                                        public void afterCommit() {
+                                                try {
+                                                        alertService.processSnapshot(savedSnapshot);
+                                                        log.info("AlertService finished");
+                                                } catch (Exception e) {
+                                                        log.error("Process snapshot failed", e);
+                                                }
+                                        }
+                                });
         }
 
         @Transactional
