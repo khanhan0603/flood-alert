@@ -84,6 +84,13 @@ public class RiskScoreCalculator {
                 && latest.getDangerDurationMinutes() >= 2) {
             return RiskLevel.HIGH;
         }
+         // Nếu duy trì trạng thái nguy hiểm từ 1 phút trở lên => MEDIUM
+        if (latest.getDangerRatio() != null
+                && latest.getDangerRatio() >= DANGER_RATIO_THRESHOLD
+                && latest.getDangerDurationMinutes() != null
+                && latest.getDangerDurationMinutes() >= 1) {
+            return RiskLevel.MEDIUM;
+        }
 
         long dangerCount = aggregates.stream()
                 .filter(a -> a.getDangerRatio() != null
