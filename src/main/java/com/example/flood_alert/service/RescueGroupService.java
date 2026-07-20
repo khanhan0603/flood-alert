@@ -247,6 +247,12 @@ public class RescueGroupService {
                                         "Chỉ được chọn RESCUER");
                 }
 
+                boolean isLeader=rescueGroupRepository.existsByLeaderId(request.getUserId());
+
+                if(isLeader){
+                        throw new RuntimeException("Người dùng này đã nhận vai trò trưởng nhóm thuộc nhóm khác!");
+                }
+
                 group.setLeader(user);
 
                 rescueGroupRepository.save(group);
