@@ -415,6 +415,7 @@ public class RescueTeamService {
         return page;
     }
 
+    @Transactional(readOnly=true)
     public RescueTeamResponse getDetailTeam(UUID teamId) {
         RescueTeamResponse team = rescueTeamRepository.findDetail(teamId);
         if (team == null) {
@@ -424,6 +425,7 @@ public class RescueTeamService {
     }
 
     // List team by area level 1
+    @Transactional(readOnly=true)
     public Page<RescueTeamResponse> getListTeamByArea(UUID areaId, Pageable pageable) {
         Page<RescueTeam> page = rescueTeamRepository.findByAreaId(areaId, pageable);
         if (page.isEmpty()) {
