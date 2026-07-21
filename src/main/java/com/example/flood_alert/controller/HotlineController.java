@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.dbo.request.CreateHotlineSosRequest;
 import com.example.flood_alert.dbo.request.EmergencyContactRequest;
-import com.example.flood_alert.dbo.request.SearchHotlineSosRequest;
+import com.example.flood_alert.dbo.request.SearchSosRequest;
 import com.example.flood_alert.dbo.request.UpdateHotlineSosRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.CallEventResponse;
@@ -118,7 +118,7 @@ public class HotlineController {
         @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<Page<SosResponse>> searchHotlineSos(
 
-                        SearchHotlineSosRequest request,
+                        SearchSosRequest request,
 
                         @PageableDefault(size = 20) Pageable pageable) {
 

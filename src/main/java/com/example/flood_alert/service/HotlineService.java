@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.CreateHotlineSosRequest;
 import com.example.flood_alert.dbo.request.EmergencyContactRequest;
-import com.example.flood_alert.dbo.request.SearchHotlineSosRequest;
+import com.example.flood_alert.dbo.request.SearchSosRequest;
 import com.example.flood_alert.dbo.request.UpdateHotlineSosRequest;
 import com.example.flood_alert.dbo.response.CallEventResponse;
 import com.example.flood_alert.dbo.response.CreateHotlineSosResponse;
@@ -438,7 +438,7 @@ public class HotlineService {
         // Tra cứu cho hotline
         @Transactional(readOnly = true)
         public Page<SosResponse> searchHotlineSos(
-                        SearchHotlineSosRequest request,
+                        SearchSosRequest request,
                         Pageable pageable) {
 
                 String keyword = request.getKeyword();

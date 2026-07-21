@@ -21,6 +21,7 @@ import com.example.flood_alert.dbo.request.AnonymousSosDetailRequest;
 import com.example.flood_alert.dbo.request.AnonymousSosListRequest;
 import com.example.flood_alert.dbo.request.CancelAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.CreateSosRequest;
+import com.example.flood_alert.dbo.request.SearchSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateSosRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
@@ -229,12 +230,13 @@ public class SosRequestController {
          * Tra cứu thông tin SOS bằng mã tracking.
          * Người dân không cần đăng nhập.
          */
-        @GetMapping("/tracking/{trackingCode}")
-        public ApiResponse<SosResponse> getByTrackingCode(
-                        @PathVariable String trackingCode) {
+        @GetMapping("/search")
+        public ApiResponse<Page<SosResponse>> getByTrackingCode(
+                        SearchSosRequest request,
+                        @PageableDefault(size = 5) Pageable pageable) {
 
-                return ApiResponse.<SosResponse>builder()
-                                .result(sosRequestService.getByTrackingCode(trackingCode))
+                return ApiResponse. <Page<SosResponse>>builder()
+                                .result(sosRequestService.searchCitizenSos(request, pageable))
                                 .build();
         }
 

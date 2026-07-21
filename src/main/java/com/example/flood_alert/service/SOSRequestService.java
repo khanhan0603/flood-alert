@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.AnonymousSosListRequest;
 import com.example.flood_alert.dbo.request.CreateSosRequest;
+import com.example.flood_alert.dbo.request.SearchSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateSosRequest;
 import com.example.flood_alert.dbo.response.CitizenAssignmentResponse;
@@ -25,7 +26,6 @@ import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.dbo.response.TeamDashboardResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
-import com.example.flood_alert.entity.CallTask;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.User;
@@ -933,24 +933,24 @@ public class SOSRequestService {
                 sosRequestRepository.save(sos);
         }
 
-        // Tra cứu sos theo tracking code cho người dân
+        // Tra cứu sos theo tracking code và sodt cho người dân
         @Transactional(readOnly = true)
-        public SosResponse getByTrackingCode(
-                        String trackingCode) {
-                if (trackingCode == null || trackingCode.isBlank()) {
-                        throw new AppException(ErrorCode.TRACKING_CODE_REQUIRED);
+        public Page<SosResponse> searchCitizenSos(SearchSosRequest request, Pageable pageable) {
+                 String keyword = request.getKeyword();
+
+                if (keyword != null) {
+                        keyword = keyword.trim();
+
+                        if (keyword.isBlank()) {
+                                keyword = null;
+                        }
                 }
 
-                SosRequest sos = sosRequestRepository
-                                .findByTrackingCode(trackingCode)
-                                .orElseThrow(() -> new AppException(
-                                                ErrorCode.SOS_NOT_FOUND));
-
-                SosResponse response = sosRequestMapper.toResponse(sos);
-
-                response.setAlreadyExists(false);
-
-                return response;
+                return sosRequestRepository
+                                .searchCitizenSos(
+                                                keyword,
+                                                pageable)
+                                .map(sosRequestMapper::toResponse);
         }
 
         @Transactional

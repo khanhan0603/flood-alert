@@ -16,7 +16,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SearchHotlineSosRequest {
+public class SearchSosRequest {
 
     // Nội dung người dùng nhập trên ô tìm kiếm.
     // Có thể là:
