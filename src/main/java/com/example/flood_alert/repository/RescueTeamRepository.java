@@ -19,6 +19,8 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
     // Kiem tra co phai team leader khong
     boolean existsByLeaderId(UUID leaderId);
 
+    boolean existsByDeputyLeaderId(UUID deputyLeaderId);
+
     // Tìm team theo id leader
     Optional<RescueTeam> findByLeaderId(UUID leaderId);
 

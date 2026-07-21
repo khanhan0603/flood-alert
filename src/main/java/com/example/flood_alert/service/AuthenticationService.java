@@ -157,8 +157,11 @@ public class AuthenticationService {
         // Test group leader
         Boolean isGroupLeader = false;
 
+        Boolean isTeamDeputy=false;
+
         if (user.getRole().equals(Role.RESCUER)) {
             isTeamLeader = rescueTeamRepository.existsByLeaderId(user.getId());
+            isTeamDeputy = rescueTeamRepository.existsByDeputyLeaderId(user.getId());
             isGroupLeader = rescueGroupRepository.existsByLeaderId(user.getId());
         }
 
@@ -200,6 +203,7 @@ public class AuthenticationService {
                         : null)
                 .isTeamLeader(isTeamLeader)
                 .isGroupLeader(isGroupLeader)
+                .isTeamDeputy(isTeamDeputy)
                 .groupType(groupType)
                 .build();
 

@@ -36,5 +36,8 @@ public class AuthenticateResponse {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     Boolean isGroupLeader;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    Boolean isTeamDeputy;
+
     RescueGroupType groupType;
 }
