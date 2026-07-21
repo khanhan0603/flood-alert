@@ -1,5 +1,7 @@
 package com.example.flood_alert.dbo.response;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AccessLevel;
@@ -18,4 +20,7 @@ public class Recovery {
 
     @JsonProperty("remaining_missing")
     Integer remainingMissing;
+
+    @JsonProperty("error_details")
+    List<PredictionErrorResponse> errorDetails;
 }

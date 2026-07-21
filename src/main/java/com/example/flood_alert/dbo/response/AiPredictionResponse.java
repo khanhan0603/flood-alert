@@ -1,5 +1,7 @@
 package com.example.flood_alert.dbo.response;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AccessLevel;
@@ -25,4 +27,7 @@ public class AiPredictionResponse {
     Long durationMs;
 
     Recovery recovery;
+    
+    @JsonProperty("error_details")
+    List<PredictionErrorResponse> errorDetails;
 }

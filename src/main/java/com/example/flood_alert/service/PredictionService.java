@@ -10,8 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import com.example.flood_alert.dbo.request.PredictRequest;
 import com.example.flood_alert.dbo.response.AiPredictionResponse;
 import com.example.flood_alert.dbo.response.FloodPredictionResponse;
+import com.example.flood_alert.dbo.response.Recovery;
 import com.example.flood_alert.repository.PredictionRepository;
 
 import lombok.AccessLevel;
@@ -30,6 +32,9 @@ public class PredictionService {
 
     @Value("${fastapi.url}")
     private String fastApiUrl;
+
+    @Value("http://127.0.0.1:8000")
+    private String localFastApiUrl;
 
     public boolean isFastApiHealthy() {
 
@@ -91,6 +96,7 @@ public class PredictionService {
         return restTemplate.getForObject(fastApiUrl + "/predict-all/status", String.class);
     }
 
+
     public List<FloodPredictionResponse> getAllPrediction() {
         return predictionRepository.findLatestPredictionsForAllAreas();
     }
@@ -123,5 +129,35 @@ public class PredictionService {
 
             log.error("RECOVERY FAILED", ex);
         }
+    }
+
+    public AiPredictionResponse triggerPredictionTestBatch(PredictRequest request) {
+
+        ResponseEntity<AiPredictionResponse> response = restTemplate.postForEntity(
+                localFastApiUrl + "/predict-test-batch",
+                request,
+                AiPredictionResponse.class);
+
+        AiPredictionResponse result = response.getBody();
+
+        try {
+
+            ResponseEntity<Recovery> recoveryResponse = restTemplate.postForEntity(
+                    localFastApiUrl + "/recover-test",
+                    request,
+                    Recovery.class);
+
+            log.info(
+                    "TEST RECOVERY status={} body={}",
+                    recoveryResponse.getStatusCode(),
+                    recoveryResponse.getBody());
+            result.setRecovery(recoveryResponse.getBody());
+
+        } catch (RestClientException ex) {
+
+            log.error("TEST RECOVERY FAILED", ex);
+        }
+
+        return result;
     }
 }
