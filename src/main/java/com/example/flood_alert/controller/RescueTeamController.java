@@ -113,7 +113,7 @@ public class RescueTeamController {
         public ApiResponse<Page<RescueTeamResponse>> getListTeamByArea(
                         @PathVariable UUID areaId,
                         @RequestParam(defaultValue = "0") int page,
-                        @RequestParam(defaultValue = "10") int size) {
+                        @RequestParam(defaultValue = "12") int size) {
                 Pageable pageable = PageRequest.of(page, size);
                 return ApiResponse.<Page<RescueTeamResponse>>builder()
                                 .result(rescueTeamService.getListTeamByArea(areaId, pageable))
