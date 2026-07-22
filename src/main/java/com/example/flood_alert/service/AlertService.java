@@ -113,9 +113,19 @@ public class AlertService {
         floodAlertRepository.saveAll(alerts);
 
         // Gửi email
-        emailProcessor.processPendingEmails();
+        try {
+            emailProcessor.processPendingEmails();
+        } catch (Exception ex) {
+            log.error("Email processing failed", ex);
+            throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
+        }
         // Gửi web push
-        webPushProcessor.processPendingPushNotifications();
+        try {
+            webPushProcessor.processPendingPushNotifications();
+        } catch (Exception ex) {
+            log.error("Push processing failed", ex);
+            throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
+        }
     }
 
     private void createMediumAlerts(AreaRiskSnapshot snapshot, List<User> users) {
