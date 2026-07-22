@@ -10,8 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
 import com.example.flood_alert.dbo.response.FloodAlertResponse;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.FloodAlert;
@@ -44,11 +42,6 @@ public class AlertService {
 
     @Transactional
     public void processSnapshot(AreaRiskSnapshot snapshot) {
-        log.info("Transaction active={}",
-                TransactionSynchronizationManager.isActualTransactionActive());
-
-        log.info("Transaction name={}",
-                TransactionSynchronizationManager.getCurrentTransactionName());
         log.info("PROCESS ALERT area={} risk={}",
                 snapshot.getArea().getId(),
                 snapshot.getRiskLevel());
@@ -145,10 +138,6 @@ public class AlertService {
         log.info("Create {} alerts", alerts.size());
 
         floodAlertRepository.saveAll(alerts);
-
-        floodAlertRepository.flush();
-
-        log.info("Flush OK");
 
         log.info("Save done. Web push");
         // Gửi web push

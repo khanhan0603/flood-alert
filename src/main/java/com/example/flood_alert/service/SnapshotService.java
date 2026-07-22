@@ -7,14 +7,13 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
 import com.example.flood_alert.dbo.response.AreaRiskSnapshotResponse;
@@ -24,6 +23,7 @@ import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.FloodPrediction;
 import com.example.flood_alert.entity.IoTAreaAggregates;
 import com.example.flood_alert.enums.RiskLevel;
+import com.example.flood_alert.event.SnapshotCreatedEvent;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
@@ -47,6 +47,7 @@ public class SnapshotService {
         AreaRepository areaRepository;
         RiskScoreCalculator riskScoreCalculator;
         AlertService alertService;
+        ApplicationEventPublisher eventPublisher;
 
         @Transactional
         public void generateSnapshot(UUID areaId) {
@@ -88,20 +89,8 @@ public class SnapshotService {
                                 .build();
 
                 AreaRiskSnapshot savedSnapshot = areaRiskSnapshotRepository.save(snapshot);
-                log.info("Snapshot saved. Call AlertService");
-
-                TransactionSynchronizationManager.registerSynchronization(
-                                new TransactionSynchronization() {
-                                        @Override
-                                        public void afterCommit() {
-                                                try {
-                                                        alertService.processSnapshot(savedSnapshot);
-                                                        log.info("AlertService finished");
-                                                } catch (Exception e) {
-                                                        log.error("Process snapshot failed", e);
-                                                }
-                                        }
-                                });
+                log.info("Snapshot saved. Publish event");
+                eventPublisher.publishEvent(new SnapshotCreatedEvent(savedSnapshot.getId()));
         }
 
         @Transactional
