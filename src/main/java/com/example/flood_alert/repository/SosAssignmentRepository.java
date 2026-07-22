@@ -37,7 +37,7 @@ public interface SosAssignmentRepository extends JpaRepository<SosAssignment, UU
           FROM SosAssignment sa
           WHERE sa.group.leader.id = :leaderId
           ORDER BY sa.sos.priority DESC,
-                   sa.assignedAt ASC
+                   sa.assignedAt DESC
       """)
   List<SosAssignment> findMyAssignments(UUID leaderId);
 
