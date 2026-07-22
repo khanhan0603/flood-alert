@@ -9,7 +9,10 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import com.example.flood_alert.dbo.response.FloodAlertResponse;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.FloodAlert;
@@ -40,8 +43,10 @@ public class AlertService {
 
     private static final long ALERT_COOLDOW_SECONDS = 30;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processSnapshot(AreaRiskSnapshot snapshot) {
+        log.debug("processSnapshot isNewTransaction={}",
+        TransactionSynchronizationManager.isActualTransactionActive());
         log.info("PROCESS ALERT area={} risk={}",
                 snapshot.getArea().getId(),
                 snapshot.getRiskLevel());

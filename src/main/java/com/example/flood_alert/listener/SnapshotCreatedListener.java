@@ -1,5 +1,6 @@
 package com.example.flood_alert.listener;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -20,6 +21,7 @@ public class SnapshotCreatedListener {
     private final AreaRiskSnapshotRepository areaRiskSnapshotRepository;
     private final AlertService alertService;
 
+    @Async("eventTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(SnapshotCreatedEvent event) {
 
