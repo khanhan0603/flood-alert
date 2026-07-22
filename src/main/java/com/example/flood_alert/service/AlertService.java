@@ -9,6 +9,8 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.example.flood_alert.dbo.response.FloodAlertResponse;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
@@ -23,7 +25,6 @@ import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.FloodAlertRepository;
 import com.example.flood_alert.repository.UserRepository;
 
-import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -43,6 +44,11 @@ public class AlertService {
 
     @Transactional
     public void processSnapshot(AreaRiskSnapshot snapshot) {
+        log.info("Transaction active={}",
+                TransactionSynchronizationManager.isActualTransactionActive());
+
+        log.info("Transaction name={}",
+                TransactionSynchronizationManager.getCurrentTransactionName());
         log.info("PROCESS ALERT area={} risk={}",
                 snapshot.getArea().getId(),
                 snapshot.getRiskLevel());
