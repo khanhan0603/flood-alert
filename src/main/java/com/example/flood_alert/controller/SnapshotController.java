@@ -22,6 +22,7 @@ import com.example.flood_alert.dbo.response.RegionalForecastResponse;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.service.AreaService;
 import com.example.flood_alert.service.SnapshotService;
+import com.example.flood_alert.service.SnapshotWriter;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -35,12 +36,13 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SnapshotController {
         SnapshotService snapshotService;
+        SnapshotWriter snapshotWriter;
         AreaService areaService;
 
         @PostMapping("/generate/{areaId}")
         public ApiResponse<String> generateSnapshot(@PathVariable UUID areaId) {
 
-                snapshotService.generateSnapshot(areaId);
+                snapshotWriter.generateSnapshot(areaId);
 
                 return ApiResponse.<String>builder()
                                 .result("Snapshot generated successfully")

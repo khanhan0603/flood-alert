@@ -7,29 +7,21 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import com.example.flood_alert.dbo.response.AreaDataByParentResponse;
 import com.example.flood_alert.dbo.response.AreaRiskSnapshotResponse;
 import com.example.flood_alert.dbo.response.RegionalForecastResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
-import com.example.flood_alert.entity.FloodPrediction;
-import com.example.flood_alert.entity.IoTAreaAggregates;
-import com.example.flood_alert.enums.RiskLevel;
-import com.example.flood_alert.event.SnapshotCreatedEvent;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.AreaRiskSnapshotRepository;
 import com.example.flood_alert.repository.IoTAreaAggregateRepository;
-import com.example.flood_alert.repository.PredictionRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -43,57 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 public class SnapshotService {
         AreaRiskSnapshotRepository areaRiskSnapshotRepository;
         IoTAreaAggregateRepository ioTAreaAggregateRepository;
-        PredictionRepository floodPredictionRepository;
         AreaRepository areaRepository;
-        RiskScoreCalculator riskScoreCalculator;
-        AlertService alertService;
-        ApplicationEventPublisher eventPublisher;
+        SnapshotWriter snapshotWriter;
 
-        @Transactional
-        public void generateSnapshot(UUID areaId) {
-                // Lấy 15 aggregate gần nhất (~15 phút) thay vì 2
-                List<IoTAreaAggregates> aggregates = ioTAreaAggregateRepository
-                                .findRecentAggregates(areaId, PageRequest.of(0, 15));
-
-                if (aggregates.size() < 2) {
-                        log.info("Skip snapshot area={} — only {} aggregates", areaId, aggregates.size());
-                        return;
-                }
-
-                FloodPrediction prediction = floodPredictionRepository
-                                .findTopByAreaIdOrderByPredictedAtDesc(areaId)
-                                .orElse(null);
-
-                RiskLevel riskLevel = riskScoreCalculator.calculate(aggregates, prediction);
-
-                double iotRiskScore = riskScoreCalculator.calculateScore(aggregates);
-                int dangerAggregateCount = (int) riskScoreCalculator.countDangerAggregates(aggregates);
-                double dangerPercent = ((double) dangerAggregateCount / aggregates.size()) * 100;
-
-                IoTAreaAggregates latestAggregate = aggregates.get(0);
-
-                AreaRiskSnapshot snapshot = AreaRiskSnapshot.builder()
-                                .area(areaRepository.getReferenceById(areaId))
-                                .prediction(prediction)
-                                .riskLevel(riskLevel)
-                                .iotRiskScore(iotRiskScore)
-                                .dangerRatio(latestAggregate.getDangerRatio())
-                                .dangerDurationMinutes(latestAggregate.getDangerDurationMinutes())
-                                .waterRiseRatePerMinute(latestAggregate.getWaterRiseRatePerMinute())
-                                .predictionRiskLevel(prediction != null ? prediction.getLead1() : null)
-                                .predictionProbability(prediction != null ? prediction.getLead1Probability() : null)
-                                .dangerAggregateCount(dangerAggregateCount)
-                                .dangerPercent(dangerPercent)
-                                .snapshotAt(LocalDateTime.now())
-                                .createdAt(LocalDateTime.now())
-                                .build();
-
-                AreaRiskSnapshot savedSnapshot = areaRiskSnapshotRepository.save(snapshot);
-                log.info("Snapshot saved. Publish event");
-                eventPublisher.publishEvent(new SnapshotCreatedEvent(savedSnapshot.getId()));
-        }
-
-        @Transactional
         public void generateAllSnapshots() {
 
                 List<UUID> areaIds = ioTAreaAggregateRepository.findAreasHasLatestAggregate();
@@ -105,7 +49,7 @@ public class SnapshotService {
 
                         try {
 
-                                generateSnapshot(areaId);
+                                snapshotWriter.generateSnapshot(areaId);
 
                         } catch (Exception e) {
 
@@ -115,8 +59,6 @@ public class SnapshotService {
                                                 e);
                         }
                 }
-                log.info("Rollback only = {}",TransactionAspectSupport.currentTransactionStatus().isRollbackOnly());
-
 
                 log.info("FINISH GENERATE SNAPSHOTS");
         }
