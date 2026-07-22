@@ -34,6 +34,8 @@ public class WebPushProcessor {
     @Transactional
     public void processPendingPushNotifications() {
 
+        log.info("=== ENTER WebPushProcessor ===");
+
         List<FloodAlert> alerts = floodAlertRepository.findByChannelAndStatus(
                 Channel.WEB_PUSH,
                 StatusAlert.PENDING);

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -125,6 +126,8 @@ public class SnapshotService {
                                                 e);
                         }
                 }
+                log.info("Rollback only = {}",TransactionAspectSupport.currentTransactionStatus().isRollbackOnly());
+
 
                 log.info("FINISH GENERATE SNAPSHOTS");
         }
