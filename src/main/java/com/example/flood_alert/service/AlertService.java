@@ -146,6 +146,10 @@ public class AlertService {
 
         floodAlertRepository.saveAll(alerts);
 
+        floodAlertRepository.flush();
+
+        log.info("Flush OK");
+
         log.info("Save done. Web push");
         // Gửi web push
         webPushProcessor.processPendingPushNotifications();
