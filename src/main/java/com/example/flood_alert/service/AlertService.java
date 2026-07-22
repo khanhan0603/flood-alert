@@ -39,7 +39,7 @@ public class AlertService {
     EmailProcessor emailProcessor;
     WebPushProcessor webPushProcessor;
 
-    private static final long ALERT_COOLDOW_MINUTES = 2;
+    private static final long ALERT_COOLDOW_SECONDS = 30;
 
     @Transactional
     public void processSnapshot(AreaRiskSnapshot snapshot) {
@@ -48,23 +48,28 @@ public class AlertService {
                 snapshot.getRiskLevel());
         RiskLevel riskLevel = snapshot.getRiskLevel();
 
+        log.info("1. Pass LOW");
+
         if (riskLevel == RiskLevel.LOW) {
             return;
         }
 
-        if (!shouldSendAlert(snapshot)) {
-            log.info(
-                    "Skip duplicate alert for area {}",
-                    snapshot.getArea().getId());
+        boolean allow = shouldSendAlert(snapshot);
+        log.info("2. shouldSendAlert={}", allow);
+
+        if (!allow) {
             return;
         }
 
         List<User> users = userRepository.findByAreaAndTrangthai(snapshot.getArea(), Status.ACTIVE);
 
+        log.info("3. users={}", users.size());
+
         if (users.isEmpty()) {
-            log.info("No active users found in area {}", snapshot.getArea().getId());
             return;
         }
+
+        log.info("4. Before create alerts");
 
         switch (riskLevel) {
             case MEDIUM -> createMediumAlerts(snapshot, users);
@@ -72,6 +77,7 @@ public class AlertService {
             default -> {
             }
         }
+        log.info("5. Finished create alerts");
     }
 
     private void createHighAlerts(AreaRiskSnapshot snapshot, List<User> users) {
@@ -130,7 +136,13 @@ public class AlertService {
                             .createdAt(now)
                             .build());
         }
+        log.info("Create {} alerts", alerts.size());
+
         floodAlertRepository.saveAll(alerts);
+
+        log.info("Save done. Web push");
+        // Gửi web push
+        webPushProcessor.processPendingPushNotifications();
     }
 
     private String buildMessage(AreaRiskSnapshot snapshot) {
@@ -199,7 +211,7 @@ public class AlertService {
         // HIGH -> HIGH hoặc MEDIUM -> MEDIUM
         if (currentRisk == previousRisk) {
             boolean allow = latestAlert.getCreatedAt()
-                    .plusMinutes(ALERT_COOLDOW_MINUTES)
+                    .plusSeconds(ALERT_COOLDOW_SECONDS)
                     .isBefore(LocalDateTime.now());
 
             log.info("Allow send={}", allow);
