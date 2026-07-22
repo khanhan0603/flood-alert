@@ -127,4 +127,7 @@ public interface AreaRiskSnapshotRepository
                         """)
         List<HighRiskSnapshotResponse> findTopHighRiskAreas(
                         Pageable pageable);
+
+    @Query("SELECT s FROM AreaRiskSnapshot s JOIN FETCH s.area WHERE s.id = :id")
+    Optional<AreaRiskSnapshot> findByIdWithArea(@Param("id") UUID id);
 }

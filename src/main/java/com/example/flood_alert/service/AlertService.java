@@ -11,7 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.example.flood_alert.dbo.response.FloodAlertResponse;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
@@ -23,6 +22,7 @@ import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.enums.StatusAlert;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
+import com.example.flood_alert.repository.AreaRiskSnapshotRepository;
 import com.example.flood_alert.repository.FloodAlertRepository;
 import com.example.flood_alert.repository.UserRepository;
 
@@ -40,13 +40,16 @@ public class AlertService {
     FloodAlertRepository floodAlertRepository;
     EmailProcessor emailProcessor;
     WebPushProcessor webPushProcessor;
+    AreaRiskSnapshotRepository areaRiskSnapshotRepository;
 
     private static final long ALERT_COOLDOW_SECONDS = 30;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void processSnapshot(AreaRiskSnapshot snapshot) {
-        log.debug("processSnapshot isNewTransaction={}",
-        TransactionSynchronizationManager.isActualTransactionActive());
+    public void processSnapshot(UUID snapshotId) {
+        AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
+                .findByIdWithArea(snapshotId)                
+                .orElseThrow(() -> new AppException(ErrorCode.SNAPSHOT_NOT_FOUND));
+
         log.info("PROCESS ALERT area={} risk={}",
                 snapshot.getArea().getId(),
                 snapshot.getRiskLevel());

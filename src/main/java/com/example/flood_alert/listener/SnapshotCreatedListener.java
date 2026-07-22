@@ -24,14 +24,11 @@ public class SnapshotCreatedListener {
     @Async("eventTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(SnapshotCreatedEvent event) {
-
         log.info("Receive SnapshotCreatedEvent: {}", event.snapshotId());
-
-        AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
-                .findById(event.snapshotId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Snapshot not found: " + event.snapshotId()));
-
-        alertService.processSnapshot(snapshot);
+        try {
+            alertService.processSnapshot(event.snapshotId());
+        } catch (Exception ex) {
+            log.error("Process alert failed for snapshot={}", event.snapshotId(), ex);
+        }
     }
 }
