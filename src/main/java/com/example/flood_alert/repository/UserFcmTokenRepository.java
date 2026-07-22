@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.entity.UserFcmToken;
@@ -16,4 +18,12 @@ public interface UserFcmTokenRepository
     List<UserFcmToken> findByUserId(UUID userId);
 
     boolean existsByToken(String token);
+
+    @Modifying
+    @Query("""
+                delete from UserFcmToken t
+                where t.user.id = :userId
+                  and t.token = :token
+            """)
+    void deleteByUserIdAndToken(UUID userId, String token);
 }

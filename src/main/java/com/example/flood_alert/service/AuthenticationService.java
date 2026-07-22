@@ -35,6 +35,7 @@ import com.example.flood_alert.repository.RefreshTokenRepository;
 import com.example.flood_alert.repository.RescueGroupMemberRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
+import com.example.flood_alert.repository.UserFcmTokenRepository;
 import com.example.flood_alert.repository.UserRepository;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -64,6 +65,7 @@ public class AuthenticationService {
     RescueGroupRepository rescueGroupRepository;
     RefreshTokenRepository refreshTokenRepository;
     RescueGroupMemberRepository rescueGroupMemberRepository;
+    UserFcmTokenRepository userFcmTokenRepository;
 
     @NonFinal
     @Value("${jwt.signedKey}")
@@ -157,7 +159,7 @@ public class AuthenticationService {
         // Test group leader
         Boolean isGroupLeader = false;
 
-        Boolean isTeamDeputy=false;
+        Boolean isTeamDeputy = false;
 
         if (user.getRole().equals(Role.RESCUER)) {
             isTeamLeader = rescueTeamRepository.existsByLeaderId(user.getId());
@@ -241,6 +243,14 @@ public class AuthenticationService {
         RefreshToken refreshToken = refreshTokenRepository
                 .findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        User user = refreshToken.getUser();
+
+        if (request.getFcmToken() != null && !request.getFcmToken().isBlank()) {
+            userFcmTokenRepository.deleteByUserIdAndToken(
+                    user.getId(),
+                    request.getFcmToken());
+        }
 
         if (!refreshToken.isRevoked()) {
 
