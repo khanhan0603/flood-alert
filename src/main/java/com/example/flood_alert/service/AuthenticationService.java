@@ -94,6 +94,13 @@ public class AuthenticationService {
     public AuthenticateResponse refresh(RefreshRequest request)
             throws ParseException, JOSEException {
 
+        log.info("Refresh token = {}", request.getRefreshToken());
+        if (request == null
+            || request.getRefreshToken() == null
+            || request.getRefreshToken().isBlank()) {
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
+    }
+        
         SignedJWT signedJWT = verifyToken(request.getRefreshToken());
 
         String type = signedJWT.getJWTClaimsSet()
