@@ -49,6 +49,8 @@ public class NotificationService {
     NotificationRepository notificationRepository;
     UserRepository userRepository;
     NotificationMapper notificationMapper;
+    NotificationEmailProcessor notificationEmailProcessor;
+    NotificationWebPushProcessor notificationWebPushProcessor;
 
     // lưu FCM token
     @Transactional
@@ -140,6 +142,10 @@ public class NotificationService {
                 sos,
                 null,
                 null);
+
+        // Gửi Web Push và Email
+        notificationEmailProcessor.processPendingEmails();
+        notificationWebPushProcessor.processPendingPushNotifications();
         if (userTokens.isEmpty()) {
             log.warn("Team Leader {} chưa đăng ký FCM Token", leader.getId());
             return;
