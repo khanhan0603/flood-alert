@@ -4,6 +4,7 @@ package com.example.flood_alert.enums;
 public enum NotificationType {
 
     // SOS
+    SOS_NEW,
     SOS_ASSIGNED,
 
     // Assignment

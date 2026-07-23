@@ -112,11 +112,6 @@ public class NotificationService {
         // Lấy tất cả FCM Token của Team Leader
         List<UserFcmToken> userTokens = userFcmTokenRepository.findByUserId(leader.getId());
 
-        if (userTokens.isEmpty()) {
-            log.warn("Team Leader {} chưa đăng ký FCM Token", leader.getId());
-            return;
-        }
-
         String title = "🚨 Có yêu cầu cứu hộ mới";
 
         String body = String.format(
@@ -124,6 +119,31 @@ public class NotificationService {
                 sos.getArea().getTenkhuvuc(),
                 sos.getVictimCount(),
                 sos.getPriority());
+
+        // Lưu notification vào DB
+        createNotification(
+                leader,
+                title,
+                body,
+                NotificationType.SOS_NEW,
+                Channel.WEB_PUSH,
+                sos,
+                null,
+                null);
+
+        createNotification(
+                leader,
+                title,
+                body,
+                NotificationType.SOS_NEW,
+                Channel.EMAIL,
+                sos,
+                null,
+                null);
+        if (userTokens.isEmpty()) {
+            log.warn("Team Leader {} chưa đăng ký FCM Token", leader.getId());
+            return;
+        }
 
         // Data gửi kèm để FE xử lý khi click notification
         Map<String, String> data = Map.of(
@@ -211,7 +231,7 @@ public class NotificationService {
                     message,
                     NotificationType.CALL_WORKFLOW_FAILED,
                     Channel.POPUP,
-                    sos,null,null);
+                    sos, null, null);
 
             createNotification(
                     receiver,
@@ -219,7 +239,7 @@ public class NotificationService {
                     message,
                     NotificationType.CALL_WORKFLOW_FAILED,
                     Channel.WEB_PUSH,
-                    sos,null,null);
+                    sos, null, null);
 
             createNotification(
                     receiver,
@@ -227,7 +247,7 @@ public class NotificationService {
                     message,
                     NotificationType.CALL_WORKFLOW_FAILED,
                     Channel.EMAIL,
-                    sos,null,null);
+                    sos, null, null);
         }
     }
 
@@ -302,7 +322,8 @@ public class NotificationService {
 
                         Vui lòng chọn nhóm cứu hộ khác để tiếp tục điều phối SOS %s.
                         """, assignment.getGroup().getName(), sos.getTrackingCode());
-        createNotification(dispatcher, title, message, NotificationType.CALL_WORKFLOW_FAILED, Channel.POPUP, assignment.getSos(),assignment, null);
+        createNotification(dispatcher, title, message, NotificationType.CALL_WORKFLOW_FAILED, Channel.POPUP,
+                assignment.getSos(), assignment, null);
     }
 
     // Pop up cho province ko gọi được khi support request
@@ -326,9 +347,9 @@ public class NotificationService {
                         """, supportRequest.getSos().getTeam().getName());
 
         for (User u : provinceOperators) {
-            createNotification(u, title, message, NotificationType.CALL_WORKFLOW_FAILED, Channel.POPUP, supportRequest.getSos(),null,supportRequest);
+            createNotification(u, title, message, NotificationType.CALL_WORKFLOW_FAILED, Channel.POPUP,
+                    supportRequest.getSos(), null, supportRequest);
         }
     }
 
-    
 }
