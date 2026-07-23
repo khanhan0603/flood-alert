@@ -38,6 +38,51 @@ public class NotificationManagerService {
         NotificationWebPushProcessor notificationWebPushProcessor;
         UserRepository userRepository;
 
+        @Transactional
+        public void notifyNewSos(User teamLeader,SosRequest sos) {
+
+                if (teamLeader == null) {
+                        return;
+                }
+
+                String title = "🚨 Có yêu cầu cứu hộ mới";
+
+                String message = String.format(
+                                "Khu vực: %s | %d nạn nhân | Ưu tiên: %s",
+                                sos.getArea().getTenkhuvuc(),
+                                sos.getVictimCount(),
+                                sos.getPriority());
+
+                List<Notification> notifications = new ArrayList<>();
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(teamLeader)
+                                                .title(title)
+                                                .message(message)
+                                                .type(NotificationType.SOS_NEW)
+                                                .channel(Channel.EMAIL)
+                                                .status(StatusAlert.PENDING)
+                                                .sos(sos)
+                                                .build());
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(teamLeader)
+                                                .title(title)
+                                                .message(message)
+                                                .type(NotificationType.SOS_NEW)
+                                                .channel(Channel.WEB_PUSH)
+                                                .status(StatusAlert.PENDING)
+                                                .sos(sos)
+                                                .build());
+
+                notificationRepository.saveAll(notifications);
+
+                notificationEmailProcessor.processPendingEmails();
+                notificationWebPushProcessor.processPendingPushNotifications();
+        }
+
         // notify assignment failed to team leader
         @Transactional
         public void notifyAssignmentFailed(

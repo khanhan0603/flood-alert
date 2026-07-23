@@ -272,9 +272,9 @@ public class SOSRequestService {
                 // Gửi thông báo cho Team Leader của Team phụ trách
                 if (team.getLeader() != null) {
 
-                        notificationService.sendNewSosNotification(
-                                        team.getLeader(),
-                                        sos);
+                        notificationManagerService.notifyNewSos(team.getLeader(), sos);
+
+                        notificationService.sendNewSosNotification(team.getLeader(), sos);
                 }
 
                 // 8. Response
@@ -936,7 +936,7 @@ public class SOSRequestService {
         // Tra cứu sos theo tracking code và sodt cho người dân
         @Transactional(readOnly = true)
         public Page<SosResponse> searchCitizenSos(SearchSosRequest request, Pageable pageable) {
-                 String keyword = request.getKeyword();
+                String keyword = request.getKeyword();
 
                 if (keyword != null) {
                         keyword = keyword.trim();

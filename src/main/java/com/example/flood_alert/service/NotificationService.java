@@ -122,27 +122,6 @@ public class NotificationService {
                 sos.getVictimCount(),
                 sos.getPriority());
 
-        // Lưu notification vào DB
-        createNotification(
-                leader,
-                title,
-                body,
-                NotificationType.SOS_NEW,
-                Channel.WEB_PUSH,
-                sos,
-                null,
-                null);
-
-        createNotification(
-                leader,
-                title,
-                body,
-                NotificationType.SOS_NEW,
-                Channel.EMAIL,
-                sos,
-                null,
-                null);
-
         // Gửi Web Push và Email
         notificationEmailProcessor.processPendingEmails();
         notificationWebPushProcessor.processPendingPushNotifications();
