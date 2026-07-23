@@ -120,18 +120,17 @@ public class AlertService {
 
         floodAlertRepository.saveAll(alerts);
 
-        // Gửi email
-        try {
-            emailProcessor.processPendingEmails();
-        } catch (Exception ex) {
-            log.error("Email processing failed", ex);
-            throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
-        }
-        // Gửi web push
         try {
             webPushProcessor.processPendingPushNotifications();
         } catch (Exception ex) {
             log.error("Push processing failed", ex);
+            throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
+        }
+
+        try {
+            emailProcessor.processPendingEmails();
+        } catch (Exception ex) {
+            log.error("Email processing failed", ex);
             throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
         }
     }

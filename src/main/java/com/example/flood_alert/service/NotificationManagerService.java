@@ -429,10 +429,8 @@ public class NotificationManagerService {
                 }
 
                 notificationRepository.saveAll(notifications);
-
-                notificationEmailProcessor.processPendingEmails();
-
                 notificationWebPushProcessor.processPendingPushNotifications();
+                notificationEmailProcessor.processPendingEmails();
         }
 
         // Thông báo đến group leader có nhiệm vụ hỗ trợ
@@ -484,9 +482,8 @@ public class NotificationManagerService {
                                                 .build());
 
                 notificationRepository.saveAll(notifications);
-
-                notificationEmailProcessor.processPendingEmails();
                 notificationWebPushProcessor.processPendingPushNotifications();
+                notificationEmailProcessor.processPendingEmails();
         }
 
         // Thông báo cho người tạo Support Request khi không Province Operator nào phản
@@ -534,10 +531,8 @@ public class NotificationManagerService {
                                                 .build());
 
                 notificationRepository.saveAll(notifications);
-
-                notificationEmailProcessor.processPendingEmails();
-
                 notificationWebPushProcessor.processPendingPushNotifications();
+                notificationEmailProcessor.processPendingEmails();
         }
 
         // Gửi thông báo cho team leader đã có province nhận điều phối
@@ -578,9 +573,8 @@ public class NotificationManagerService {
                                                 .build());
 
                 notificationRepository.saveAll(notifications);
-
-                notificationEmailProcessor.processPendingEmails();
                 notificationWebPushProcessor.processPendingPushNotifications();
+                notificationEmailProcessor.processPendingEmails();
         }
 
         // Thông báo đến team leader đã có người nhận điều phối yêu cầu cứu hộ
@@ -640,9 +634,8 @@ public class NotificationManagerService {
                                                 .build());
 
                 notificationRepository.saveAll(notifications);
-
-                notificationEmailProcessor.processPendingEmails();
                 notificationWebPushProcessor.processPendingPushNotifications();
+                notificationEmailProcessor.processPendingEmails();
 
         }
 }
