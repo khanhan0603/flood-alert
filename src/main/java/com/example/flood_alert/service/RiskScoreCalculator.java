@@ -84,7 +84,7 @@ public class RiskScoreCalculator {
                 && latest.getDangerDurationMinutes() >= 2) {
             return RiskLevel.HIGH;
         }
-         // Nếu duy trì trạng thái nguy hiểm từ 1 phút trở lên => MEDIUM
+        // Nếu duy trì trạng thái nguy hiểm từ 1 phút trở lên => MEDIUM
         if (latest.getDangerRatio() != null
                 && latest.getDangerRatio() >= DANGER_RATIO_THRESHOLD
                 && latest.getDangerDurationMinutes() != null
@@ -98,6 +98,10 @@ public class RiskScoreCalculator {
                 .count();
 
         double dangerPercent = (double) dangerCount / aggregates.size();
+
+        System.out.println("Size = " + aggregates.size());
+        System.out.println("DangerCount = " + dangerCount);
+        System.out.println("DangerPercent = " + dangerPercent);
 
         boolean recentTrendNotDecreasing = isRecentTrendNotDecreasing(aggregates);
 
