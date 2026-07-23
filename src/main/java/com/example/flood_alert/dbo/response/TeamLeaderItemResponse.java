@@ -22,4 +22,10 @@ public class TeamLeaderItemResponse {
     String leaderName;
 
     String phone;
+
+    UUID deputyLeaderId;
+
+    String deputyLeaderName;
+
+    String deputyLeaderPhone;
 }

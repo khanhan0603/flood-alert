@@ -76,16 +76,16 @@ public class RescueTeamController {
         //                         .build();
         // }
 
-        // Danh sách leader theo khu vực
-        @GetMapping("/leader/{areaId}")
-        public ApiResponse<List<TeamLeaderItemResponse>> getLeadersByArea(
+        // Danh sách leader & deputy theo khu vực
+        @GetMapping("/leader-deputy/{areaId}")
+        public ApiResponse<List<TeamLeaderItemResponse>> getLeaderAndDeputyLeaderByArea(
                         @PathVariable UUID areaId) {
 
                 System.out.println("AREA = " + areaId);
 
                 return ApiResponse
                                 .<List<TeamLeaderItemResponse>>builder()
-                                .result(rescueTeamService.getLeadersByArea(areaId))
+                                .result(rescueTeamService.getLeaderAndDeputyLeaderByArea(areaId))
                                 .build();
         }
 

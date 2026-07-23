@@ -388,9 +388,9 @@ public class RescueTeamService {
                 .build();
     }
 
-    // Danh sách leader theo khu vực
+    // Danh sách leader và deputy theo khu vực
     @Transactional(readOnly = true) // readOnly = true vì chỉ đọc data
-    public List<TeamLeaderItemResponse> getLeadersByArea(
+    public List<TeamLeaderItemResponse> getLeaderAndDeputyLeaderByArea(
             UUID areaId) {
 
         return rescueTeamRepository.findByAreaId(areaId)
@@ -402,6 +402,9 @@ public class RescueTeamService {
                         .leaderId(team.getLeader().getId())
                         .leaderName(team.getLeader().getHoten())
                         .phone(team.getLeader().getSodt())
+                        .deputyLeaderId(team.getDeputyLeader().getId())
+                        .deputyLeaderName(team.getDeputyLeader().getHoten())
+                        .deputyLeaderPhone(team.getDeputyLeader().getSodt())
                         .build())
                 .toList();
     }
@@ -415,7 +418,7 @@ public class RescueTeamService {
         return page;
     }
 
-    @Transactional(readOnly=true)
+    @Transactional(readOnly = true)
     public RescueTeamResponse getDetailTeam(UUID teamId) {
         RescueTeamResponse team = rescueTeamRepository.findDetail(teamId);
         if (team == null) {
@@ -425,7 +428,7 @@ public class RescueTeamService {
     }
 
     // List team by area level 1
-    @Transactional(readOnly=true)
+    @Transactional(readOnly = true)
     public Page<RescueTeamResponse> getListTeamByArea(UUID areaId, Pageable pageable) {
         Page<RescueTeam> page = rescueTeamRepository.findByAreaId(areaId, pageable);
         if (page.isEmpty()) {
@@ -480,12 +483,12 @@ public class RescueTeamService {
                 .leaderName(team.getLeader() != null
                         ? team.getLeader().getHoten()
                         : null)
-                .deputyId(team.getDeputyLeader()!=null
-                            ? team.getDeputyLeader().getId()
-                            : null)
-                .deputyName(team.getDeputyLeader()!=null
-                            ? team.getDeputyLeader().getHoten()
-                            : null)       
+                .deputyId(team.getDeputyLeader() != null
+                        ? team.getDeputyLeader().getId()
+                        : null)
+                .deputyName(team.getDeputyLeader() != null
+                        ? team.getDeputyLeader().getHoten()
+                        : null)
                 .emergencyPhone(team.getEmergencyPhone())
                 .lat(team.getLat())
                 .lon(team.getLon())
