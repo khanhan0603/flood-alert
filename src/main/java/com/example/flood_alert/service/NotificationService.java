@@ -49,8 +49,6 @@ public class NotificationService {
     NotificationRepository notificationRepository;
     UserRepository userRepository;
     NotificationMapper notificationMapper;
-    NotificationEmailProcessor notificationEmailProcessor;
-    NotificationWebPushProcessor notificationWebPushProcessor;
 
     // lưu FCM token
     @Transactional
@@ -102,66 +100,6 @@ public class NotificationService {
         return messageId;
     }
 
-    @Transactional
-    public void sendNewSosNotification(User leader, SosRequest sos) {
-
-        // Không có Team Leader
-        if (leader == null) {
-            log.warn("Không thể gửi thông báo SOS vì Team Leader = null");
-            return;
-        }
-
-        // Lấy tất cả FCM Token của Team Leader
-        List<UserFcmToken> userTokens = userFcmTokenRepository.findByUserId(leader.getId());
-
-        String title = "🚨 Có yêu cầu cứu hộ mới";
-
-        String body = String.format(
-                "Khu vực: %s | %d nạn nhân | Ưu tiên: %s",
-                sos.getArea().getTenkhuvuc(),
-                sos.getVictimCount(),
-                sos.getPriority());
-
-        // Gửi Web Push và Email
-        notificationEmailProcessor.processPendingEmails();
-        notificationWebPushProcessor.processPendingPushNotifications();
-        if (userTokens.isEmpty()) {
-            log.warn("Team Leader {} chưa đăng ký FCM Token", leader.getId());
-            return;
-        }
-
-        // Data gửi kèm để FE xử lý khi click notification
-        Map<String, String> data = Map.of(
-                "type", "NEW_SOS",
-                "sosId", sos.getId().toString(),
-                "priority", sos.getPriority().name());
-
-        for (UserFcmToken userToken : userTokens) {
-
-            try {
-
-                sendNotification(
-                        userToken.getToken(),
-                        title,
-                        body,
-                        data);
-
-            } catch (FirebaseMessagingException ex) {
-
-                log.error(
-                        "Không thể gửi thông báo tới token {} của Team Leader {}",
-                        userToken.getToken(),
-                        leader.getId(),
-                        ex);
-            }
-        }
-
-        log.info(
-                "Đã gửi thông báo SOS {} tới Team Leader {} ({} thiết bị)",
-                sos.getId(),
-                leader.getId(),
-                userTokens.size());
-    }
 
     @Transactional
     public void createCallWorkflowFailedNotifications(SosRequest sos) {

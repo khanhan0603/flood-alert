@@ -273,8 +273,6 @@ public class SOSRequestService {
                 if (team.getLeader() != null) {
 
                         notificationManagerService.notifyNewSos(team.getLeader(), sos);
-
-                        notificationService.sendNewSosNotification(team.getLeader(), sos);
                 }
 
                 // 8. Response

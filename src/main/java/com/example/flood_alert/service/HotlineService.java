@@ -81,6 +81,7 @@ public class HotlineService {
         SosRequestMapper sosRequestMapper;
 
         NotificationService notificationService;
+        NotificationManagerService notificationManagerService;
 
         List<StatusSOS> ACTIVE_STATUSES = List.of(
                         StatusSOS.PENDING,
@@ -359,7 +360,7 @@ public class HotlineService {
                 // Gửi thông báo
                 if (team.getLeader() != null) {
 
-                        notificationService.sendNewSosNotification(
+                        notificationManagerService.notifyNewSos(
                                         team.getLeader(),
                                         sos);
                 }
