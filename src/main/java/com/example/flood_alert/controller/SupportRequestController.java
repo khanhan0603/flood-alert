@@ -85,7 +85,6 @@ public class SupportRequestController {
 
         // Province duyệt các item trong Support Request
         @PutMapping("/{id}/approve")
-        @PreAuthorize("hasAuthority('SCOPE_PROVINCE_OPERATOR')")
         public ApiResponse<Void> approve(
                         @PathVariable UUID id,
                         @RequestBody @Valid ApproveSupportRequest request) {
