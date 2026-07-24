@@ -51,7 +51,8 @@ public class SecurityConfig {
                                 "/hotline/emergency-contact",
                                 "/predict/run",
                                 "/snapshot/**",
-                                "/predict/run-test/**")
+                                "/predict/run-test/**",
+                                "/support-request/**")
                         .permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(customJwtDecoder)))
