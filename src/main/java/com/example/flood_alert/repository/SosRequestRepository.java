@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.enums.StatusSOS;
 
@@ -98,7 +99,7 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
                                     WHEN s.environmentRisk = 'MEDIUM' THEN 2
                                     WHEN s.environmentRisk = 'LOW' THEN 3
                                 END,
-                                s.createdAt ASC
+                                s.createdAt DESC
                         """)
         Page<SosRequest> findActiveByTeamId(
                         @Param("teamId") UUID teamId,
@@ -124,7 +125,7 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
                                     WHEN s.environmentRisk = 'MEDIUM' THEN 2
                                     WHEN s.environmentRisk = 'LOW' THEN 3
                                 END,
-                                s.createdAt ASC
+                                s.createdAt DESC
                         """)
         Page<SosRequest> findActiveByDispatcherUserId(
                         @Param("dispatcherUserId") UUID dispatcherUserId,
