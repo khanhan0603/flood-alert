@@ -35,55 +35,54 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WeatherDataInitializerService {
 
-    static final String FORECAST_URL  = "https://api.open-meteo.com/v1/forecast";
-    static final String TIMEZONE      = "Asia/Bangkok";
-    static final String HOURLY_FIELDS =
-            "precipitation,temperature_2m,dew_point_2m,surface_pressure,"
+    static final String FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+    static final String TIMEZONE = "Asia/Bangkok";
+    static final String HOURLY_FIELDS = "precipitation,temperature_2m,dew_point_2m,surface_pressure,"
             + "wind_speed_10m,wind_direction_10m,relative_humidity_2m,"
             + "et0_fao_evapotranspiration";
 
-    static final int PAST_DAYS        = 8;
-    static final int FORECAST_DAYS    = 3;
+    static final int PAST_DAYS = 8;
+    static final int FORECAST_DAYS = 3;
 
-    // 1000ms × 3321 area ≈ 55 phút/lần sync — an toàn free tier
+    // 1000ms × 3321 area ≈ 55 phút/lần sync
     // Giảm xuống 500ms sau khi xác nhận không bị 429
     static final int REQUEST_DELAY_MS = 700;
-    static final int RETRY_ATTEMPTS   = 5;
+    static final int RETRY_ATTEMPTS = 5;
     static final int RETRY_BACKOFF_MS = 5_000;
 
     WeatherDataRepository weatherDataRepository;
-    AreaRepository        areaRepository;
-    RestTemplateBuilder   restTemplateBuilder;
+    AreaRepository areaRepository;
+    RestTemplateBuilder restTemplateBuilder;
     JdbcTemplate jdbcTemplate;
 
-    static final String UPSERT_SQL="""
-        INSERT INTO weather_datas (
-            id,
-            area_id,
-            time,
-            rainfall,
-            temperature,
-            dewpoint,
-            pressure,
-            wind_speed,
-            wind_direction,
-            humidity,
-            evapotranspiration
-        )VALUES(
-            gen_random_uuid(),
-            ?,?,?,?,?,?,?,?,?,?
-            )
-            ON CONFLICT (area_id,time)
-            DO UPDATE SET
-            rainfall=EXCLUDED.rainfall,
-            temperature=EXCLUDED.temperature,
-            dewpoint=EXCLUDED.dewpoint,
-            pressure=EXCLUDED.pressure,
-            wind_speed=EXCLUDED.wind_speed,
-            wind_direction=EXCLUDED.wind_direction,
-            humidity=EXCLUDED.humidity,
-            evapotranspiration=EXCLUDED.evapotranspiration
-    """;
+    static final String UPSERT_SQL = """
+                INSERT INTO weather_datas (
+                    id,
+                    area_id,
+                    time,
+                    rainfall,
+                    temperature,
+                    dewpoint,
+                    pressure,
+                    wind_speed,
+                    wind_direction,
+                    humidity,
+                    evapotranspiration
+                )VALUES(
+                    gen_random_uuid(),
+                    ?,?,?,?,?,?,?,?,?,?
+                    )
+                    ON CONFLICT (area_id,time)
+                    DO UPDATE SET
+                    rainfall=EXCLUDED.rainfall,
+                    temperature=EXCLUDED.temperature,
+                    dewpoint=EXCLUDED.dewpoint,
+                    pressure=EXCLUDED.pressure,
+                    wind_speed=EXCLUDED.wind_speed,
+                    wind_direction=EXCLUDED.wind_direction,
+                    humidity=EXCLUDED.humidity,
+                    evapotranspiration=EXCLUDED.evapotranspiration
+            """;
 
     // =========================================================================
     // SCHEDULER 1: 00:30 VN — sau model 17h UTC hôm qua
@@ -103,7 +102,7 @@ public class WeatherDataInitializerService {
 
     // =========================================================================
     // SCHEDULER 3: Cleanup 23:55 — xoá data quá khứ cũ hơn PAST_DAYS ngày
-    //              Forecast (time > now) giữ nguyên cho AI
+    // Forecast (time > now) giữ nguyên cho AI
     // =========================================================================
     @Scheduled(cron = "0 55 23 * * *", zone = "Asia/Ho_Chi_Minh")
     public void deleteOldData() {
@@ -135,7 +134,8 @@ public class WeatherDataInitializerService {
         try {
             JsonNode response = fetchJsonWithRetry(
                     restTemplate, buildForecastUrl(area), "ON-DEMAND", area.getId());
-            if (response == null) return false;
+            if (response == null)
+                return false;
             upsertHourly(area, response.path("hourly"));
             log.info("ON-DEMAND SUCCESS area={}", area.getId());
             return true;
@@ -158,9 +158,9 @@ public class WeatherDataInitializerService {
         }
 
         RestTemplate restTemplate = buildRestTemplate();
-        int total   = areas.size();
+        int total = areas.size();
         int success = 0;
-        int failed  = 0;
+        int failed = 0;
 
         for (int i = 0; i < total; i++) {
             Area area = areas.get(i);
@@ -173,9 +173,9 @@ public class WeatherDataInitializerService {
                 if (response == null) {
                     failed++;
                 } else {
-                    long start=System.currentTimeMillis();
+                    long start = System.currentTimeMillis();
                     upsertHourly(area, response.path("hourly"));
-                    log.info("[{}] UPSERT area={} took {} ms", label, area.getId(), System.currentTimeMillis()-start);
+                    log.info("[{}] UPSERT area={} took {} ms", label, area.getId(), System.currentTimeMillis() - start);
                     success++;
                 }
             } catch (Exception e) {
@@ -192,21 +192,21 @@ public class WeatherDataInitializerService {
 
     // =========================================================================
     // SAVE: Upsert 264 giờ/area bằng native SQL — không dùng JPA entity pipeline
-    //       ON CONFLICT DO UPDATE → observed ghi đè forecast cũ đúng cách
+    // ON CONFLICT DO UPDATE → observed ghi đè forecast cũ đúng cách
     // =========================================================================
-    private void upsertHourly(Area area,JsonNode hourly){
-        JsonNode times=hourly.path("time");
+    private void upsertHourly(Area area, JsonNode hourly) {
+        JsonNode times = hourly.path("time");
 
-        if(!times.isArray()||times.isEmpty()){
+        if (!times.isArray() || times.isEmpty()) {
             return;
         }
 
-        int count=times.size();
+        int count = times.size();
 
-        jdbcTemplate.batchUpdate(UPSERT_SQL, new BatchPreparedStatementSetter(){
+        jdbcTemplate.batchUpdate(UPSERT_SQL, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
-                LocalDateTime time=LocalDateTime.parse(times.get(i).asText());
+                LocalDateTime time = LocalDateTime.parse(times.get(i).asText());
 
                 ps.setObject(1, area.getId());
                 ps.setObject(2, time);
@@ -224,21 +224,22 @@ public class WeatherDataInitializerService {
             public int getBatchSize() {
                 return count;
             }
-            
+
         });
     }
+
     // =========================================================================
     // Helper: Build URL forecast — past_days + forecast_days trong 1 request
     // =========================================================================
     private String buildForecastUrl(Area area) {
         return UriComponentsBuilder
                 .fromUriString(FORECAST_URL)
-                .queryParam("latitude",      area.getLat())
-                .queryParam("longitude",     area.getLon())
-                .queryParam("past_days",     PAST_DAYS)
+                .queryParam("latitude", area.getLat())
+                .queryParam("longitude", area.getLon())
+                .queryParam("past_days", PAST_DAYS)
                 .queryParam("forecast_days", FORECAST_DAYS)
-                .queryParam("hourly",        HOURLY_FIELDS)
-                .queryParam("timezone",      TIMEZONE)
+                .queryParam("hourly", HOURLY_FIELDS)
+                .queryParam("timezone", TIMEZONE)
                 .toUriString();
     }
 
@@ -246,9 +247,9 @@ public class WeatherDataInitializerService {
     // Helper: Retry với exponential backoff — dừng hẳn nếu hết daily quota
     // =========================================================================
     private JsonNode fetchJsonWithRetry(RestTemplate restTemplate,
-                                        String url,
-                                        String scope,
-                                        UUID areaId) {
+            String url,
+            String scope,
+            UUID areaId) {
         for (int attempt = 1; attempt <= RETRY_ATTEMPTS; attempt++) {
             try {
                 return restTemplate.getForObject(url, JsonNode.class);
@@ -305,5 +306,13 @@ public class WeatherDataInitializerService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    public void refillWeather(UUID areaId) {
+
+        Area area = areaRepository.findById(areaId)
+                .orElseThrow(() -> new RuntimeException("Area not found"));
+
+        fetchOnDemand(area);
     }
 }

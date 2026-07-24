@@ -4,7 +4,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,8 +34,8 @@ public class WeatherDataController {
 
     // @PostMapping("/backfill")
     // public String backfill() {
-    //     weatherDataInitializerService.backfill();
-    //     return "DONE";
+    // weatherDataInitializerService.backfill();
+    // return "DONE";
     // }
 
     @GetMapping("/list-area")
@@ -57,8 +60,14 @@ public class WeatherDataController {
     // test trước khi 00:30 fill dữ liệu
     // @PostMapping("/sync-now")
     // public String syncNow() {
-    //     weatherDataInitializerService.triggerManualSync();
-    //     return "OK";
+    // weatherDataInitializerService.triggerManualSync();
+    // return "OK";
     // }
+    @PostMapping("/admin/weather/{areaId}/refill")
+    public ResponseEntity<Void> refillWeather(@PathVariable UUID areaId) {
 
+        weatherDataInitializerService.refillWeather(areaId);
+
+        return ResponseEntity.ok().build();
+    }
 }
