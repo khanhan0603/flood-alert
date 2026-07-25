@@ -21,6 +21,7 @@ import com.example.flood_alert.dbo.response.SosAssignmentResponse;
 import com.example.flood_alert.dbo.response.SosDetailResponse;
 import com.example.flood_alert.dbo.response.SosHandlerResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
+import com.example.flood_alert.dbo.response.SosTimelineItemResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.dbo.response.TeamDashboardResponse;
 import com.example.flood_alert.entity.Area;
@@ -628,6 +629,24 @@ public class SOSRequestService {
                                                 ? resolveCurrentHandler(sos)
                                                 : null;
 
+                // Lấy lịch sử status, sắp xếp theo thời gian tăng dần
+                List<SosStatusHistory> histories = sosStatusHistoryRepository
+                                .findBySosIdOrderByCreatedAtAsc(sos.getId());
+
+                List<SosTimelineItemResponse> timeline = histories.stream()
+                                .map(h -> SosTimelineItemResponse.builder()
+                                                .status(h.getStatus())
+                                                .updatedAt(h.getCreatedAt())
+                                                .note(h.getNote())
+                                                .build())
+                                .toList();
+
+                // updatedAt = thời điểm bản ghi lịch sử gần nhất
+                // fallback về sos.getUpdatedAt() nếu vì lý do gì đó chưa có lịch sử
+                LocalDateTime updatedAt = histories.isEmpty()
+                                ? sos.getUpdatedAt()
+                                : histories.get(histories.size() - 1).getCreatedAt();
+
                 return CitizenSosDetailResponse.builder()
                                 .id(sos.getId())
                                 .trackingCode(sos.getTrackingCode())
@@ -642,8 +661,9 @@ public class SOSRequestService {
                                 .address(sos.getDiachi())
                                 .status(sos.getStatus())
                                 .createdAt(sos.getCreatedAt())
-                                .assignments(assignments)
+                                .updatedAt(updatedAt)
                                 .currentHandler(currentHandler)
+                                .timeline(timeline)
                                 .build();
         }
 

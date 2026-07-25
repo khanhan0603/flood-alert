@@ -47,6 +47,6 @@ public class CitizenSosDetailResponse {
     SosHandlerResponse currentHandler;
 
     LocalDateTime createdAt;
-
-    List<CitizenAssignmentResponse> assignments;
+    LocalDateTime updatedAt; // thời điểm đổi status gần nhất (lấy từ sos_status_history)
+    List<SosTimelineItemResponse> timeline; // nếu chưa có, thêm luôn theo phần trước
 }
