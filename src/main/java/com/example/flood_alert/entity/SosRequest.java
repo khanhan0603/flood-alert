@@ -66,10 +66,10 @@ public class SosRequest extends BaseEntity {
     @Column(nullable = false)
     Integer victimCount;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 9, scale = 6)
     BigDecimal lat;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 9, scale = 6)
     BigDecimal lon;
 
     String diachi;

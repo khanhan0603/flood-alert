@@ -1,0 +1,5 @@
+ALTER TABLE sos_requests
+    ALTER COLUMN lat TYPE NUMERIC(8,6);
+
+ALTER TABLE sos_requests
+    ALTER COLUMN lon TYPE NUMERIC(9,6);
