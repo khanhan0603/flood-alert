@@ -21,7 +21,7 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
   @Query("""
       SELECT sr
       FROM SupportRequest sr
-      WHERE sr.dispatcher.id = :dispatcherId
+      WHERE sr.dispatcherUser.id = :dispatcherId
         AND sr.source = :source
         AND sr.status = :status
       ORDER BY sr.createdAt DESC
