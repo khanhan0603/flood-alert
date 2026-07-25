@@ -81,6 +81,13 @@ public class SosAssignmentService {
                                 .findById(request.getSosId())
                                 .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
                 validateDispatcherPermission(sos, currentUser);
+
+                // Team Leader bắt đầu điều phối -> trở thành Dispatcher
+                if (sos.getDispatcherUser() == null) {
+                        sos.setDispatcherUser(currentUser);
+                        sosRequestRepository.save(sos);
+                }
+
                 RescueTeam team = sos.getTeam();
                 RescueGroup group = rescueGroupRepository
                                 .findById(request.getGroupId())
