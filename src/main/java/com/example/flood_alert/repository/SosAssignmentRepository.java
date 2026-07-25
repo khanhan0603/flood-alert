@@ -52,14 +52,11 @@ public interface SosAssignmentRepository extends JpaRepository<SosAssignment, UU
                         """)
         List<SosAssignment> findMyAssignments(UUID leaderId);
 
-        // Tìm thông tin của group chính
-        @Query("""
-                            SELECT sa
-                            FROM SosAssignment sa
-                            WHERE sa.sos.id = :sosId
-                              AND sa.role = com.example.flood_alert.enums.AssignmentRole.PRIMARY
-                        """)
-        Optional<SosAssignment> findPrimaryAssignment(UUID sosId);
+        // Tìm thông tin của group chính - lấy PRIMARY đang active (chưa FAILED), mới
+        // nhất
+        default Optional<SosAssignment> findPrimaryAssignment(UUID sosId) {
+                return findActivePrimaryAssignments(sosId).stream().findFirst();
+        }
 
         // Tìm thông tin group support
         @Query("""
