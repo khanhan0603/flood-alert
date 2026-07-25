@@ -150,4 +150,8 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
 
     List<FloodPrediction> findByPredictionJobHistoryId(
             UUID predictionJobHistoryId);
+
+    Optional<FloodPrediction> findByArea_IdAndPredictionJobHistory_Id(
+        UUID areaId,
+        UUID predictionJobHistoryId);
 }

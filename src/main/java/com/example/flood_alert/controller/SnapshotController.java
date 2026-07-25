@@ -39,15 +39,15 @@ public class SnapshotController {
         SnapshotWriter snapshotWriter;
         AreaService areaService;
 
-        @PostMapping("/generate/{areaId}")
-        public ApiResponse<String> generateSnapshot(@PathVariable UUID areaId) {
+        // @PostMapping("/generate/{areaId}")
+        // public ApiResponse<String> generateSnapshot(@PathVariable UUID areaId) {
 
-                snapshotWriter.generateSnapshot(areaId);
+        //         snapshotWriter.generateSnapshot(areaId);
 
-                return ApiResponse.<String>builder()
-                                .result("Snapshot generated successfully")
-                                .build();
-        }
+        //         return ApiResponse.<String>builder()
+        //                         .result("Snapshot generated successfully")
+        //                         .build();
+        // }
 
         @PostMapping("/generate-all")
         public ApiResponse<String> generateAllSnapshots() {

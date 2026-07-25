@@ -36,19 +36,21 @@ public class SnapshotWriter {
         AreaRepository areaRepository;
         RiskScoreCalculator riskScoreCalculator;
         ApplicationEventPublisher eventPublisher;
-        
+
         @Transactional
-        public void generateSnapshot(UUID areaId) {
+        public void generateSnapshot(UUID areaId, UUID predictionJobHistoryId) {
                 List<IoTAreaAggregates> aggregates = ioTAreaAggregateRepository
                                 .findRecentAggregates(areaId, PageRequest.of(0, 15));
 
                 if (aggregates.size() < 2) {
-                        log.info("Skip snapshot area={} — only {} aggregates", areaId, aggregates.size());
+                        log.info("Skip snapshot area={ } — only {} aggregates", areaId, aggregates.size());
                         return;
                 }
 
                 FloodPrediction prediction = floodPredictionRepository
-                                .findTopByAreaIdOrderByPredictedAtDesc(areaId)
+                                .findByArea_IdAndPredictionJobHistory_Id(
+                                                areaId,
+                                                predictionJobHistoryId)
                                 .orElse(null);
 
                 RiskLevel riskLevel = riskScoreCalculator.calculate(aggregates, prediction);

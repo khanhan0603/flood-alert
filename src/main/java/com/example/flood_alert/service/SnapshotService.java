@@ -17,11 +17,14 @@ import com.example.flood_alert.dbo.response.AreaRiskSnapshotResponse;
 import com.example.flood_alert.dbo.response.RegionalForecastResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
+import com.example.flood_alert.entity.PredictionJobHistory;
+import com.example.flood_alert.enums.PredictionJobStatus;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.AreaRiskSnapshotRepository;
 import com.example.flood_alert.repository.IoTAreaAggregateRepository;
+import com.example.flood_alert.repository.PredictionJobHistoryRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -37,10 +40,15 @@ public class SnapshotService {
         IoTAreaAggregateRepository ioTAreaAggregateRepository;
         AreaRepository areaRepository;
         SnapshotWriter snapshotWriter;
+        PredictionJobHistoryRepository predictionJobHistoryRepository;
 
         public void generateAllSnapshots() {
 
                 List<UUID> areaIds = ioTAreaAggregateRepository.findAreasHasLatestAggregate();
+
+                PredictionJobHistory latestJob = predictionJobHistoryRepository
+                                .findTopByStatusOrderByFinishedAtDesc(PredictionJobStatus.SUCCESS)
+                                .orElseThrow(() -> new AppException(ErrorCode.PREDICTION_JOB_NOT_FOUND));
 
                 log.info("START GENERATE SNAPSHOTS - TOTAL AREA={}",
                                 areaIds.size());
@@ -49,7 +57,7 @@ public class SnapshotService {
 
                         try {
 
-                                snapshotWriter.generateSnapshot(areaId);
+                                snapshotWriter.generateSnapshot(areaId,latestJob.getId());
 
                         } catch (Exception e) {
 
