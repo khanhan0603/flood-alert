@@ -15,6 +15,7 @@ import com.example.flood_alert.dbo.request.SaveFcmTokenRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.PopupNotificationResponse;
 import com.example.flood_alert.service.NotificationService;
+import com.example.flood_alert.service.NotificationWebPushProcessor;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class NotificationController {
     NotificationService notificationService;
+    NotificationWebPushProcessor notificationWebPushProcessor;
 
     // @PostMapping("/test")
     // public String test(@RequestParam String token) throws Exception {
@@ -39,6 +41,12 @@ public class NotificationController {
 
     // return "OK";
     // }
+
+    @PostMapping("/push")
+    public String push() {
+        notificationWebPushProcessor.processPendingPushNotifications();
+        return "OK";
+    }
 
     @PostMapping("/token")
     public void saveToken(@RequestBody SaveFcmTokenRequest request) {
