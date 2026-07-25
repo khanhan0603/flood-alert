@@ -133,10 +133,10 @@ public interface AreaRiskSnapshotRepository
 
     @Query("""
             SELECT s
-            FROM AreaSnapshot s
+            FROM AreaRiskSnapshot s
             WHERE s.recordedAt = (
                 SELECT MAX(s2.recordedAt)
-                FROM AreaSnapshot s2
+                FROM AreaRiskSnapshot s2
                 WHERE s2.area.id = s.area.id
             )
             ORDER BY s.area.name
