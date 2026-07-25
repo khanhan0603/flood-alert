@@ -240,18 +240,26 @@ public class SosAssignmentService {
 
                 List<SosAssignment> assignments = sosAssignmentRepository.findBySosId(sosId);
 
-                boolean hasProcessing = assignments.stream()
+                // Chỉ xét các assignment còn hiệu lực (loại bỏ FAILED - đã kết thúc vòng đời)
+                List<SosAssignment> activeAssignments = assignments.stream()
+                                .filter(a -> a.getStatus() != AssignmentStatus.FAILED)
+                                .toList();
+
+                boolean hasProcessing = activeAssignments.stream()
                                 .anyMatch(a -> a.getStatus() == AssignmentStatus.ACKNOWLEDGED
                                                 || a.getStatus() == AssignmentStatus.MOVING
                                                 || a.getStatus() == AssignmentStatus.ARRIVED
                                                 || a.getStatus() == AssignmentStatus.RESCUING);
 
-                boolean allCompleted = !assignments.isEmpty()
-                                && assignments.stream()
+                // Hoàn thành khi có ít nhất 1 assignment active và TẤT CẢ active đều COMPLETED
+                boolean allCompleted = !activeAssignments.isEmpty()
+                                && activeAssignments.stream()
                                                 .allMatch(a -> a.getStatus() == AssignmentStatus.COMPLETED);
 
-                boolean hasFailed = assignments.stream()
-                                .anyMatch(a -> a.getStatus() == AssignmentStatus.FAILED);
+                // Có nhóm đang chờ giao lại: có FAILED nhưng chưa có assignment active nào khác
+                boolean hasFailedWithoutReplacement = assignments.stream()
+                                .anyMatch(a -> a.getStatus() == AssignmentStatus.FAILED)
+                                && activeAssignments.isEmpty();
 
                 SosRequest sos = sosRequestRepository.findById(sosId)
                                 .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
@@ -263,7 +271,7 @@ public class SosAssignmentService {
 
                         newStatus = StatusSOS.DONE;
 
-                } else if (hasProcessing || hasFailed) {
+                } else if (hasProcessing || hasFailedWithoutReplacement) {
 
                         newStatus = StatusSOS.PROCESSING;
                 }
