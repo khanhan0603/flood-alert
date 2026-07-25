@@ -100,12 +100,12 @@ public class SupportRequestService {
                 validateDispatcherPermission(sos, currentUser);
 
                 // kiểm tra sos request có tạo yêu cầu hỗ trợ và đang đợi duyệt ko
-                if (supportRequestRepository.existsBySosIdAndStatus(
+                if (supportRequestRepository.existsBySosIdAndSourceAndStatus(
                                 request.getSosId(),
+                                SupportRequestSource.TEAM,
                                 SupportRequestStatus.PENDING)) {
 
-                        throw new AppException(
-                                        ErrorCode.SUPPORT_REQUEST_ALREADY_EXISTS);
+                        throw new AppException(ErrorCode.SUPPORT_REQUEST_ALREADY_EXISTS);
                 }
 
                 // Phải có ít nhất một hạng mục cần hỗ trợ

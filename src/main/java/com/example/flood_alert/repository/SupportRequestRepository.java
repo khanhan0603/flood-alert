@@ -54,7 +54,17 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
       Pageable pageable);
 
   // Kiểm tra xem đã tạo hỗ trợ cho sos đó chưa
-  boolean existsBySosIdAndStatus(UUID sosId, SupportRequestStatus status);
+  @Query("""
+          SELECT COUNT(sr) > 0
+          FROM SupportRequest sr
+          WHERE sr.sos.id = :sosId
+            AND sr.source = :source
+            AND sr.status = :status
+      """)
+  boolean existsBySosIdAndSourceAndStatus(
+      @Param("sosId") UUID sosId,
+      @Param("source") SupportRequestSource source,
+      @Param("status") SupportRequestStatus status);
 
   // Kiểm tra Group đã có yêu cầu hỗ trợ đang chờ xử lý cho SOS này chưa
   @Query("""
