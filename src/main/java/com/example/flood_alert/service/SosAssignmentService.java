@@ -72,6 +72,7 @@ public class SosAssignmentService {
         SosStatusHistoryRepository sosStatusHistoryRepository;
 
         // Dispatcher giao nhiệm vụ cho Rescue Group
+        // Dispatcher giao nhiệm vụ cho Rescue Group
         @Transactional
         public AssignmentResponse assignGroup(AssignGroupRequest request) {
 
@@ -103,6 +104,25 @@ public class SosAssignmentService {
                         throw new AppException(ErrorCode.GROUP_NOT_AVAILABLE);
                 }
 
+                // Xác định note trước khi đổi status (cần biết SOS đang PENDING hay không,
+                // và role là PRIMARY hay SUPPORT)
+                boolean isFirstAssign = sos.getStatus() == StatusSOS.PENDING;
+
+                String note;
+
+                if (request.getRole() == AssignmentRole.SUPPORT) {
+
+                        note = "Giao nhóm hỗ trợ: " + group.getName();
+
+                } else if (isFirstAssign) {
+
+                        note = "Giao nhiệm vụ cho nhóm " + group.getName();
+
+                } else {
+
+                        note = "Giao lại nhiệm vụ cho nhóm " + group.getName();
+                }
+
                 SosAssignment assignment = SosAssignment.builder()
                                 .sos(sos)
                                 .group(group)
@@ -116,16 +136,21 @@ public class SosAssignmentService {
                 sosAssignmentRepository.save(assignment);
                 // Tạo Call Workflow gọi Group Leader
                 CallTask callTask = callWorkflowService.startGroupLeaderCallWorkFlow(assignment);
-                // SOS chuyển sang ASSIGNED
-                if (sos.getStatus() == StatusSOS.PENDING) {
+
+                // SOS chuyển sang ASSIGNED (chỉ khi đang PENDING - lần giao đầu tiên)
+                if (isFirstAssign) {
+
                         sos.setStatus(StatusSOS.ASSIGNED);
                         sosRequestRepository.save(sos);
 
-                        saveStatusHistory(sos, StatusSOS.ASSIGNED, "Giao nhiệm vụ cho nhóm " + group.getName());
+                        saveStatusHistory(sos, StatusSOS.ASSIGNED, note);
+
                 } else {
-                        // Giao lại nhóm khác khi SOS đã ASSIGNED/PROCESSING từ trước
-                        // (ví dụ sau khi nhóm cũ báo FAILED) -> ghi note-only, không đổi status
-                        saveStatusHistory(sos, sos.getStatus(), "Giao lại nhiệm vụ cho nhóm " + group.getName());
+                        // SOS đã ASSIGNED/PROCESSING từ trước:
+                        // - giao thêm nhóm SUPPORT, hoặc
+                        // - giao lại nhóm PRIMARY khác (sau khi nhóm cũ FAILED)
+                        // -> ghi note-only, không đổi status
+                        saveStatusHistory(sos, sos.getStatus(), note);
                 }
 
                 // Group chuyển BUSY
