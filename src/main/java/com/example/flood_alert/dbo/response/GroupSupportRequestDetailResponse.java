@@ -16,6 +16,8 @@ public class GroupSupportRequestDetailResponse {
 
     UUID id;
 
+    UUID sosId;
+
     String groupName;
 
     String groupLeaderName;

@@ -1101,6 +1101,7 @@ public class SupportRequestService {
                 GroupSupportRequestDetailResponse response = new GroupSupportRequestDetailResponse();
 
                 response.setId(supportRequest.getId());
+                response.setSosId(supportRequest.getSos().getId());
                 response.setGroupName(group.getName());
                 response.setGroupLeaderName(supportRequest.getRequestedBy().getHoten());
                 response.setReason(supportRequest.getReason());
