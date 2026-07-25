@@ -90,7 +90,7 @@ public class AuthenticationService {
         }
     }
 
-    @Transactional
+    @Transactional(timeout=5)
     public AuthenticateResponse refresh(RefreshRequest request)
             throws ParseException, JOSEException {
 
@@ -244,12 +244,17 @@ public class AuthenticationService {
 
         // Verify JWT
         SignedJWT signedJWT = verifyToken(request.getAccessToken());
+        log.info("Access OK");
+
         verifyToken(request.getRefreshToken());
+        log.info("Refresh OK");
+
         String jti = signedJWT.getJWTClaimsSet().getJWTID();
 
         RefreshToken refreshToken = refreshTokenRepository
                 .findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        log.info("Find refresh OK");
 
         User user = refreshToken.getUser();
 

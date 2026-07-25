@@ -48,7 +48,7 @@ public interface IoTReadingSensorRepository extends JpaRepository<IoTSensorReadi
         @Modifying
         @Transactional
         @Query("""
-                            DELETE FROM IoTReading r
+                            DELETE FROM IoTSensorReading r
                             WHERE r.recordedAt < :time
                         """)
         int deleteByRecordedAtBefore(LocalDateTime time);
