@@ -30,7 +30,6 @@ import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.mapper.CallTaskMapper;
-import com.example.flood_alert.mapper.SosAssignmentMapper;
 import com.example.flood_alert.repository.CallLogRepository;
 import com.example.flood_alert.repository.CallTaskRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;

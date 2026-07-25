@@ -148,10 +148,20 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
             UUID predictionJobHistoryId,
             Pageable pageable);
 
-    List<FloodPrediction> findByPredictionJobHistoryId(
-            UUID predictionJobHistoryId);
+    @Query("""
+                SELECT fp
+                FROM FloodPrediction fp
+                WHERE fp.predictionJobHistory.id = :predictionJobHistoryId
+                  AND (
+                        fp.lead1 = com.example.flood_alert.enums.RiskLevel.HIGH
+                     OR fp.lead2 = com.example.flood_alert.enums.RiskLevel.HIGH
+                     OR fp.lead3 = com.example.flood_alert.enums.RiskLevel.HIGH
+                  )
+            """)
+    List<FloodPrediction> findHighRiskPredictionsByPredictionJobHistoryId(
+            @Param("predictionJobHistoryId") UUID predictionJobHistoryId);
 
     Optional<FloodPrediction> findByArea_IdAndPredictionJobHistory_Id(
-        UUID areaId,
-        UUID predictionJobHistoryId);
+            UUID areaId,
+            UUID predictionJobHistoryId);
 }

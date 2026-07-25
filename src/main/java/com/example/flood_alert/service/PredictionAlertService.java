@@ -39,7 +39,7 @@ public class PredictionAlertService {
                 log.info("=== CREATE ALERT START ===");
 
                 List<FloodPrediction> predictions = predictionRepository
-                                .findByPredictionJobHistoryId(predictionJobHistoryId);
+                                .findHighRiskPredictionsByPredictionJobHistoryId(predictionJobHistoryId);
 
                 log.info("Create alerts for job {}", predictionJobHistoryId);
 

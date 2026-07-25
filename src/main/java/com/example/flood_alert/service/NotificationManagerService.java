@@ -658,7 +658,7 @@ public class NotificationManagerService {
                                                 .title(alert.getTitle())
                                                 .message(alert.getMessage())
                                                 .type(NotificationType.PREDICTION_HIGH_RISK)
-                                                .channel(Channel.EMAIL)
+                                                .channel(Channel.POPUP)
                                                 .status(StatusAlert.PENDING)
                                                 .build());
 
