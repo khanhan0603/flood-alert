@@ -122,6 +122,10 @@ public class SosAssignmentService {
                         sosRequestRepository.save(sos);
 
                         saveStatusHistory(sos, StatusSOS.ASSIGNED, "Giao nhiệm vụ cho nhóm " + group.getName());
+                } else {
+                        // Giao lại nhóm khác khi SOS đã ASSIGNED/PROCESSING từ trước
+                        // (ví dụ sau khi nhóm cũ báo FAILED) -> ghi note-only, không đổi status
+                        saveStatusHistory(sos, sos.getStatus(), "Giao lại nhiệm vụ cho nhóm " + group.getName());
                 }
 
                 // Group chuyển BUSY
