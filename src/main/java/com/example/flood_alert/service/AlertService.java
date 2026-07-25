@@ -127,12 +127,12 @@ public class AlertService {
             throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
         }
 
-        try {
-            emailProcessor.processPendingEmails();
-        } catch (Exception ex) {
-            log.error("Email processing failed", ex);
-            throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
-        }
+        // try {
+        //     emailProcessor.processPendingEmails();
+        // } catch (Exception ex) {
+        //     log.error("Email processing failed", ex);
+        //     throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
+        // }
     }
 
     private void createMediumAlerts(AreaRiskSnapshot snapshot, List<User> users) {
