@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class IoTReadingSchedule {
     private final IoTReadingSensorRepository ioTReadingRepository;
-    @Scheduled(cron = "00 08 14 * * *")
+    @Scheduled(cron = "00 30 14 * * *")
     @Transactional
     public void deleteOldIoTReadings() {
         LocalDateTime expiredTime = LocalDateTime.now().minusDays(1);
