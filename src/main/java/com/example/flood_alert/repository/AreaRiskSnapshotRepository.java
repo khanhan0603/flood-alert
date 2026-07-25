@@ -132,14 +132,14 @@ public interface AreaRiskSnapshotRepository
     Optional<AreaRiskSnapshot> findByIdWithArea(@Param("id") UUID id);
 
     @Query("""
-            SELECT s
-            FROM AreaRiskSnapshot s
-            WHERE s.recordedAt = (
-                SELECT MAX(s2.recordedAt)
-                FROM AreaRiskSnapshot s2
-                WHERE s2.area.id = s.area.id
-            )
-            ORDER BY s.area.name
+                SELECT s
+                FROM AreaRiskSnapshot s
+                WHERE s.snapshotAt = (
+                    SELECT MAX(s2.snapshotAt)
+                    FROM AreaRiskSnapshot s2
+                    WHERE s2.area.id = s.area.id
+                )
+                ORDER BY s.area.tenkhuvuc
             """)
     List<AreaRiskSnapshot> findLatestSnapshots();
 }
