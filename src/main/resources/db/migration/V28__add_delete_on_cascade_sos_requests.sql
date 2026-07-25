@@ -1,26 +1,26 @@
 -- support_requests
 ALTER TABLE support_requests
-DROP CONSTRAINT fkssxha98a7oohums9evm51d4sr;
+DROP CONSTRAINT IF EXISTS fkssxha98a7oohums9evm51d4sr;
 
 ALTER TABLE support_requests
-ADD CONSTRAINT fkssxha98a7oohums9evm51d4sr
+ADD CONSTRAINT fk_support_requests_sos
 FOREIGN KEY (sos_id)
 REFERENCES sos_requests(id)
 ON DELETE CASCADE;
 
 -- sos_assignments
 ALTER TABLE sos_assignments
-DROP CONSTRAINT fkj45q73q5t2dr8hjjsrl1x7imj;
+DROP CONSTRAINT IF EXISTS fkj45q73q5t2dr8hjjsrl1x7imj;
 
 ALTER TABLE sos_assignments
-ADD CONSTRAINT fkj45q73q5t2dr8hjjsrl1x7imj
+ADD CONSTRAINT fk_sos_assignments_sos
 FOREIGN KEY (sos_id)
 REFERENCES sos_requests(id)
 ON DELETE CASCADE;
 
 -- emergency_call_event
 ALTER TABLE emergency_call_event
-DROP CONSTRAINT fk_call_event_sos;
+DROP CONSTRAINT IF EXISTS fk_call_event_sos;
 
 ALTER TABLE emergency_call_event
 ADD CONSTRAINT fk_call_event_sos
@@ -30,7 +30,7 @@ ON DELETE CASCADE;
 
 -- notifications
 ALTER TABLE notifications
-DROP CONSTRAINT fk_notification_sos;
+DROP CONSTRAINT IF EXISTS fk_notification_sos;
 
 ALTER TABLE notifications
 ADD CONSTRAINT fk_notification_sos
@@ -40,7 +40,7 @@ ON DELETE CASCADE;
 
 -- call_tasks
 ALTER TABLE call_tasks
-DROP CONSTRAINT fk_call_task_sos_request;
+DROP CONSTRAINT IF EXISTS fk_call_task_sos_request;
 
 ALTER TABLE call_tasks
 ADD CONSTRAINT fk_call_task_sos_request
@@ -50,7 +50,7 @@ ON DELETE CASCADE;
 
 -- call_logs
 ALTER TABLE call_logs
-DROP CONSTRAINT fk_call_log_sos_request;
+DROP CONSTRAINT IF EXISTS fk_call_log_sos_request;
 
 ALTER TABLE call_logs
 ADD CONSTRAINT fk_call_log_sos_request
@@ -60,7 +60,7 @@ ON DELETE CASCADE;
 
 -- alarms
 ALTER TABLE alarms
-DROP CONSTRAINT fk_alarm_sos_request;
+DROP CONSTRAINT IF EXISTS fk_alarm_sos_request;
 
 ALTER TABLE alarms
 ADD CONSTRAINT fk_alarm_sos_request
