@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.example.flood_alert.entity.IoTDevice;
 
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 
 public interface IoTDeviceRepository extends JpaRepository<IoTDevice, UUID> {
     Optional<IoTDevice> findByDeviceCode(String deviceCode);

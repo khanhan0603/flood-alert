@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.entity.IoTSensorReading;
 
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 
 public interface IoTReadingSensorRepository extends JpaRepository<IoTSensorReading, UUID> {
         @Query("""

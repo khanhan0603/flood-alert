@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,7 +72,6 @@ public class SosAssignmentService {
         SosStatusHistoryRepository sosStatusHistoryRepository;
 
         // Dispatcher giao nhiệm vụ cho Rescue Group
-        @CacheEvict(value = "team-dashboard", allEntries = true)
         @Transactional
         public AssignmentResponse assignGroup(AssignGroupRequest request) {
 

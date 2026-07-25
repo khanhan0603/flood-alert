@@ -20,19 +20,12 @@ public class ApplicationInitConfig {
 
     AreaDataInitializerService areaDataInitializerService;
     UserDataInitializerService userDataInitializerService;
-    //StringRedisTemplate stringRedisTemplate;
 
     @Bean
     ApplicationRunner applicationRunner() {
         return args -> {
             areaDataInitializerService.init();
             userDataInitializerService.init();
-
-            // Reset Redis weather keys để backfill chạy lại từ đầu
-            // trigger redeploy
-            // stringRedisTemplate.delete("weather:backfill_done");
-            // stringRedisTemplate.delete("weather:last_area_id");
-            // log.info("RESET WEATHER REDIS KEYS");
         };
     }
 }

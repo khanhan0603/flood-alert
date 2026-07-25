@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import com.example.flood_alert.entity.CallTask;
 import com.example.flood_alert.enums.CallTaskStatus;
 
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 
 public interface CallTaskRepository extends JpaRepository<CallTask, UUID> {
 
