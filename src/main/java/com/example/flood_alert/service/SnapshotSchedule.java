@@ -7,11 +7,12 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class IoTAggregateScheduler {
-    private final IoTAreaAggregateService ioTAreaAggregateService;
+public class SnapshotSchedule {
+    private final SnapshotService snapshotService;
 
-    @Scheduled(cron = "0 */1 * * * *")
-    public void aggregate() {
-        ioTAreaAggregateService.aggregateAllAreas();
+
+    @Scheduled(cron="0 */15 * * * *")
+    public void generateSnapshots(){
+        snapshotService.generateAllSnapshots();
     }
 }
