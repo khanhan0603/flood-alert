@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.Notification;
+import com.example.flood_alert.entity.PredictionAlert;
 import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
 import com.example.flood_alert.entity.SupportRequest;
@@ -39,7 +40,7 @@ public class NotificationManagerService {
         UserRepository userRepository;
 
         @Transactional
-        public void notifyNewSos(User teamLeader,SosRequest sos) {
+        public void notifyNewSos(User teamLeader, SosRequest sos) {
 
                 if (teamLeader == null) {
                         return;
@@ -637,5 +638,42 @@ public class NotificationManagerService {
                 notificationWebPushProcessor.processPendingPushNotifications();
                 notificationEmailProcessor.processPendingEmails();
 
+        }
+
+        // Alert HIGH prediction
+        @Transactional
+        public void notifyHighRiskPrediction(
+                        User teamLeader,
+                        PredictionAlert alert) {
+
+                if (teamLeader == null) {
+                        return;
+                }
+
+                List<Notification> notifications = new ArrayList<>();
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(teamLeader)
+                                                .title(alert.getTitle())
+                                                .message(alert.getMessage())
+                                                .type(NotificationType.PREDICTION_HIGH_RISK)
+                                                .channel(Channel.EMAIL)
+                                                .status(StatusAlert.PENDING)
+                                                .build());
+
+                notifications.add(
+                                Notification.builder()
+                                                .user(teamLeader)
+                                                .title(alert.getTitle())
+                                                .message(alert.getMessage())
+                                                .type(NotificationType.PREDICTION_HIGH_RISK)
+                                                .channel(Channel.WEB_PUSH)
+                                                .status(StatusAlert.PENDING)
+                                                .build());
+
+                notificationRepository.saveAll(notifications);
+
+                notificationWebPushProcessor.processPendingPushNotifications();
         }
 }

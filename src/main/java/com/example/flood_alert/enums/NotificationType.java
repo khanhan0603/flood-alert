@@ -24,5 +24,7 @@ public enum NotificationType {
     SUPPORT_ASSIGNMENT_REJECTED,  // Team được điều động từ chối
 
     // Luồng call workflow bị fail
-    CALL_WORKFLOW_FAILED
+    CALL_WORKFLOW_FAILED,
+
+    PREDICTION_HIGH_RISK
 }

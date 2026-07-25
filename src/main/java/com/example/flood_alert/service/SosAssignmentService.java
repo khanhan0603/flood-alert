@@ -23,6 +23,7 @@ import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
 import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
+import com.example.flood_alert.entity.SosStatusHistory;
 import com.example.flood_alert.entity.SupportRequestItem;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.AssignmentRole;
@@ -42,6 +43,7 @@ import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
+import com.example.flood_alert.repository.SosStatusHistoryRepository;
 import com.example.flood_alert.repository.SupportRequestItemRepository;
 import com.example.flood_alert.repository.UserRepository;
 
@@ -68,6 +70,7 @@ public class SosAssignmentService {
         CallWorkflowService callWorkflowService;
         CallTaskMapper callTaskMapper;
         CallTaskRepository callTaskRepository;
+        SosStatusHistoryRepository sosStatusHistoryRepository;
 
         // Dispatcher giao nhiệm vụ cho Rescue Group
         @CacheEvict(value = "team-dashboard", allEntries = true)
@@ -112,6 +115,8 @@ public class SosAssignmentService {
                 if (sos.getStatus() == StatusSOS.PENDING) {
                         sos.setStatus(StatusSOS.ASSIGNED);
                         sosRequestRepository.save(sos);
+
+                        saveStatusHistory(sos, StatusSOS.ASSIGNED, "Giao nhiệm vụ cho nhóm " + group.getName());
                 }
 
                 // Group chuyển BUSY
@@ -122,6 +127,16 @@ public class SosAssignmentService {
                                 .assignmentId(assignment.getId())
                                 .callTask(callTaskMapper.toResponse(callTask))
                                 .build();
+        }
+
+        private void saveStatusHistory(SosRequest sos, StatusSOS status, String note) {
+
+                sosStatusHistoryRepository.save(
+                                SosStatusHistory.builder()
+                                                .sos(sos)
+                                                .status(status)
+                                                .note(note)
+                                                .build());
         }
 
         // Danh sách các group để giao nhiệm vụ, có đánh dấu group đã từng gọi
@@ -232,16 +247,24 @@ public class SosAssignmentService {
                 SosRequest sos = sosRequestRepository.findById(sosId)
                                 .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
 
+                StatusSOS oldStatus = sos.getStatus();
+                StatusSOS newStatus = oldStatus;
+
                 if (allCompleted) {
 
-                        sos.setStatus(StatusSOS.DONE);
+                        newStatus = StatusSOS.DONE;
 
                 } else if (hasProcessing || hasFailed) {
 
-                        sos.setStatus(StatusSOS.PROCESSING);
+                        newStatus = StatusSOS.PROCESSING;
                 }
 
+                sos.setStatus(newStatus);
                 sosRequestRepository.save(sos);
+
+                if (newStatus != oldStatus) {
+                        saveStatusHistory(sos, newStatus, null);
+                }
         }
 
         // Trả về danh sách các status assignment
@@ -501,6 +524,11 @@ public class SosAssignmentService {
 
                 // Cập nhật trạng thái SOS
                 updateSosStatus(assignment.getSos().getId());
+
+                saveStatusHistory(
+                                assignment.getSos(),
+                                assignment.getSos().getStatus(),
+                                "Nhóm " + group.getName() + " báo thất bại: " + request.getFailedReason());
         }
 
 }

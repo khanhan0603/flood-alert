@@ -44,6 +44,8 @@ public class CitizenSosDetailResponse {
 
     StatusSOS status;
 
+    SosHandlerResponse currentHandler;
+
     LocalDateTime createdAt;
 
     List<CitizenAssignmentResponse> assignments;

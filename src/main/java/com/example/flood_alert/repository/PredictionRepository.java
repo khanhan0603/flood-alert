@@ -147,4 +147,7 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
     List<HighRiskAreaResponse> findTopHighRiskAreas(
             UUID predictionJobHistoryId,
             Pageable pageable);
+
+    List<FloodPrediction> findByPredictionJobHistoryId(
+            UUID predictionJobHistoryId);
 }

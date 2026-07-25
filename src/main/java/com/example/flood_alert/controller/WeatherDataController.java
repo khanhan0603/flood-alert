@@ -58,11 +58,12 @@ public class WeatherDataController {
     }
 
     // test trước khi 00:30 fill dữ liệu
-    // @PostMapping("/sync-now")
-    // public String syncNow() {
-    // weatherDataInitializerService.triggerManualSync();
-    // return "OK";
-    // }
+    @PostMapping("/sync-now")
+    public String syncNow() {
+        weatherDataInitializerService.triggerManualSync();
+        return "OK";
+    }
+
     @PostMapping("/admin/weather/{areaId}/refill")
     public ResponseEntity<Void> refillWeather(@PathVariable UUID areaId) {
 

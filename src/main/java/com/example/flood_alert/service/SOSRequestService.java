@@ -21,13 +21,16 @@ import com.example.flood_alert.dbo.response.CitizenAssignmentResponse;
 import com.example.flood_alert.dbo.response.CitizenSosDetailResponse;
 import com.example.flood_alert.dbo.response.SosAssignmentResponse;
 import com.example.flood_alert.dbo.response.SosDetailResponse;
+import com.example.flood_alert.dbo.response.SosHandlerResponse;
 import com.example.flood_alert.dbo.response.SosResponse;
 import com.example.flood_alert.dbo.response.SupportRequestResponse;
 import com.example.flood_alert.dbo.response.TeamDashboardResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.RescueTeam;
+import com.example.flood_alert.entity.SosAssignment;
 import com.example.flood_alert.entity.SosRequest;
+import com.example.flood_alert.entity.SosStatusHistory;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.DispatcherType;
 import com.example.flood_alert.enums.EnvironmentRisk;
@@ -46,6 +49,7 @@ import com.example.flood_alert.repository.AreaRiskSnapshotRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.SosAssignmentRepository;
 import com.example.flood_alert.repository.SosRequestRepository;
+import com.example.flood_alert.repository.SosStatusHistoryRepository;
 import com.example.flood_alert.repository.SupportRequestRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -89,6 +93,7 @@ public class SOSRequestService {
                         StatusSOS.PENDING,
                         StatusSOS.PROCESSING);
         NotificationManagerService notificationManagerService;
+        SosStatusHistoryRepository sosStatusHistoryRepository;
 
         @Transactional
         @CacheEvict(value = "team-dashboard", allEntries = true)
@@ -582,64 +587,27 @@ public class SOSRequestService {
 
                 SosRequest sos = sosRequestRepository
                                 .findByIdAndUserId(sosId, currentUser.getId())
-                                .orElseThrow(() -> new AppException(
-                                                ErrorCode.SOS_NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
 
-                List<CitizenAssignmentResponse> assignments = sosAssignmentRepository
-                                .findBySosId(sosId)
-                                .stream()
-                                .map(assignment -> CitizenAssignmentResponse.builder()
-                                                .groupName(assignment.getGroup().getName())
-                                                .groupLeaderName(
-                                                                assignment.getGroup().getLeader() != null
-                                                                                ? assignment.getGroup().getLeader()
-                                                                                                .getHoten()
-                                                                                : null)
-                                                .groupLeaderPhone(
-                                                                assignment.getGroup().getLeader() != null
-                                                                                ? assignment.getGroup().getLeader()
-                                                                                                .getSodt()
-                                                                                : null)
-                                                .status(assignment.getStatus())
-                                                .role(assignment.getRole())
-                                                .build())
-                                .toList();
-
-                return CitizenSosDetailResponse.builder()
-                                .id(sos.getId())
-                                .trackingCode(sos.getTrackingCode())
-                                .phoneNumber(sos.getSodt())
-                                .victimCount(sos.getVictimCount())
-                                .injured(sos.getInjured())
-                                .trapped(sos.getTrapped())
-                                .vulnerable(sos.getVulnerable())
-                                .description(sos.getMota())
-                                .lat(sos.getLat())
-                                .lon(sos.getLon())
-                                .address(sos.getDiachi())
-                                .status(sos.getStatus())
-                                .createdAt(sos.getCreatedAt())
-                                .assignments(assignments)
-                                .build();
+                return buildCitizenDetail(sos);
         }
 
         // Get detail sos for người không có tài khoản
         @Transactional(readOnly = true)
         public CitizenSosDetailResponse getAnonymousSosDetail(
-                        UUID sosId,
-                        String sodt,
-                        String clientDeviceId) {
+                        UUID sosId, String sodt, String clientDeviceId) {
 
                 SosRequest sos = sosRequestRepository
-                                .findByIdAndSodtAndClientDeviceId(
-                                                sosId,
-                                                sodt,
-                                                clientDeviceId)
-                                .orElseThrow(() -> new AppException(
-                                                ErrorCode.SOS_NOT_FOUND));
+                                .findByIdAndSodtAndClientDeviceId(sosId, sodt, clientDeviceId)
+                                .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
+
+                return buildCitizenDetail(sos);
+        }
+
+        private CitizenSosDetailResponse buildCitizenDetail(SosRequest sos) {
 
                 List<CitizenAssignmentResponse> assignments = sosAssignmentRepository
-                                .findBySosId(sosId)
+                                .findBySosId(sos.getId())
                                 .stream()
                                 .map(assignment -> CitizenAssignmentResponse.builder()
                                                 .groupName(assignment.getGroup().getName())
@@ -658,6 +626,11 @@ public class SOSRequestService {
                                                 .build())
                                 .toList();
 
+                SosHandlerResponse currentHandler = (sos.getStatus() == StatusSOS.ASSIGNED
+                                || sos.getStatus() == StatusSOS.PROCESSING)
+                                                ? resolveCurrentHandler(sos)
+                                                : null;
+
                 return CitizenSosDetailResponse.builder()
                                 .id(sos.getId())
                                 .trackingCode(sos.getTrackingCode())
@@ -673,7 +646,37 @@ public class SOSRequestService {
                                 .status(sos.getStatus())
                                 .createdAt(sos.getCreatedAt())
                                 .assignments(assignments)
+                                .currentHandler(currentHandler)
                                 .build();
+        }
+
+        private SosHandlerResponse resolveCurrentHandler(SosRequest sos) {
+
+                List<SosAssignment> activePrimary = sosAssignmentRepository
+                                .findActivePrimaryAssignments(sos.getId());
+
+                if (!activePrimary.isEmpty()) {
+                        SosAssignment assignment = activePrimary.get(0);
+                        User groupLeader = assignment.getGroup().getLeader();
+
+                        return SosHandlerResponse.builder()
+                                        .label("Nhóm trưởng")
+                                        .name(groupLeader != null ? groupLeader.getHoten() : null)
+                                        .phone(groupLeader != null ? groupLeader.getSodt() : null)
+                                        .build();
+                }
+
+                // Chưa giao nhóm nào (hoặc nhóm trước đó FAILED và chưa giao lại)
+                // -> nếu đã có người điều phối claim, hiển thị người đó
+                if (sos.getDispatcherUser() != null) {
+                        return SosHandlerResponse.builder()
+                                        .label("Đội trưởng")
+                                        .name(sos.getDispatcherUser().getHoten())
+                                        .phone(sos.getDispatcherUser().getSodt())
+                                        .build();
+                }
+
+                return null;
         }
 
         // List sos request xếp theo status
@@ -905,6 +908,8 @@ public class SOSRequestService {
                 sos.setStatus(StatusSOS.CANCELED);
 
                 sosRequestRepository.save(sos);
+
+                saveStatusHistory(sos, StatusSOS.CANCELED, null);
         }
 
         // Cancel người có tài khoản
@@ -929,6 +934,18 @@ public class SOSRequestService {
                 sos.setStatus(StatusSOS.CANCELED);
 
                 sosRequestRepository.save(sos);
+
+                saveStatusHistory(sos, StatusSOS.CANCELED, null);
+        }
+
+        private void saveStatusHistory(SosRequest sos, StatusSOS status, String note) {
+
+                sosStatusHistoryRepository.save(
+                                SosStatusHistory.builder()
+                                                .sos(sos)
+                                                .status(status)
+                                                .note(note)
+                                                .build());
         }
 
         // Tra cứu sos theo tracking code và sodt cho người dân

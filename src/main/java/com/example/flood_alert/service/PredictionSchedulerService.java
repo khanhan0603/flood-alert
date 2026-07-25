@@ -26,6 +26,7 @@ public class PredictionSchedulerService {
     PredictionService predictionService;
     PredictionRepository predictionRepository;
     PredictionJobHistoryRepository predictionJobHistoryRepository;
+    PredictionAlertService predictionAlertService;
 
     private static final int TOTAL_AREAS = 3321;
     private static final int BATCH_SIZE = 100;
@@ -203,7 +204,7 @@ public class PredictionSchedulerService {
 
             log.info("Prediction job history saved. id={}", history.getId());
 
-            //Link ca chạy sang flood_prediction
+            // Link ca chạy sang flood_prediction
             int linked = predictionRepository.linkPredictionJobHistory(
                     history.getId(),
                     history.getStartedAt(),
@@ -212,6 +213,13 @@ public class PredictionSchedulerService {
             log.info(
                     "Linked {} flood predictions to prediction history {}",
                     linked,
+                    history.getId());
+
+            // alert
+            predictionAlertService.createAlerts(history.getId());
+
+            log.info(
+                    "Prediction alerts created for prediction history {}",
                     history.getId());
 
         } catch (Exception ex) {
