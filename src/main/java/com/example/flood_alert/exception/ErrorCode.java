@@ -93,6 +93,7 @@ public enum ErrorCode {
     GROUP_LEADER_NOT_FOUND(1083,"Không tìm thấy nhóm trưởng phụ trách nhiệm vụ này!"),
     SUPPORT_REQUEST_ALREADY_CLAIMED(1084,"Yêu cầu hỗ trợ đã có người nhận điều phối!"),
     SOS_ALREADY_CLAIMED(1085,"Yêu cầu cứu hộ đã có người nhận điều phối!"),
+    FLOOD_ALERT_NOT_FOUND(1086,"Không tìm thấy thông tin cảnh báo lũ lụt!"),
     ;
 
     int code;

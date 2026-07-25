@@ -1,5 +1,6 @@
 package com.example.flood_alert.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -8,10 +9,12 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.FloodAlertPopupResponse;
 import com.example.flood_alert.dbo.response.FloodAlertResponse;
 import com.example.flood_alert.service.AlertService;
 import com.example.flood_alert.service.EmailProcessor;
@@ -39,11 +42,32 @@ public class FloodAlertController {
     }
 
     @GetMapping("/my-alerts/{userId}")
-    public ApiResponse<Page<FloodAlertResponse>> getMyAlerts(@PathVariable UUID userId,@PageableDefault(page = 0,size = 10) Pageable pageable){
+    public ApiResponse<Page<FloodAlertResponse>> getMyAlerts(@PathVariable UUID userId,
+            @PageableDefault(page = 0, size = 10) Pageable pageable) {
 
         return ApiResponse.<Page<FloodAlertResponse>>builder()
                 .result(
-                        alertService.getAlertsByUser(userId,pageable))
+                        alertService.getAlertsByUser(userId, pageable))
+                .build();
+    }
+
+    // Danh sách popup cảnh báo lũ đang PENDING
+    @GetMapping("/popup")
+    public ApiResponse<List<FloodAlertPopupResponse>> getMyPopupAlerts() {
+
+        return ApiResponse.<List<FloodAlertPopupResponse>>builder()
+                .result(alertService.getMyPopupAlerts())
+                .build();
+    }
+
+    // Đánh dấu popup đã đọc
+    @PutMapping("/{alertId}/read")
+    public ApiResponse<Void> markPopupAlertAsRead(
+            @PathVariable UUID alertId) {
+
+        alertService.markPopupAlertAsRead(alertId);
+
+        return ApiResponse.<Void>builder()
                 .build();
     }
 

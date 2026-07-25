@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.event.SnapshotCreatedEvent;
 import com.example.flood_alert.repository.AreaRiskSnapshotRepository;
 import com.example.flood_alert.service.AlertService;

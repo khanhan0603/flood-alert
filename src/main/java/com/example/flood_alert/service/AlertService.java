@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.flood_alert.dbo.response.FloodAlertPopupResponse;
 import com.example.flood_alert.dbo.response.FloodAlertResponse;
 import com.example.flood_alert.entity.AreaRiskSnapshot;
 import com.example.flood_alert.entity.FloodAlert;
@@ -41,13 +42,14 @@ public class AlertService {
     EmailProcessor emailProcessor;
     WebPushProcessor webPushProcessor;
     AreaRiskSnapshotRepository areaRiskSnapshotRepository;
+    AuthenticationService authenticationService;
 
     private static final long ALERT_COOLDOW_SECONDS = 30;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processSnapshot(UUID snapshotId) {
         AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
-                .findByIdWithArea(snapshotId)                
+                .findByIdWithArea(snapshotId)
                 .orElseThrow(() -> new AppException(ErrorCode.SNAPSHOT_NOT_FOUND));
 
         log.info("PROCESS ALERT area={} risk={}",
@@ -112,7 +114,7 @@ public class AlertService {
                             .riskLevel(RiskLevel.HIGH)
                             .title(buildTitle(snapshot.getRiskLevel()))
                             .message(buildMessage(snapshot))
-                            .channel(Channel.EMAIL)
+                            .channel(Channel.POPUP)
                             .status(StatusAlert.PENDING)
                             .createdAt(now)
                             .build());
@@ -128,10 +130,10 @@ public class AlertService {
         }
 
         // try {
-        //     emailProcessor.processPendingEmails();
+        // emailProcessor.processPendingEmails();
         // } catch (Exception ex) {
-        //     log.error("Email processing failed", ex);
-        //     throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
+        // log.error("Email processing failed", ex);
+        // throw ex; // giữ nguyên hành vi rollback để không che giấu bug thật
         // }
     }
 
@@ -148,6 +150,18 @@ public class AlertService {
                             .title(buildTitle(snapshot.getRiskLevel()))
                             .message(buildMessage(snapshot))
                             .channel(Channel.WEB_PUSH)
+                            .status(StatusAlert.PENDING)
+                            .createdAt(now)
+                            .build());
+            alerts.add(
+                    FloodAlert.builder()
+                            .snapshot(snapshot)
+                            .user(user)
+                            .area(snapshot.getArea())
+                            .riskLevel(RiskLevel.HIGH)
+                            .title(buildTitle(snapshot.getRiskLevel()))
+                            .message(buildMessage(snapshot))
+                            .channel(Channel.POPUP)
                             .status(StatusAlert.PENDING)
                             .createdAt(now)
                             .build());
@@ -265,5 +279,44 @@ public class AlertService {
                         .createdAt(
                                 alert.getCreatedAt())
                         .build());
+    }
+
+    @Transactional(readOnly = true)
+    public List<FloodAlertPopupResponse> getMyPopupAlerts() {
+
+        User currentUser = authenticationService.getCurrentUser();
+
+        return floodAlertRepository
+                .findByUser_IdAndChannelAndStatusOrderByCreatedAtDesc(
+                        currentUser.getId(),
+                        Channel.POPUP,
+                        StatusAlert.PENDING)
+                .stream()
+                .map(alert -> FloodAlertPopupResponse.builder()
+                        .id(alert.getId())
+                        .title(alert.getTitle())
+                        .message(alert.getMessage())
+                        .tenkhuvuc(alert.getArea().getTenkhuvuc())
+                        .riskLevel(alert.getRiskLevel())
+                        .createdAt(alert.getCreatedAt())
+                        .build())
+                .toList();
+    }
+
+    @Transactional
+    public void markPopupAlertAsRead(UUID alertId) {
+
+        User currentUser = authenticationService.getCurrentUser();
+
+        FloodAlert alert = floodAlertRepository.findById(alertId)
+                .orElseThrow(() -> new AppException(ErrorCode.FLOOD_ALERT_NOT_FOUND));
+
+        if (!alert.getUser().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.FLOOD_ALERT_NOT_FOUND);
+        }
+
+        alert.setStatus(StatusAlert.SENT);
+
+        floodAlertRepository.save(alert);
     }
 }

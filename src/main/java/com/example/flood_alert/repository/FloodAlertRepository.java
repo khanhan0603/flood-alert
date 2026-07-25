@@ -33,4 +33,9 @@ public interface FloodAlertRepository extends JpaRepository<FloodAlert, UUID> {
     Page<FloodAlert> findByUserOrderByCreatedAtDesc(
             User user,
             Pageable pageable);
+
+    List<FloodAlert> findByUser_IdAndChannelAndStatusOrderByCreatedAtDesc(
+            UUID userId,
+            Channel channel,
+            StatusAlert status);
 }
