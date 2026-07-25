@@ -190,13 +190,9 @@ public class SupportRequestService {
 
                 User currentUser = authenticationService.getCurrentUser();
 
-                UUID provinceId = currentUser
-                                .getArea()
-                                .getId();
-
                 return supportRequestRepository
-                                .findByProvinceAndStatus(
-                                                provinceId,
+                                .findByDispatcherAndStatus(
+                                                currentUser.getId(),
                                                 SupportRequestSource.TEAM,
                                                 status,
                                                 pageable)
