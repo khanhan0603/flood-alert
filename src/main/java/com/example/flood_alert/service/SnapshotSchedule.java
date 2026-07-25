@@ -11,7 +11,7 @@ public class SnapshotSchedule {
     private final SnapshotService snapshotService;
 
 
-    @Scheduled(cron="0 */15 * * * *")
+    @Scheduled(cron="0 */02 * * * *")
     public void generateSnapshots(){
         snapshotService.generateAllSnapshots();
     }
