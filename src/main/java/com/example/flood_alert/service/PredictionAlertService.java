@@ -21,8 +21,10 @@ import com.example.flood_alert.repository.RescueTeamRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -34,9 +36,12 @@ public class PredictionAlertService {
         RescueTeamRepository rescueTeamRepository;
 
         public void createAlerts(UUID predictionJobHistoryId) {
+                log.info("=== CREATE ALERT START ===");
 
                 List<FloodPrediction> predictions = predictionRepository
                                 .findByPredictionJobHistoryId(predictionJobHistoryId);
+
+                log.info("Create alerts for job {}", predictionJobHistoryId);
 
                 List<PredictionAlert> alerts = new ArrayList<>();
 
@@ -52,9 +57,10 @@ public class PredictionAlertService {
                 }
 
                 predictionAlertRepository.saveAll(alerts);
+                log.info("Saved {} alerts", alerts.size());
 
                 for (PredictionAlert alert : alerts) {
-
+                        log.info("Processing area {}", alert.getArea().getId());
                         rescueTeamRepository
                                         .findByArea_Id(alert.getArea().getId())
                                         .ifPresent(team -> {
