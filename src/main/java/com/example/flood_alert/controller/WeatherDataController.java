@@ -3,6 +3,7 @@ package com.example.flood_alert.controller;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,8 +61,11 @@ public class WeatherDataController {
     // test trước khi 00:30 fill dữ liệu
     @PostMapping("/sync-now")
     public String syncNow() {
-        weatherDataInitializerService.triggerManualSync();
-        return "OK";
+
+        CompletableFuture.runAsync(
+                weatherDataInitializerService::triggerManualSync);
+
+        return "Weather sync started";
     }
 
     @PostMapping("/admin/weather/{areaId}/refill")
