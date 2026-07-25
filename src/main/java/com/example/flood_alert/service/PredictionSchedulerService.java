@@ -51,7 +51,7 @@ public class PredictionSchedulerService {
 
         log.info("START MANUAL PREDICTION");
 
-        runBatchPrediction(PredictionJobType.MORNING);
+        runBatchPrediction(PredictionJobType.EVENING);
     }
 
     private void runBatchPrediction(PredictionJobType jobType) {

@@ -1005,10 +1005,13 @@ public class SupportRequestService {
                         }
                 }
 
+                RescueTeam team = assignment.getGroup().getTeam();
+
                 SupportRequest supportRequest = SupportRequest.builder()
                                 .source(SupportRequestSource.GROUP)
                                 .status(SupportRequestStatus.PENDING)
                                 .requestedBy(currentUser)
+                                .dispatcherUser(team.getLeader())
                                 .sos(assignment.getSos())
                                 .reason(request.getReason())
                                 .createdAt(LocalDateTime.now())
