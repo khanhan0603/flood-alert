@@ -1218,7 +1218,11 @@ public class SupportRequestService {
                 supportRequestItemRepository.save(item);
 
                 // Kiểm tra toàn bộ Support Request
-                updateSupportRequestStatus(item.getSupportRequest());
+                SupportRequest supportRequest = supportRequestRepository
+                                .findById(item.getSupportRequest().getId())
+                                .orElseThrow(() -> new AppException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
+
+                updateSupportRequestStatus(supportRequest);
 
                 // Thông báo Group Leader có nhiệm vụ hỗ trợ mới
                 notificationManagerService.notifyAssignmentAssigned(assignment);
