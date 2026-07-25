@@ -1,7 +1,6 @@
 package com.example.flood_alert.service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -10,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -175,7 +175,15 @@ public class IoTAreaAggregateService {
                                 .recordedAt(recordedAt) // slot làm tròn, không phải endTime
                                 .build();
 
-                ioTAreaAggregateRepository.save(aggregate);
+                try {
+                        ioTAreaAggregateRepository.save(aggregate);
+                } catch (DataIntegrityViolationException e) {
+                        if (e.getMostSpecificCause().getMessage().contains("uk_area_recorded_at")) {
+                                log.info("Aggregate already exists. area={} recordedAt={}", areaId, recordedAt);
+                        } else {
+                                throw e;
+                        }
+                }
         }
 
         public void aggregateAllAreas() {

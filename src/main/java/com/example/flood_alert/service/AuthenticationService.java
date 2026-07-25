@@ -90,7 +90,7 @@ public class AuthenticationService {
         }
     }
 
-    @Transactional(timeout=5)
+    @Transactional
     public AuthenticateResponse refresh(RefreshRequest request)
             throws ParseException, JOSEException {
 

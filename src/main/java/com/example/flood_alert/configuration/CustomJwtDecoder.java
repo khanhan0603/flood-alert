@@ -41,8 +41,8 @@ public class CustomJwtDecoder implements JwtDecoder {
 
         String jti = jwt.getId();
 
-        System.out.println("JWT ID = " + jti);
-        System.out.println("Exists = " + invalidatedTokenRepository.existsByJwtId(jti));
+        // System.out.println("JWT ID = " + jti);
+        // System.out.println("Exists = " + invalidatedTokenRepository.existsByJwtId(jti));
 
         if (invalidatedTokenRepository.existsByJwtId(jti)) {
             throw new JwtException("Token has been invalidated");
