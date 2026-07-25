@@ -604,27 +604,8 @@ public class SOSRequestService {
 
         private CitizenSosDetailResponse buildCitizenDetail(SosRequest sos) {
 
-                List<CitizenAssignmentResponse> assignments = sosAssignmentRepository
-                                .findBySosId(sos.getId())
-                                .stream()
-                                .map(assignment -> CitizenAssignmentResponse.builder()
-                                                .groupName(assignment.getGroup().getName())
-                                                .groupLeaderName(
-                                                                assignment.getGroup().getLeader() != null
-                                                                                ? assignment.getGroup().getLeader()
-                                                                                                .getHoten()
-                                                                                : null)
-                                                .groupLeaderPhone(
-                                                                assignment.getGroup().getLeader() != null
-                                                                                ? assignment.getGroup().getLeader()
-                                                                                                .getSodt()
-                                                                                : null)
-                                                .status(assignment.getStatus())
-                                                .role(assignment.getRole())
-                                                .build())
-                                .toList();
-
-                SosHandlerResponse currentHandler = (sos.getStatus() == StatusSOS.ASSIGNED
+                SosHandlerResponse currentHandler = (sos.getStatus() == StatusSOS.PENDING
+                                || sos.getStatus() == StatusSOS.ASSIGNED
                                 || sos.getStatus() == StatusSOS.PROCESSING)
                                                 ? resolveCurrentHandler(sos)
                                                 : null;
@@ -683,14 +664,31 @@ public class SOSRequestService {
                                         .build();
                 }
 
-                // Chưa giao nhóm nào (hoặc nhóm trước đó FAILED và chưa giao lại)
-                // -> nếu đã có người điều phối claim, hiển thị người đó
+                // Đã có người claim dispatcher (thường là SOS qua Hotline,
+                // ai bắt máy nhận cuộc gọi thì người đó claim dispatcher)
                 if (sos.getDispatcherUser() != null) {
                         return SosHandlerResponse.builder()
                                         .label("Đội trưởng")
                                         .name(sos.getDispatcherUser().getHoten())
                                         .phone(sos.getDispatcherUser().getSodt())
                                         .build();
+                }
+
+                // Chưa ai claim dispatcher:
+                // - SOS gửi trực tiếp từ dân (DIRECT) -> mặc định Team Leader của Team
+                // phụ trách khu vực là người xử lý, vì họ luôn chịu trách nhiệm khu vực đó
+                // - SOS từ Hotline mà chưa ai claim -> chưa xác định được ai xử lý
+                if (sos.getSosSource() == SosSource.DIRECT) {
+
+                        User teamLeader = sos.getTeam().getLeader();
+
+                        if (teamLeader != null) {
+                                return SosHandlerResponse.builder()
+                                                .label("Đội trưởng")
+                                                .name(teamLeader.getHoten())
+                                                .phone(teamLeader.getSodt())
+                                                .build();
+                        }
                 }
 
                 return null;
