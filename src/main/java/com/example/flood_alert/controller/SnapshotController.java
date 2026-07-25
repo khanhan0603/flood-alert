@@ -107,4 +107,11 @@ public class SnapshotController {
                                 .build();
         }
 
+        @GetMapping("/latest")
+        public ApiResponse<List<AreaRiskSnapshotResponse>> getLatestSnapshots() {
+
+                return ApiResponse.<List<AreaRiskSnapshotResponse>>builder()
+                                .result(snapshotService.getLatestSnapshots())
+                                .build();
+        }
 }

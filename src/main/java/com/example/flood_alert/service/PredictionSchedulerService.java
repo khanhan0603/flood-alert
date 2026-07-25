@@ -79,10 +79,11 @@ public class PredictionSchedulerService {
                     offset,
                     BATCH_SIZE);
 
-            AiPredictionResponse response = predictionService.triggerPredictionBatch(
-                    offset,
-                    BATCH_SIZE);
+            log.info("CALL AI offset={}", offset);
 
+            AiPredictionResponse response = predictionService.triggerPredictionBatch(offset, BATCH_SIZE);
+
+            log.info("AI RETURN offset={}", offset);
             // Cộng dồn
             if (response != null) {
 

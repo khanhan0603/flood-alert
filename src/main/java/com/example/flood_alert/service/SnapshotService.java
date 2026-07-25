@@ -139,4 +139,27 @@ public class SnapshotService {
                                 .filter(Objects::nonNull)
                                 .toList();
         }
+
+        @Transactional(readOnly = true)
+        public List<AreaRiskSnapshotResponse> getLatestSnapshots() {
+
+                return areaRiskSnapshotRepository.findLatestSnapshots()
+                                .stream()
+                                .map(snapshot -> AreaRiskSnapshotResponse.builder()
+                                                .areaId(snapshot.getArea().getId())
+                                                .tenkhuvuc(snapshot.getArea().getTenkhuvuc())
+                                                .riskLevel(snapshot.getRiskLevel())
+                                                .iotRiskScore(snapshot.getIotRiskScore())
+                                                .predictionProbability(snapshot.getPredictionProbability())
+                                                .dangerRatio(snapshot.getDangerRatio())
+                                                .dangerDurationMinutes(snapshot.getDangerDurationMinutes())
+                                                .waterRiseRatePerMinute(snapshot.getWaterRiseRatePerMinute())
+                                                .dangerAggregateCount(snapshot.getDangerAggregateCount())
+                                                .dangerPercent(snapshot.getDangerPercent())
+                                                .predictionRiskLevel(snapshot.getPredictionRiskLevel())
+                                                .snapshotAt(snapshot.getSnapshotAt())
+                                                .createdAt(snapshot.getCreatedAt())
+                                                .build())
+                                .toList();
+        }
 }
