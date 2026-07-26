@@ -158,7 +158,7 @@ public class AlertService {
                             .snapshot(snapshot)
                             .user(user)
                             .area(snapshot.getArea())
-                            .riskLevel(RiskLevel.HIGH)
+                            .riskLevel(RiskLevel.MEDIUM)
                             .title(buildTitle(snapshot.getRiskLevel()))
                             .message(buildMessage(snapshot))
                             .channel(Channel.POPUP)
