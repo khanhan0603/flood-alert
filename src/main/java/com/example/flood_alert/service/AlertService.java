@@ -211,47 +211,55 @@ public class AlertService {
 
     // Check chống spam alert
     private boolean shouldSendAlert(AreaRiskSnapshot snapshot) {
-        log.info("CHECK COOLDOWN");
 
-        Optional<FloodAlert> latestAlertOpt = floodAlertRepository
-                .findTopByAreaOrderByCreatedAtDesc(snapshot.getArea());
+        Optional<AreaRiskSnapshot> previousSnapshotOpt = areaRiskSnapshotRepository
+                .findPreviousSnapshot(
+                        snapshot.getArea(),
+                        snapshot.getId());
 
-        log.info("Found latest={}", latestAlertOpt.isPresent());
+        if (previousSnapshotOpt.isEmpty()) {
+            return snapshot.getRiskLevel() != RiskLevel.LOW;
+        }
 
-        if (latestAlertOpt.isEmpty()) {
+        RiskLevel previousRisk = previousSnapshotOpt.get().getRiskLevel();
+        RiskLevel currentRisk = snapshot.getRiskLevel();
+
+        log.info("Previous risk={}", previousRisk);
+        log.info("Current risk={}", currentRisk);
+
+        // LOW -> MEDIUM
+        if (previousRisk == RiskLevel.LOW && currentRisk == RiskLevel.MEDIUM) {
             return true;
         }
 
-        FloodAlert latestAlert = latestAlertOpt.get();
-
-        RiskLevel currentRisk = snapshot.getRiskLevel();
-        RiskLevel previousRisk = latestAlert.getRiskLevel();
-
-        log.info("Latest created={}", latestAlert.getCreatedAt());
-        log.info("Now={}", LocalDateTime.now());
-        log.info("Current risk={}", currentRisk);
-        log.info("Previous risk={}", previousRisk);
-
         // MEDIUM -> HIGH
-        if (currentRisk.ordinal() > previousRisk.ordinal()) {
-            log.info("Risk upgraded -> allow");
+        if (previousRisk == RiskLevel.MEDIUM && currentRisk == RiskLevel.HIGH) {
+            return true;
+        }
+
+        // HIGH -> MEDIUM
+        if (previousRisk == RiskLevel.HIGH && currentRisk == RiskLevel.MEDIUM) {
             return true;
         }
 
         // HIGH -> HIGH hoặc MEDIUM -> MEDIUM
-        if (currentRisk == previousRisk) {
-            boolean allow = latestAlert.getCreatedAt()
+        if (previousRisk == currentRisk
+                && currentRisk != RiskLevel.LOW) {
+
+            Optional<FloodAlert> latestAlertOpt = floodAlertRepository
+                    .findTopByAreaOrderByCreatedAtDesc(snapshot.getArea());
+
+            if (latestAlertOpt.isEmpty()) {
+                return true;
+            }
+
+            return latestAlertOpt.get()
+                    .getCreatedAt()
                     .plusSeconds(ALERT_COOLDOW_SECONDS)
                     .isBefore(LocalDateTime.now());
-
-            log.info("Allow send={}", allow);
-
-            return allow;
         }
 
-        // HIGH -> MEDIUM
-        log.info("Risk downgraded -> block");
-
+        // LOW -> LOW, HIGH -> LOW, MEDIUM -> LOW
         return false;
     }
 
