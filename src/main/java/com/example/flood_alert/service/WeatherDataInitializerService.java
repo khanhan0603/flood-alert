@@ -84,26 +84,16 @@ public class WeatherDataInitializerService {
                     evapotranspiration=EXCLUDED.evapotranspiration
             """;
 
-    // =========================================================================
-    // SCHEDULER 1: 00:30 VN — sau model 17h UTC hôm qua
-    // =========================================================================
     @Scheduled(cron = "0 30 0 * * *", zone = "Asia/Ho_Chi_Minh")
     public void syncMidnight() {
         syncAll("SYNC-00h30");
     }
 
-    // =========================================================================
-    // SCHEDULER 2: 12:30 VN — sau model 05h UTC hôm nay
-    // =========================================================================
     @Scheduled(cron = "0 30 12 * * *", zone = "Asia/Ho_Chi_Minh")
     public void syncNoon() {
         syncAll("SYNC-12h30");
     }
 
-    // =========================================================================
-    // SCHEDULER 3: Cleanup 23:55 — xoá data quá khứ cũ hơn PAST_DAYS ngày
-    // Forecast (time > now) giữ nguyên cho AI
-    // =========================================================================
     @Scheduled(cron = "0 55 23 * * *", zone = "Asia/Ho_Chi_Minh")
     public void deleteOldData() {
         LocalDateTime cutoff = LocalDate.now().minusDays(PAST_DAYS).atStartOfDay();
@@ -116,18 +106,15 @@ public class WeatherDataInitializerService {
         }
     }
 
-    // =========================================================================
     // PUBLIC: Trigger thủ công (admin API / test)
-    // =========================================================================
     public void triggerManualSync() {
         log.info("MANUAL SYNC TRIGGERED");
         syncAll("MANUAL");
     }
 
-    /**
-     * On-demand: Controller gọi khi user mở phường/xã mà data cũ hơn ngưỡng.
-     * Chỉ tốn 1 request, không ảnh hưởng batch.
-     */
+    // On-demand: Controller gọi khi user mở phường/xã mà data cũ hơn ngưỡng.
+    // Chỉ tốn 1 request, không ảnh hưởng batch.
+    
     public boolean fetchOnDemand(Area area) {
         log.info("ON-DEMAND FETCH area={}", area.getId());
         RestTemplate restTemplate = buildRestTemplate();
@@ -145,9 +132,7 @@ public class WeatherDataInitializerService {
         }
     }
 
-    // =========================================================================
-    // CORE: Duyệt toàn bộ area, fetch + upsert
-    // =========================================================================
+    //Duyệt toàn bộ area, fetch + upsert
     private void syncAll(String label) {
         log.info("=== START [{}] ===", label);
 
@@ -190,10 +175,8 @@ public class WeatherDataInitializerService {
                 label, success, total, failed);
     }
 
-    // =========================================================================
-    // SAVE: Upsert 264 giờ/area bằng native SQL — không dùng JPA entity pipeline
+    //Upsert 264 giờ/area bằng native SQL — không dùng JPA entity pipeline
     // ON CONFLICT DO UPDATE → observed ghi đè forecast cũ đúng cách
-    // =========================================================================
     private void upsertHourly(Area area, JsonNode hourly) {
         JsonNode times = hourly.path("time");
 
@@ -228,9 +211,7 @@ public class WeatherDataInitializerService {
         });
     }
 
-    // =========================================================================
     // Helper: Build URL forecast — past_days + forecast_days trong 1 request
-    // =========================================================================
     private String buildForecastUrl(Area area) {
         return UriComponentsBuilder
                 .fromUriString(FORECAST_URL)
@@ -283,9 +264,7 @@ public class WeatherDataInitializerService {
         return null;
     }
 
-    // =========================================================================
     // Helper: Parse BigDecimal an toàn từ hourly array
-    // =========================================================================
     private BigDecimal decimal(JsonNode node, String field, int index) {
         JsonNode arr = node.path(field);
         if (!arr.isArray() || index >= arr.size() || arr.get(index).isNull())

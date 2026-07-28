@@ -232,6 +232,11 @@ public class AlertService {
             return true;
         }
 
+        // LOW -> HIGH
+        if (previousRisk == RiskLevel.LOW && currentRisk == RiskLevel.HIGH) {
+            return true;
+        }
+
         // MEDIUM -> HIGH
         if (previousRisk == RiskLevel.MEDIUM && currentRisk == RiskLevel.HIGH) {
             return true;
