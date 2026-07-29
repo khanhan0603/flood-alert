@@ -39,7 +39,7 @@ public class PredictionSchedulerService {
         runBatchPrediction(PredictionJobType.MORNING);
     }
 
-    @Scheduled(cron = "0 30 18 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 50 20 * * *", zone = "Asia/Ho_Chi_Minh")
     public void predictEvening() {
 
         log.info("START EVENING PREDICTION");
