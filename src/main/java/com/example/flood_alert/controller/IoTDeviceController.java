@@ -50,17 +50,17 @@ public class IoTDeviceController {
                 IoTDevice device = ioTDeviceService.registerDevice(request);
 
                 IoTDeviceDetailResponse response = IoTDeviceDetailResponse.builder()
-                                .id(device.getId().toString())
+                                .id(device.getId())
                                 .device_code(device.getDeviceCode())
-                                .area_id(device.getArea().getId().toString())
+                                .area_id(device.getArea().getId())
                                 .tenkhuvuc(device.getArea().getTenkhuvuc())
                                 .ten_thietbi(device.getTenThietBi())
                                 .trang_thai(device.getTrangThai())
                                 .lat(device.getLat())
                                 .lon(device.getLon())
                                 .nguong_canh_bao(device.getNguongCanhBao())
-                                .createdAt(device.getCreatedAt().toString())
-                                .updatedAt(device.getUpdatedAt().toString())
+                                .createdAt(device.getCreatedAt())
+                                .updatedAt(device.getUpdatedAt())
                                 .build();
 
                 return ApiResponse.<IoTDeviceDetailResponse>builder()
@@ -85,17 +85,17 @@ public class IoTDeviceController {
                                 adminId);
 
                 IoTDeviceDetailResponse response = IoTDeviceDetailResponse.builder()
-                                .id(device.getId().toString())
+                                .id(device.getId())
                                 .device_code(device.getDeviceCode())
-                                .area_id(device.getArea().getId().toString())
+                                .area_id(device.getArea().getId())
                                 .tenkhuvuc(device.getArea().getTenkhuvuc())
                                 .ten_thietbi(device.getTenThietBi())
                                 .trang_thai(device.getTrangThai())
                                 .lat(device.getLat())
                                 .lon(device.getLon())
                                 .nguong_canh_bao(device.getNguongCanhBao())
-                                .createdAt(device.getCreatedAt().toString())
-                                .updatedAt(device.getUpdatedAt().toString())
+                                .createdAt(device.getCreatedAt())
+                                .updatedAt(device.getUpdatedAt())
                                 .build();
 
                 return ApiResponse.<IoTDeviceDetailResponse>builder()
@@ -111,17 +111,17 @@ public class IoTDeviceController {
                 IoTDevice device = ioTDeviceService.rejectDevice(deviceId, adminId);
 
                 IoTDeviceDetailResponse response = IoTDeviceDetailResponse.builder()
-                                .id(device.getId().toString())
+                                .id(device.getId())
                                 .device_code(device.getDeviceCode())
-                                .area_id(device.getArea().getId().toString())
+                                .area_id(device.getArea().getId())
                                 .tenkhuvuc(device.getArea().getTenkhuvuc())
                                 .ten_thietbi(device.getTenThietBi())
                                 .trang_thai(device.getTrangThai())
                                 .lat(device.getLat())
                                 .lon(device.getLon())
                                 .nguong_canh_bao(device.getNguongCanhBao())
-                                .createdAt(device.getCreatedAt().toString())
-                                .updatedAt(device.getUpdatedAt().toString())
+                                .createdAt(device.getCreatedAt())
+                                .updatedAt(device.getUpdatedAt())
                                 .build();
 
                 return ApiResponse.<IoTDeviceDetailResponse>builder()
