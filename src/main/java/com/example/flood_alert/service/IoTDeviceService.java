@@ -11,8 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.IoTDeviceCreationRequest;
+import com.example.flood_alert.dbo.request.IoTDeviceUpdateRequest;
 import com.example.flood_alert.dbo.request.IoTReadingCreationRequest;
-import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
+import com.example.flood_alert.dbo.response.IoTDeviceDetailResponse;
 import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
 import com.example.flood_alert.dbo.response.NearestSensorHistoryResponse;
 import com.example.flood_alert.dbo.response.SensorWaterHistoryResponse;
@@ -78,21 +79,21 @@ public class IoTDeviceService {
                 return ioTDeviceRepository.save(device);
         }
 
-        public List<IoTDeviceCreationResponse> getListDevices() {
+        public List<IoTDeviceDetailResponse> getListDevices() {
                 return ioTDeviceRepository.getListOrderByTrangThai()
                                 .stream()
-                                .map(device -> IoTDeviceCreationResponse.builder()
-                                                .id(device.getId().toString())
+                                .map(device -> IoTDeviceDetailResponse.builder()
+                                                .id(device.getId())
                                                 .device_code(device.getDeviceCode())
-                                                .area_id(device.getArea().getId().toString())
+                                                .area_id(device.getArea().getId())
                                                 .tenkhuvuc(device.getArea().getTenkhuvuc())
                                                 .ten_thietbi(device.getTenThietBi())
+                                                .trang_thai(device.getTrangThai())
                                                 .lat(device.getLat())
                                                 .lon(device.getLon())
                                                 .nguong_canh_bao(device.getNguongCanhBao())
-                                                .trang_thai(device.getTrangThai().name())
-                                                .createdAt(device.getCreatedAt().toString())
-                                                .updatedAt(device.getUpdatedAt().toString())
+                                                .createdAt(device.getCreatedAt())
+                                                .updatedAt(device.getUpdatedAt())
                                                 .build())
                                 .toList();
         }
@@ -174,8 +175,7 @@ public class IoTDeviceService {
 
                         device.setConsecutiveInvalidCount(0);
 
-                        if (device.getTrangThai() == DeviceStatus.ERROR
-                                        || device.getTrangThai() == DeviceStatus.INACTIVE) {
+                        if (device.getTrangThai() == DeviceStatus.ERROR) {
                                 device.setTrangThai(DeviceStatus.ACTIVE);
                         }
 
@@ -287,4 +287,32 @@ public class IoTDeviceService {
                                 .build();
         }
 
+        public IoTDeviceDetailResponse getDeviceDetail(UUID deviceId) {
+                return ioTDeviceRepository
+                                .findDeviceDetail(deviceId)
+                                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
+        }
+
+        @Transactional
+        public IoTDeviceDetailResponse updateDevice(UUID deviceId, IoTDeviceUpdateRequest request) {
+                IoTDevice device = ioTDeviceRepository
+                                .findById(deviceId)
+                                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
+                UUID areaId = Optional.ofNullable(
+                                areaRepository.findAreaIdByLatLon(
+                                                request.getLat(),
+                                                request.getLon()))
+                                .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
+
+                Area area = areaRepository.getReferenceById(areaId);
+                device.setArea(area);
+                device.setTenThietBi(request.getTenThietBi());
+                device.setLat(request.getLat());
+                device.setLon(request.getLon());
+                device.setNguongCanhBao(request.getNguongCanhBao());
+                device.setDeviceHeight(request.getDeviceHeight());
+                device.setUpdatedAt(LocalDateTime.now());
+                device = ioTDeviceRepository.save(device);
+                return getDeviceDetail(device.getId());
+        }
 }

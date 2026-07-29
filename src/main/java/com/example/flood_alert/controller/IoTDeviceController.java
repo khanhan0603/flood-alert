@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.flood_alert.dbo.request.IoTDeviceCreationRequest;
 import com.example.flood_alert.dbo.request.IoTReadingCreationRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
-import com.example.flood_alert.dbo.response.IoTDeviceCreationResponse;
+import com.example.flood_alert.dbo.response.IoTDeviceDetailResponse;
 import com.example.flood_alert.dbo.response.IoTReadingSensorResponse;
 import com.example.flood_alert.dbo.response.NearestSensorHistoryResponse;
 import com.example.flood_alert.entity.IoTDevice;
@@ -30,6 +30,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.web.bind.annotation.PutMapping;
+
+import com.example.flood_alert.dbo.request.IoTDeviceUpdateRequest;
+
+
 @Slf4j
 @RestController
 @RequestMapping("/iot-device")
@@ -41,37 +46,37 @@ public class IoTDeviceController {
         IoTAreaAggregateService ioTAreaAggregateService;
 
         @PostMapping("/register-device")
-        public ApiResponse<IoTDeviceCreationResponse> registerDevice(@RequestBody IoTDeviceCreationRequest request) {
+        public ApiResponse<IoTDeviceDetailResponse> registerDevice(@RequestBody IoTDeviceCreationRequest request) {
                 IoTDevice device = ioTDeviceService.registerDevice(request);
 
-                IoTDeviceCreationResponse response = IoTDeviceCreationResponse.builder()
+                IoTDeviceDetailResponse response = IoTDeviceDetailResponse.builder()
                                 .id(device.getId().toString())
                                 .device_code(device.getDeviceCode())
                                 .area_id(device.getArea().getId().toString())
-                                .tenkhuvuc(areaService.getAreaName(device.getArea().getId()))
+                                .tenkhuvuc(device.getArea().getTenkhuvuc())
                                 .ten_thietbi(device.getTenThietBi())
+                                .trang_thai(device.getTrangThai())
                                 .lat(device.getLat())
                                 .lon(device.getLon())
                                 .nguong_canh_bao(device.getNguongCanhBao())
-                                .trang_thai(device.getTrangThai().name())
                                 .createdAt(device.getCreatedAt().toString())
                                 .updatedAt(device.getUpdatedAt().toString())
                                 .build();
 
-                return ApiResponse.<IoTDeviceCreationResponse>builder()
+                return ApiResponse.<IoTDeviceDetailResponse>builder()
                                 .result(response).build();
         }
 
         @GetMapping("/list-device")
-        public ApiResponse<List<IoTDeviceCreationResponse>> getListDevices() {
+        public ApiResponse<List<IoTDeviceDetailResponse>> getListDevices() {
 
-                return ApiResponse.<List<IoTDeviceCreationResponse>>builder()
+                return ApiResponse.<List<IoTDeviceDetailResponse>>builder()
                                 .result(ioTDeviceService.getListDevices())
                                 .build();
         }
 
         @PatchMapping("/{deviceId}/approve")
-        public ApiResponse<IoTDeviceCreationResponse> approveDevice(
+        public ApiResponse<IoTDeviceDetailResponse> approveDevice(
                         @PathVariable UUID deviceId,
                         @RequestParam UUID adminId) {
 
@@ -79,47 +84,47 @@ public class IoTDeviceController {
                                 deviceId,
                                 adminId);
 
-                IoTDeviceCreationResponse response = IoTDeviceCreationResponse.builder()
+                IoTDeviceDetailResponse response = IoTDeviceDetailResponse.builder()
                                 .id(device.getId().toString())
                                 .device_code(device.getDeviceCode())
                                 .area_id(device.getArea().getId().toString())
                                 .tenkhuvuc(device.getArea().getTenkhuvuc())
                                 .ten_thietbi(device.getTenThietBi())
+                                .trang_thai(device.getTrangThai())
                                 .lat(device.getLat())
                                 .lon(device.getLon())
                                 .nguong_canh_bao(device.getNguongCanhBao())
-                                .trang_thai(device.getTrangThai().name())
                                 .createdAt(device.getCreatedAt().toString())
                                 .updatedAt(device.getUpdatedAt().toString())
                                 .build();
 
-                return ApiResponse.<IoTDeviceCreationResponse>builder()
+                return ApiResponse.<IoTDeviceDetailResponse>builder()
                                 .result(response)
                                 .build();
         }
 
         @PatchMapping("/{deviceId}/reject")
-        public ApiResponse<IoTDeviceCreationResponse> rejectDevice(
+        public ApiResponse<IoTDeviceDetailResponse> rejectDevice(
                         @PathVariable UUID deviceId,
                         @RequestParam UUID adminId) {
 
                 IoTDevice device = ioTDeviceService.rejectDevice(deviceId, adminId);
 
-                IoTDeviceCreationResponse response = IoTDeviceCreationResponse.builder()
+                IoTDeviceDetailResponse response = IoTDeviceDetailResponse.builder()
                                 .id(device.getId().toString())
                                 .device_code(device.getDeviceCode())
                                 .area_id(device.getArea().getId().toString())
                                 .tenkhuvuc(device.getArea().getTenkhuvuc())
                                 .ten_thietbi(device.getTenThietBi())
+                                .trang_thai(device.getTrangThai())
                                 .lat(device.getLat())
                                 .lon(device.getLon())
                                 .nguong_canh_bao(device.getNguongCanhBao())
-                                .trang_thai(device.getTrangThai().name())
                                 .createdAt(device.getCreatedAt().toString())
                                 .updatedAt(device.getUpdatedAt().toString())
                                 .build();
 
-                return ApiResponse.<IoTDeviceCreationResponse>builder()
+                return ApiResponse.<IoTDeviceDetailResponse>builder()
                                 .result(response)
                                 .build();
         }
@@ -174,5 +179,17 @@ public class IoTDeviceController {
                                                                 lat,
                                                                 lon))
                                 .build();
+        }
+
+        @PostMapping("/detail/{deviceId}")
+        public ApiResponse<IoTDeviceDetailResponse>getDeviceDetail(@PathVariable UUID deviceId) {
+                return ApiResponse.<IoTDeviceDetailResponse>builder()
+                                .result(ioTDeviceService.getDeviceDetail(deviceId)).build();
+        }
+
+        @PutMapping("/update/{deviceId}")
+        public ApiResponse<IoTDeviceDetailResponse> updateDevice(@PathVariable UUID deviceId, @RequestBody IoTDeviceUpdateRequest request) {
+            return ApiResponse.<IoTDeviceDetailResponse>builder()
+                            .result(ioTDeviceService.updateDevice(deviceId, request)).build();
         }
 }

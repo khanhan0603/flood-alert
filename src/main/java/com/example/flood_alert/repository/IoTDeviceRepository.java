@@ -6,10 +6,10 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-
-import com.example.flood_alert.entity.IoTDevice;
-
 import org.springframework.data.repository.query.Param;
+
+import com.example.flood_alert.dbo.response.IoTDeviceDetailResponse;
+import com.example.flood_alert.entity.IoTDevice;
 
 public interface IoTDeviceRepository extends JpaRepository<IoTDevice, UUID> {
     Optional<IoTDevice> findByDeviceCode(String deviceCode);
@@ -77,4 +77,23 @@ public interface IoTDeviceRepository extends JpaRepository<IoTDevice, UUID> {
             UUID deviceId,
             double lat,
             double lon);
+
+    @Query("""
+            SELECT new com.example.flood_alert.dbo.response.IoTDeviceDetailResponse(
+                d.id,
+                d.deviceCode,
+                d.area.id,
+                d.area.tenkhuvuc,
+                d.tenThietBi,
+                d.nguongCanhBao,
+                d.trangThai,
+                d.lat,
+                d.lon,
+                d.createdAt,
+                d.updatedAt
+            )
+            FROM IoTDevice d
+            WHERE d.id = :deviceId
+            """)
+    Optional<IoTDeviceDetailResponse> findDeviceDetail(@Param("deviceId") UUID deviceId);
 }

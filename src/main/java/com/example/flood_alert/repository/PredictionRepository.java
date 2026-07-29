@@ -87,27 +87,27 @@ public interface PredictionRepository extends JpaRepository<FloodPrediction, UUI
     @Modifying
     @Transactional
     @Query(value = """
-            UPDATE flood_predictions fp
+                        UPDATE flood_predictions fp
             SET prediction_job_history_id = :historyId
             WHERE fp.prediction_job_history_id IS NULL
-              AND DATE(fp.predicted_at + INTERVAL '7 hour') = DATE(:startedAt)
+              AND DATE(fp.predicted_at) = DATE(:startedAt)
               AND (
                     (
                         :jobType = 'MORNING'
-                        AND (fp.predicted_at + INTERVAL '7 hour')::time >= TIME '06:30:00'
-                        AND (fp.predicted_at + INTERVAL '7 hour')::time < TIME '18:30:00'
+                        AND fp.predicted_at::time >= TIME '06:30:00'
+                        AND fp.predicted_at::time < TIME '18:30:00'
                     )
                     OR
                     (
                         :jobType = 'EVENING'
                         AND (
-                            (fp.predicted_at + INTERVAL '7 hour')::time >= TIME '18:30:00'
+                            fp.predicted_at::time >= TIME '18:30:00'
                             OR
-                            (fp.predicted_at + INTERVAL '7 hour')::time < TIME '06:30:00'
+                            fp.predicted_at::time < TIME '06:30:00'
                         )
                     )
               )
-            """, nativeQuery = true)
+                        """, nativeQuery = true)
     int linkPredictionJobHistory(
             @Param("historyId") UUID historyId,
             @Param("startedAt") LocalDateTime startedAt,

@@ -26,7 +26,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 public class IoTDevice extends BaseEntity {
-    @Column(name="device_code")
+    @Column(name = "device_code")
     private String deviceCode;
 
     @ManyToOne
@@ -49,6 +49,9 @@ public class IoTDevice extends BaseEntity {
     @Column(name = "trang_thai", nullable = false)
     private DeviceStatus trangThai;
 
+    @Column(name = "device_height", nullable = false, precision = 5, scale = 2)
+    private BigDecimal deviceHeight;
+
     private LocalDateTime lastSeenAt;
 
     @ManyToOne
@@ -63,6 +66,6 @@ public class IoTDevice extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(nullable=false)
+    @Column(nullable = false)
     private Integer consecutiveInvalidCount;
 }
