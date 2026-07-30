@@ -3,6 +3,9 @@ package com.example.flood_alert.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -22,11 +25,11 @@ import lombok.Setter;
 @Setter
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor
 public class PasswordResetToken extends BaseEntity {
 
-    @Column(nullable = false, unique = true)
-    private UUID token;
+    @Column(nullable = false, unique = true, length = 6)
+    private String token;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -38,4 +41,10 @@ public class PasswordResetToken extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean used = false;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 }

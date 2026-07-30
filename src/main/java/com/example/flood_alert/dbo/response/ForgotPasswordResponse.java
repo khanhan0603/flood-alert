@@ -7,5 +7,6 @@ import lombok.Getter;
 @Builder
 public class ForgotPasswordResponse {
 
+    private String email;
     private String message;
 }

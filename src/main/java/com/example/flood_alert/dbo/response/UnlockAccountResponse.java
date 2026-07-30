@@ -6,6 +6,6 @@ import lombok.Getter;
 @Getter
 @Builder
 public class UnlockAccountResponse {
-
+    private String email;
     private String message;
 }

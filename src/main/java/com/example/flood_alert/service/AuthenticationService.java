@@ -436,10 +436,15 @@ public class AuthenticationService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
+        // Xóa OTP cũ của người dùng
         passwordResetTokenRepository.deleteByUserId(user.getId());
 
+        // Sinh OTP 6 chữ số
+        String otp = String.format("%06d",
+                ThreadLocalRandom.current().nextInt(1_000_000));
+
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(UUID.randomUUID())
+                .token(otp)
                 .user(user)
                 .expiredAt(LocalDateTime.now().plusMinutes(15))
                 .used(false)
@@ -452,18 +457,20 @@ public class AuthenticationService {
 
                 Bạn đã yêu cầu đặt lại mật khẩu.
 
-                Token đặt lại mật khẩu:
+                Mã xác thực của bạn là:
 
                 %s
 
-                Token có hiệu lực trong 15 phút.
-                Nếu bạn không thực hiện yêu cầu này thì hãy bỏ qua email.
+                Mã có hiệu lực trong 15 phút.
 
+                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.
+
+                Trân trọng,
                 Flood Alert System
                 """
                 .formatted(
                         user.getHoten(),
-                        resetToken.getToken());
+                        otp);
 
         emailService.sendEmail(
                 user.getEmail(),
@@ -471,23 +478,16 @@ public class AuthenticationService {
                 content);
 
         return ForgotPasswordResponse.builder()
-                .message("Đã gửi email đặt lại mật khẩu.")
+                .email(user.getEmail())
+                .message("Đã gửi mã xác thực đến email của bạn.")
                 .build();
     }
 
     @Transactional
     public ForgotPasswordResponse resetPassword(ResetPasswordRequest request) {
 
-        UUID token;
-
-        try {
-            token = UUID.fromString(request.getToken());
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
-
         PasswordResetToken resetToken = passwordResetTokenRepository
-                .findByToken(token)
+                .findByUserEmailAndToken(request.getEmail(), request.getToken())
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
         if (Boolean.TRUE.equals(resetToken.getUsed())) {
@@ -509,6 +509,7 @@ public class AuthenticationService {
         passwordResetTokenRepository.save(resetToken);
 
         return ForgotPasswordResponse.builder()
+                .email(user.getEmail())
                 .message("Đổi mật khẩu thành công.")
                 .build();
     }
@@ -560,6 +561,7 @@ public class AuthenticationService {
                 content);
 
         return UnlockAccountResponse.builder()
+                .email(user.getEmail())
                 .message("Đã gửi mã xác thực đến email.")
                 .build();
     }
@@ -591,11 +593,12 @@ public class AuthenticationService {
         accountUnlockTokenRepository.save(unlockToken);
 
         return UnlockAccountResponse.builder()
+                .email(user.getEmail())
                 .message("Mở khóa tài khoản thành công.")
                 .build();
     }
 
-    //Dọn OTP hết hạn
+    // Dọn OTP hết hạn
     @Scheduled(cron = "0 */10 * * * *")
     @Transactional
     public void cleanUnlockOtp() {

@@ -10,7 +10,7 @@ import com.example.flood_alert.entity.PasswordResetToken;
 
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, UUID> {
 
-    Optional<PasswordResetToken> findByToken(UUID token);
+    Optional<PasswordResetToken> findByUserEmailAndToken(String email, String token);
 
     void deleteByExpiredAtBefore(LocalDateTime time);
 
