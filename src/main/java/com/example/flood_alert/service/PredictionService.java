@@ -133,7 +133,7 @@ public class PredictionService {
     public AiPredictionResponse triggerPredictionTestBatch(PredictRequest request) {
 
         ResponseEntity<AiPredictionResponse> response = restTemplate.postForEntity(
-                localFastApiUrl + "/predict-test-batch",
+                fastApiUrl + "/predict-test-batch",
                 request,
                 AiPredictionResponse.class);
 
@@ -142,7 +142,7 @@ public class PredictionService {
         try {
 
             ResponseEntity<Recovery> recoveryResponse = restTemplate.postForEntity(
-                    localFastApiUrl + "/recover-test",
+                    fastApiUrl + "/recover-test",
                     request,
                     Recovery.class);
 
