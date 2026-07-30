@@ -46,6 +46,14 @@ public class PredictionController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/run-one")
+    public ResponseEntity<AiPredictionResponse> runPredictionOneArea(@RequestParam UUID areaId) {
+
+        AiPredictionResponse response = predictionService.triggerPredictionOneArea(areaId);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/list-by-area")
     public List<FloodPredictionResponse> getListByArea(@RequestParam UUID areaId) {
         return predictionService.findPredictionByArea(areaId);

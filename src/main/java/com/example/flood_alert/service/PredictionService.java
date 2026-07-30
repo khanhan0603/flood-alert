@@ -96,7 +96,6 @@ public class PredictionService {
         return restTemplate.getForObject(fastApiUrl + "/predict-all/status", String.class);
     }
 
-
     public List<FloodPredictionResponse> getAllPrediction() {
         return predictionRepository.findLatestPredictionsForAllAreas();
     }
@@ -159,5 +158,13 @@ public class PredictionService {
         }
 
         return result;
+    }
+
+    public AiPredictionResponse triggerPredictionOneArea(UUID areaId) {
+
+        PredictRequest request = new PredictRequest();
+        request.setAreaIds(List.of(areaId));
+
+        return triggerPredictionTestBatch(request);
     }
 }
