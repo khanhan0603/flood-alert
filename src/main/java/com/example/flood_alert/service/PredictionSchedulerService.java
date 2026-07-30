@@ -31,7 +31,7 @@ public class PredictionSchedulerService {
     private static final int TOTAL_AREAS = 3321;
     private static final int BATCH_SIZE = 100;
 
-    @Scheduled(cron = "0 30 06 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 20 16 * * *", zone = "Asia/Ho_Chi_Minh")
     public void predictMorning() {
 
         log.info("START MORNING PREDICTION");
@@ -39,7 +39,7 @@ public class PredictionSchedulerService {
         runBatchPrediction(PredictionJobType.MORNING);
     }
 
-    @Scheduled(cron = "0 50 20 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 30 18 * * *", zone = "Asia/Ho_Chi_Minh")
     public void predictEvening() {
 
         log.info("START EVENING PREDICTION");
