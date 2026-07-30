@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
+import com.example.flood_alert.dbo.request.CreateRescuerRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
@@ -27,6 +28,7 @@ import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamLeaderResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
+import com.example.flood_alert.dbo.response.RescuerResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
 import com.example.flood_alert.service.RescueTeamService;
 
@@ -66,14 +68,14 @@ public class RescueTeamController {
         // @PutMapping("/{teamId}/leader")
         // @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
         // public ApiResponse<TeamLeaderResponse> assignLeader(
-        //                 @PathVariable UUID teamId,
-        //                 @RequestBody AssignTeamLeaderRequest request) {
+        // @PathVariable UUID teamId,
+        // @RequestBody AssignTeamLeaderRequest request) {
 
-        //         return ApiResponse.<TeamLeaderResponse>builder()
-        //                         .result(rescueTeamService.assignLeader(
-        //                                         teamId,
-        //                                         request))
-        //                         .build();
+        // return ApiResponse.<TeamLeaderResponse>builder()
+        // .result(rescueTeamService.assignLeader(
+        // teamId,
+        // request))
+        // .build();
         // }
 
         // Danh sách leader & deputy theo khu vực
@@ -150,7 +152,17 @@ public class RescueTeamController {
                         @Valid @RequestBody UpdateRescueTeamLeaderRequest request) {
 
                 return ApiResponse.<RescueTeamLeaderResponse>builder()
-                                .result(rescueTeamService.updateLeader(teamId, request))
+                                .result(rescueTeamService.updateLeaderAndDeputy(teamId, request))
+                                .build();
+        }
+
+        @PostMapping("/rescuer")
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+        public ApiResponse<RescuerResponse> createRescuer(
+                        @RequestBody @Valid CreateRescuerRequest request) {
+
+                return ApiResponse.<RescuerResponse>builder()
+                                .result(rescueTeamService.createRescuer(request))
                                 .build();
         }
 }

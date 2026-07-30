@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.StringJoiner;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,19 +19,32 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.AuthenticateRequest;
+import com.example.flood_alert.dbo.request.ForgotPasswordRequest;
 import com.example.flood_alert.dbo.request.IntrospectRequest;
 import com.example.flood_alert.dbo.request.LogoutRequest;
 import com.example.flood_alert.dbo.request.RefreshRequest;
+import com.example.flood_alert.dbo.request.ResetPasswordRequest;
+import com.example.flood_alert.dbo.request.SendUnlockCodeRequest;
+import com.example.flood_alert.dbo.request.UnlockAccountRequest;
+import com.example.flood_alert.dbo.request.UpdateUserStatusRequest;
 import com.example.flood_alert.dbo.response.AuthenticateResponse;
+import com.example.flood_alert.dbo.response.ForgotPasswordResponse;
 import com.example.flood_alert.dbo.response.IntrospectResponse;
+import com.example.flood_alert.dbo.response.UnlockAccountResponse;
+import com.example.flood_alert.dbo.response.UpdateUserStatusResponse;
+import com.example.flood_alert.entity.AccountUnlockToken;
 import com.example.flood_alert.entity.InvalidatedToken;
+import com.example.flood_alert.entity.PasswordResetToken;
 import com.example.flood_alert.entity.RefreshToken;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.RescueGroupType;
 import com.example.flood_alert.enums.Role;
+import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
+import com.example.flood_alert.repository.AccountUnlockTokenRepository;
 import com.example.flood_alert.repository.InvalidatedTokenRepository;
+import com.example.flood_alert.repository.PasswordResetTokenRepository;
 import com.example.flood_alert.repository.RefreshTokenRepository;
 import com.example.flood_alert.repository.RescueGroupMemberRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
@@ -66,6 +80,10 @@ public class AuthenticationService {
     RefreshTokenRepository refreshTokenRepository;
     RescueGroupMemberRepository rescueGroupMemberRepository;
     UserFcmTokenRepository userFcmTokenRepository;
+    PasswordResetTokenRepository passwordResetTokenRepository;
+    EmailService emailService;
+    PasswordEncoder passwordEncoder;
+    AccountUnlockTokenRepository accountUnlockTokenRepository;
 
     @NonFinal
     @Value("${jwt.signedKey}")
@@ -96,11 +114,11 @@ public class AuthenticationService {
 
         log.info("Refresh token = {}", request.getRefreshToken());
         if (request == null
-            || request.getRefreshToken() == null
-            || request.getRefreshToken().isBlank()) {
-        throw new AppException(ErrorCode.UNAUTHENTICATED);
-    }
-        
+                || request.getRefreshToken() == null
+                || request.getRefreshToken().isBlank()) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
         SignedJWT signedJWT = verifyToken(request.getRefreshToken());
 
         String type = signedJWT.getJWTClaimsSet()
@@ -412,4 +430,175 @@ public class AuthenticationService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
     }
 
+    @Transactional
+    public ForgotPasswordResponse forgotPassword(ForgotPasswordRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        passwordResetTokenRepository.deleteByUserId(user.getId());
+
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(UUID.randomUUID())
+                .user(user)
+                .expiredAt(LocalDateTime.now().plusMinutes(15))
+                .used(false)
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+
+        String content = """
+                Xin chào %s,
+
+                Bạn đã yêu cầu đặt lại mật khẩu.
+
+                Token đặt lại mật khẩu:
+
+                %s
+
+                Token có hiệu lực trong 15 phút.
+                Nếu bạn không thực hiện yêu cầu này thì hãy bỏ qua email.
+
+                Flood Alert System
+                """
+                .formatted(
+                        user.getHoten(),
+                        resetToken.getToken());
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Đặt lại mật khẩu",
+                content);
+
+        return ForgotPasswordResponse.builder()
+                .message("Đã gửi email đặt lại mật khẩu.")
+                .build();
+    }
+
+    @Transactional
+    public ForgotPasswordResponse resetPassword(ResetPasswordRequest request) {
+
+        UUID token;
+
+        try {
+            token = UUID.fromString(request.getToken());
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        PasswordResetToken resetToken = passwordResetTokenRepository
+                .findByToken(token)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        if (Boolean.TRUE.equals(resetToken.getUsed())) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        if (resetToken.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        User user = resetToken.getUser();
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+
+        passwordResetTokenRepository.save(resetToken);
+
+        return ForgotPasswordResponse.builder()
+                .message("Đổi mật khẩu thành công.")
+                .build();
+    }
+
+    @Transactional
+    public UnlockAccountResponse sendUnlockCode(SendUnlockCodeRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (user.getTrangthai() == Status.ACTIVE) {
+            throw new AppException(ErrorCode.ACCOUNT_ALREADY_ACTIVE);
+        }
+
+        accountUnlockTokenRepository.deleteByUserId(user.getId());
+
+        String otp = String.format("%06d",
+                ThreadLocalRandom.current().nextInt(1000000));
+
+        AccountUnlockToken unlockToken = AccountUnlockToken.builder()
+                .otp(otp)
+                .user(user)
+                .expiredAt(LocalDateTime.now().plusMinutes(5))
+                .used(false)
+                .build();
+
+        accountUnlockTokenRepository.save(unlockToken);
+
+        String content = """
+                Xin chào %s,
+
+                Bạn đã yêu cầu mở khóa tài khoản.
+
+                Mã xác thực của bạn là:
+
+                %s
+
+                Mã có hiệu lực trong 5 phút.
+
+                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.
+
+                Flood Alert System
+                """
+                .formatted(user.getHoten(), otp);
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Mở khóa tài khoản",
+                content);
+
+        return UnlockAccountResponse.builder()
+                .message("Đã gửi mã xác thực đến email.")
+                .build();
+    }
+
+    @Transactional
+    public UnlockAccountResponse unlockAccount(UnlockAccountRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        AccountUnlockToken unlockToken = accountUnlockTokenRepository
+                .findByUserIdAndOtp(user.getId(), request.getOtp())
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_UNLOCK_OTP));
+
+        if (Boolean.TRUE.equals(unlockToken.getUsed())) {
+            throw new AppException(ErrorCode.UNLOCK_OTP_USED);
+        }
+
+        if (unlockToken.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new AppException(ErrorCode.UNLOCK_OTP_EXPIRED);
+        }
+
+        user.setTrangthai(Status.ACTIVE);
+
+        userRepository.save(user);
+
+        unlockToken.setUsed(true);
+
+        accountUnlockTokenRepository.save(unlockToken);
+
+        return UnlockAccountResponse.builder()
+                .message("Mở khóa tài khoản thành công.")
+                .build();
+    }
+
+    //Dọn OTP hết hạn
+    @Scheduled(cron = "0 */10 * * * *")
+    @Transactional
+    public void cleanUnlockOtp() {
+        accountUnlockTokenRepository.deleteByExpiredAtBefore(LocalDateTime.now());
+    }
 }

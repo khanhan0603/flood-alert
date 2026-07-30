@@ -4,16 +4,22 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.flood_alert.dbo.request.CreateProvinceOperatorRequest;
+import com.example.flood_alert.dbo.request.DeleteProvinceOperatorRequest;
 import com.example.flood_alert.dbo.response.ProvinceOperatorDetailResponse;
 import com.example.flood_alert.dbo.response.ProvinceOperatorResponse;
 import com.example.flood_alert.dbo.response.RescueTeamSummaryResponse;
+import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.enums.Role;
+import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
+import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
 import com.example.flood_alert.repository.UserRepository;
@@ -31,6 +37,8 @@ public class ProvinceOperatorService {
         UserRepository userRepository;
         RescueTeamRepository rescueTeamRepository;
         RescueGroupRepository rescueGroupRepository;
+        AreaRepository areaRepository;
+        PasswordEncoder passwordEncoder;
 
         // Danh sách các province
         @Transactional(readOnly = true)
@@ -108,5 +116,62 @@ public class ProvinceOperatorService {
                                                                                 .countByTeamId(
                                                                                                 team.getId()))
                                                 .build());
+        }
+
+        @Transactional
+        public ProvinceOperatorResponse create(
+                        CreateProvinceOperatorRequest request) {
+
+                if (userRepository.existsByEmail(request.getEmail())) {
+                        throw new AppException(ErrorCode.EMAIL_EXISTED);
+                }
+
+                if (userRepository.existsBySodt(request.getSodt())) {
+                        throw new AppException(ErrorCode.PHONE_EXISTED);
+                }
+
+                Area area = areaRepository.findById(request.getAreaId())
+                                .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
+
+                User provinceOperator = User.builder()
+                                .hoten(request.getHoten())
+                                .email(request.getEmail())
+                                .sodt(request.getSodt())
+                                .gioitinh(request.getGioitinh())
+                                .ngaysinh(request.getNgaysinh())
+                                .diachi(request.getDiachi())
+                                .password(passwordEncoder.encode("123456"))
+                                .role(Role.PROVINCE_OPERATOR)
+                                .trangthai(Status.ACTIVE)
+                                .area(area)
+                                .team(null)
+                                .build();
+
+                provinceOperator = userRepository.save(provinceOperator);
+
+                return ProvinceOperatorResponse.builder()
+                                .id(provinceOperator.getId())
+                                .hoten(provinceOperator.getHoten())
+                                .tenkhuvuc_phutrach(
+                                                provinceOperator.getArea().getTenkhuvuc())
+                                .build();
+        }
+
+        @Transactional
+        public void delete(DeleteProvinceOperatorRequest request) {
+
+                List<User> provinceOperators = userRepository.findAllByIdIn(request.getIds());
+
+                if (provinceOperators.size() != request.getIds().size()) {
+                        throw new AppException(ErrorCode.USER_NOT_EXISTED);
+                }
+
+                for (User user : provinceOperators) {
+                        if (user.getRole() != Role.PROVINCE_OPERATOR) {
+                                throw new AppException(ErrorCode.USER_IS_NOT_PROVINCE_OPERATOR);
+                        }
+                }
+
+                userRepository.deleteAll(provinceOperators);
         }
 }

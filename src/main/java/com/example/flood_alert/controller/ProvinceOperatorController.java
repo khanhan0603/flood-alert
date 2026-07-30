@@ -10,11 +10,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.flood_alert.dbo.request.CreateProvinceOperatorRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.ImportProvinceOperatorResponse;
 import com.example.flood_alert.dbo.response.ProvinceOperatorDetailResponse;
@@ -23,6 +25,7 @@ import com.example.flood_alert.dbo.response.RescueTeamSummaryResponse;
 import com.example.flood_alert.service.ProvinceOperatorImportService;
 import com.example.flood_alert.service.ProvinceOperatorService;
 
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -83,6 +86,16 @@ public class ProvinceOperatorController {
                                                                 .getTeams(
                                                                                 id,
                                                                                 pageable))
+                                .build();
+        }
+
+        @PostMapping
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+        public ApiResponse<ProvinceOperatorResponse> create(
+                        @Valid @RequestBody CreateProvinceOperatorRequest request) {
+
+                return ApiResponse.<ProvinceOperatorResponse>builder()
+                                .result(provinceOperatorService.create(request))
                                 .build();
         }
 }

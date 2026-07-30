@@ -25,12 +25,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.flood_alert.dbo.request.AssignTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
+import com.example.flood_alert.dbo.request.CreateRescuerRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamLeaderResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
+import com.example.flood_alert.dbo.response.RescuerResponse;
 import com.example.flood_alert.dbo.response.RowError;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderResponse;
@@ -45,6 +47,7 @@ import com.example.flood_alert.enums.Status;
 import com.example.flood_alert.exception.AppException;
 import com.example.flood_alert.exception.ErrorCode;
 import com.example.flood_alert.mapper.RescueTeamMapper;
+import com.example.flood_alert.mapper.UserMapper;
 import com.example.flood_alert.repository.AreaRepository;
 import com.example.flood_alert.repository.RescueGroupRepository;
 import com.example.flood_alert.repository.RescueTeamRepository;
@@ -67,6 +70,7 @@ public class RescueTeamService {
     PasswordEncoder passwordEncoder;
     AuthenticationService authenticationService;
     RescueTeamMapper rescueTeamMapper;
+    UserMapper userMapper;
 
     @Transactional
     public RescueTeamResponse create(CreateRescueTeamRequest request) {
@@ -540,7 +544,7 @@ public class RescueTeamService {
 
     // Cập nhật team leader và team deputy
     @Transactional // Toàn bộ quá trình cập nhật Leader/Deputy nằm trong một transaction
-    public RescueTeamLeaderResponse updateLeader(
+    public RescueTeamLeaderResponse updateLeaderAndDeputy(
             UUID teamId,
             UpdateRescueTeamLeaderRequest request) {
 
@@ -613,5 +617,38 @@ public class RescueTeamService {
 
         // Chuyển Entity sang Response DTO để trả về cho FE
         return rescueTeamMapper.toLeaderResponse(rescueTeam);
+    }
+
+    @Transactional
+    public RescuerResponse createRescuer(CreateRescuerRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTED);
+        }
+
+        if (userRepository.existsBySodt(request.getSodt())) {
+            throw new AppException(ErrorCode.PHONE_EXISTED);
+        }
+
+        RescueTeam team = rescueTeamRepository.findById(request.getTeamId())
+                .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
+
+        User user = User.builder()
+                .hoten(request.getHoten())
+                .email(request.getEmail())
+                .sodt(request.getSodt())
+                .gioitinh(request.getGioitinh())
+                .ngaysinh(request.getNgaysinh())
+                .diachi(request.getDiachi())
+                .password(passwordEncoder.encode("123456"))
+                .role(Role.RESCUER)
+                .trangthai(Status.ACTIVE)
+                .team(team)
+                .area(team.getArea())
+                .build();
+
+        user = userRepository.save(user);
+
+        return userMapper.toRescuerResponse(user);
     }
 }

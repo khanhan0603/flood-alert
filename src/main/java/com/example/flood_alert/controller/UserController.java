@@ -1,6 +1,7 @@
 package com.example.flood_alert.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,6 +12,7 @@ import com.example.flood_alert.dbo.request.UpdateUserRequest;
 import com.example.flood_alert.dbo.request.UserCreationRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.MyProfileResponse;
+import com.example.flood_alert.dbo.response.UpdateUserStatusResponse;
 import com.example.flood_alert.dbo.response.UserResponse;
 import com.example.flood_alert.entity.User;
 import com.example.flood_alert.service.UserService;
@@ -45,7 +47,7 @@ public class UserController {
                 .build();
     }
 
-    //Cập nhật thông tin người dùng
+    // Cập nhật thông tin người dùng
     @PutMapping("/me")
     public ApiResponse<MyProfileResponse> updateMyProfile(@RequestBody UpdateUserRequest request) {
         return ApiResponse.<MyProfileResponse>builder()
@@ -53,11 +55,19 @@ public class UserController {
                 .build();
     }
 
-    //Thông tin người dùng
+    // Thông tin người dùng
     @GetMapping("/me")
     public ApiResponse<MyProfileResponse> getMyProfile() {
         return ApiResponse.<MyProfileResponse>builder()
                 .result(userService.getMyProfile())
+                .build();
+    }
+
+    @PatchMapping("/me/lock")
+    public ApiResponse<UpdateUserStatusResponse> lockMyAccount() {
+
+        return ApiResponse.<UpdateUserStatusResponse>builder()
+                .result(userService.lockMyAccount())
                 .build();
     }
 }

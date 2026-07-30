@@ -9,8 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.UpdateUserRequest;
+import com.example.flood_alert.dbo.request.UpdateUserStatusRequest;
 import com.example.flood_alert.dbo.request.UserCreationRequest;
 import com.example.flood_alert.dbo.response.MyProfileResponse;
+import com.example.flood_alert.dbo.response.UpdateUserStatusResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.User;
@@ -203,4 +205,23 @@ public class UserService {
 
         return response;
     }
+
+    @Transactional
+    public UpdateUserStatusResponse lockMyAccount() {
+
+        User user = authenticationService.getCurrentUser();
+
+        if (user.getTrangthai() == Status.INACTIVE) {
+            throw new AppException(ErrorCode.USER_ALREADY_INACTIVE);
+        }
+
+        user.setTrangthai(Status.INACTIVE);
+
+        userRepository.save(user);
+
+        return UpdateUserStatusResponse.builder()
+                .message("Khóa tài khoản thành công.")
+                .build();
+    }
+    
 }
