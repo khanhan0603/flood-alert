@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.example.flood_alert.dbo.response.ListMemberOfGroupResponse;
@@ -49,7 +50,7 @@ public interface RescueGroupMemberRepository extends JpaRepository<RescueGroupMe
     // Kiểm tra xem user có trong group ko, và lấy entity để delete
     Optional<RescueGroupMember> findByGroup_IdAndUser_Id(UUID groupId, UUID userId);
 
-    //Tìm group type theo mã người dugf
+    // Tìm group type theo mã người dugf
     @Query("""
             select rg.type
             from RescueGroup rg
@@ -64,4 +65,11 @@ public interface RescueGroupMemberRepository extends JpaRepository<RescueGroupMe
     Optional<RescueGroupType> findGroupTypeByUserId(UUID userId);
 
     Integer countByGroup_Id(UUID groupId);
+
+    @Modifying
+    @Query("""
+                delete from RescueGroupMember m
+                where m.group.id = :groupId
+            """)
+    void deleteAllByGroupId(UUID groupId);
 }

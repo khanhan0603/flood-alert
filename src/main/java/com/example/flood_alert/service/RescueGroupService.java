@@ -61,9 +61,10 @@ public class RescueGroupService {
                 RescueTeam team = rescueTeamRepository.findById(teamId)
                                 .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
 
-                if (rescueGroupRepository.existsByTeamIdAndName(
+                if (rescueGroupRepository.existsByTeam_IdAndNameAndStatus(
                                 teamId,
-                                request.getName())) {
+                                request.getName(),
+                                RescueGroupStatus.AVAILABLE)) {
 
                         throw new AppException(ErrorCode.RESCUE_GROUP_EXISTED);
                 }
@@ -247,9 +248,9 @@ public class RescueGroupService {
                                         "Chỉ được chọn RESCUER");
                 }
 
-                boolean isLeader=rescueGroupRepository.existsByLeaderId(request.getUserId());
+                boolean isLeader = rescueGroupRepository.existsByLeaderId(request.getUserId());
 
-                if(isLeader){
+                if (isLeader) {
                         throw new RuntimeException("Người dùng này đã nhận vai trò trưởng nhóm thuộc nhóm khác!");
                 }
 
@@ -318,29 +319,47 @@ public class RescueGroupService {
                         UUID groupId,
                         UpdateRescueGroupStatusRequest request) {
 
-                // Team Leader đang đăng nhập
                 User currentUser = authenticationService.getCurrentUser();
 
-                // Tìm Group
                 RescueGroup group = rescueGroupRepository.findById(groupId)
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.RESCUE_GROUP_NOT_FOUND));
 
-                // Chỉ Group Leader được cập nhật
-                if (group.getLeader() == null
-                                || !group.getLeader().getId().equals(currentUser.getId())) {
+                boolean isTeamLeader = group.getTeam().getLeader() != null
+                                && group.getTeam().getLeader().getId().equals(currentUser.getId());
 
+                boolean isGroupLeader = group.getLeader() != null
+                                && group.getLeader().getId().equals(currentUser.getId());
+
+                if (!isTeamLeader && !isGroupLeader) {
                         throw new AppException(ErrorCode.NO_PERMISSION);
                 }
 
-                // Không cho cập nhật BUSY thủ công
                 if (request.getStatus() == RescueGroupStatus.BUSY) {
                         throw new AppException(ErrorCode.INVALID_GROUP_STATUS);
                 }
 
+                // AVAILABLE -> OFFLINE
+                if (group.getStatus() == RescueGroupStatus.AVAILABLE
+                                && request.getStatus() == RescueGroupStatus.OFFLINE) {
+
+                        removeAllMembers(group);
+                }
+
+                // OFFLINE -> AVAILABLE
                 group.setStatus(request.getStatus());
 
                 rescueGroupRepository.save(group);
+        }
+
+        // loại toàn bộ thành viên
+        private void removeAllMembers(RescueGroup group) {
+
+                // Bỏ trưởng nhóm
+                group.setLeader(null);
+
+                // Xóa toàn bộ thành viên
+                rescueGroupMemberRepository.deleteAllByGroupId(group.getId());
         }
 
         // Danh sách các group available theo loại hỗ trợ cần

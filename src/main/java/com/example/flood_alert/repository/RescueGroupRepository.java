@@ -16,7 +16,10 @@ import com.example.flood_alert.enums.RescueGroupStatus;
 import com.example.flood_alert.enums.RescueGroupType;
 
 public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> {
-     boolean existsByTeamIdAndName(UUID teamId, String name);
+     boolean existsByTeam_IdAndNameAndStatus(
+        UUID teamId,
+        String name,
+        RescueGroupStatus status);
 
      @Query("""
                   SELECT new com.example.flood_alert.dbo.response.RescueGroupResponse
