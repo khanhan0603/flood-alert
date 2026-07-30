@@ -520,6 +520,10 @@ public class AuthenticationService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
+        if (user.getRole() != Role.CITIZEN) {
+            throw new AppException(ErrorCode.USER_IS_NOT_CITIZEN);
+        }
+
         if (user.getTrangthai() == Status.ACTIVE) {
             throw new AppException(ErrorCode.ACCOUNT_ALREADY_ACTIVE);
         }

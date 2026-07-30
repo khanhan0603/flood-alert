@@ -171,8 +171,9 @@ public class ProvinceOperatorService {
                         if (user.getRole() != Role.PROVINCE_OPERATOR) {
                                 throw new AppException(ErrorCode.USER_IS_NOT_PROVINCE_OPERATOR);
                         }
+                        user.setTrangthai(Status.INACTIVE);
                 }
 
-                userRepository.deleteAll(provinceOperators);
+                userRepository.saveAll(provinceOperators);
         }
 }

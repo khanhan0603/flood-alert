@@ -8,9 +8,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.flood_alert.dbo.request.ChangePasswordRequest;
 import com.example.flood_alert.dbo.request.UpdateUserRequest;
 import com.example.flood_alert.dbo.request.UpdateUserStatusRequest;
 import com.example.flood_alert.dbo.request.UserCreationRequest;
+import com.example.flood_alert.dbo.response.ChangePasswordResponse;
 import com.example.flood_alert.dbo.response.MyProfileResponse;
 import com.example.flood_alert.dbo.response.UpdateUserStatusResponse;
 import com.example.flood_alert.entity.Area;
@@ -223,5 +225,26 @@ public class UserService {
                 .message("Khóa tài khoản thành công.")
                 .build();
     }
-    
+
+    @Transactional
+    public ChangePasswordResponse changePassword(ChangePasswordRequest request) {
+
+        User currentUser = authenticationService.getCurrentUser();
+
+        if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPassword())) {
+            throw new AppException(ErrorCode.WRONG_PASSWORD);
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), currentUser.getPassword())) {
+            throw new AppException(ErrorCode.NEW_PASSWORD_MUST_BE_DIFFERENT);
+        }
+
+        currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        userRepository.save(currentUser);
+
+        return ChangePasswordResponse.builder()
+                .message("Đổi mật khẩu thành công.")
+                .build();
+    }
 }

@@ -103,7 +103,10 @@ public enum ErrorCode {
     INVALID_UNLOCK_OTP(1089, "Mã xác thực không hợp lệ!"),
     UNLOCK_OTP_EXPIRED(1090, "Mã xác thực đã hết hạn!"),
     UNLOCK_OTP_USED(1091, "Mã xác thực đã được sử dụng!"),
-    USER_IS_NOT_PROVINCE_OPERATOR(1099, "Người dùng không phải điều phối viên cấp tỉnh!")
+    USER_IS_NOT_PROVINCE_OPERATOR(1099, "Người dùng không phải điều phối viên cấp tỉnh!"),
+    USER_IS_NOT_CITIZEN(2000, "Người dùng không phải người dân nên không dùng chức năng này!"),
+    WRONG_PASSWORD(2001, "Mật khẩu hiện tại không chính xác."),
+    NEW_PASSWORD_MUST_BE_DIFFERENT(2002, "Mật khẩu mới phải khác mật khẩu hiện tại.");
     ;
 
     int code;

@@ -48,12 +48,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   @Query("""
           select u.email
           from User u
+          where u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
       """)
   Set<String> findAllEmails();
 
   @Query("""
           select u.sodt
           from User u
+          where u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
       """)
   Set<String> findAllPhones();
 
@@ -73,6 +75,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   List<User> findAvailableMembers(UUID teamId);
 
   // danh sách các province
+  @Query("""
+        SELECT u
+        FROM User u
+        WHERE u.role = :role
+                AND u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
+        ORDER BY u.id ASC
+      """)
   Page<User> findByRole(Role role, Pageable pageable);
 
   // Danh sách điều hành cấp tỉnh phục vụ cho hàm notification

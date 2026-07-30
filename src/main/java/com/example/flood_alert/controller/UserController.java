@@ -1,5 +1,6 @@
 package com.example.flood_alert.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -8,9 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.flood_alert.dbo.request.ChangePasswordRequest;
 import com.example.flood_alert.dbo.request.UpdateUserRequest;
 import com.example.flood_alert.dbo.request.UserCreationRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
+import com.example.flood_alert.dbo.response.ChangePasswordResponse;
 import com.example.flood_alert.dbo.response.MyProfileResponse;
 import com.example.flood_alert.dbo.response.UpdateUserStatusResponse;
 import com.example.flood_alert.dbo.response.UserResponse;
@@ -64,10 +67,20 @@ public class UserController {
     }
 
     @PatchMapping("/me/lock")
+    @PreAuthorize("hasAuthority('SCOPE_CITIZEN')")
     public ApiResponse<UpdateUserStatusResponse> lockMyAccount() {
 
         return ApiResponse.<UpdateUserStatusResponse>builder()
                 .result(userService.lockMyAccount())
+                .build();
+    }
+
+    @PutMapping("/change-password")
+    public ApiResponse<ChangePasswordResponse> changePassword(
+            @RequestBody @Valid ChangePasswordRequest request) {
+
+        return ApiResponse.<ChangePasswordResponse>builder()
+                .result(userService.changePassword(request))
                 .build();
     }
 }
