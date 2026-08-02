@@ -205,11 +205,15 @@ public class PredictionSchedulerService {
 
             log.info("Prediction job history saved. id={}", history.getId());
 
+            log.info("History ID     : {}", history.getId());
+            log.info("History Start  : {}", history.getStartedAt());
+            log.info("History Finish : {}", history.getFinishedAt());
+
             // Link ca chạy sang flood_prediction
             int linked = predictionRepository.linkPredictionJobHistory(
                     history.getId(),
                     history.getStartedAt(),
-                    history.getJobType().name());
+                    history.getFinishedAt());
 
             log.info(
                     "Linked {} flood predictions to prediction history {}",
