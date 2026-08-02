@@ -1,5 +1,6 @@
 package com.example.flood_alert.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -72,4 +73,13 @@ public interface RescueGroupMemberRepository extends JpaRepository<RescueGroupMe
                 where m.group.id = :groupId
             """)
     void deleteAllByGroupId(UUID groupId);
+
+    //Danh sách thành viên theo nhóm cứu hộ
+    @Query("""
+            SELECT gm
+            FROM RescueGroupMember gm
+            JOIN FETCH gm.user
+            WHERE gm.group.id = :groupId
+            """)
+    List<RescueGroupMember> findAllWithUserByGroupId(UUID groupId);
 }

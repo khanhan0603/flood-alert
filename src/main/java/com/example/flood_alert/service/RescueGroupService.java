@@ -13,8 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.flood_alert.dbo.request.AddGroupMembersRequest;
 import com.example.flood_alert.dbo.request.AssignGroupLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueGroupRequest;
+import com.example.flood_alert.dbo.request.UpdateRescueGroupRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueGroupStatusRequest;
 import com.example.flood_alert.dbo.response.AvailableMemberResponse;
+import com.example.flood_alert.dbo.response.GroupDetailResponse;
 import com.example.flood_alert.dbo.response.GroupLeaderResponse;
 import com.example.flood_alert.dbo.response.GroupMemberResponse;
 import com.example.flood_alert.dbo.response.ListMemberOfGroupResponse;
@@ -53,6 +55,15 @@ public class RescueGroupService {
         UserRepository userRepository;
         AuthenticationService authenticationService;
         SupportRequestItemRepository supportRequestItemRepository;
+
+        private static final int BOAT_MIN = 3;
+        private static final int BOAT_MAX = 5;
+
+        private static final int SEARCH_RESCUE_MIN = 10;
+        private static final int SEARCH_RESCUE_MAX = 25;
+
+        private static final int LOGISTICS_MIN = 5;
+        private static final int LOGISTICS_MAX = 8;
 
         public RescueGroupResponse create(
                         UUID teamId,
@@ -159,6 +170,12 @@ public class RescueGroupService {
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.RESCUE_GROUP_NOT_FOUND));
 
+                long currentMember = rescueGroupMemberRepository.countByGroup_Id(groupId);
+
+                if (currentMember + request.getUserIds().size() > getMaxMembers(group)) {
+                        throw new AppException(ErrorCode.GROUP_MEMBER_LIMIT_EXCEEDED);
+                }
+
                 List<GroupMemberResponse> responses = new ArrayList<>();
 
                 for (UUID userId : request.getUserIds()) {
@@ -177,14 +194,14 @@ public class RescueGroupService {
                         if (user.getRole() != Role.RESCUER) {
 
                                 throw new RuntimeException(
-                                                "Chỉ được thêm RESCUER");
+                                                "Chỉ được thêm lực lượng cứu hộ");
                         }
 
                         if (rescueGroupMemberRepository
                                         .existsByUser_Id(userId)) {
 
                                 throw new RuntimeException(
-                                                "Rescuer đã thuộc group khác");
+                                                "Cứu hộ viên đã thuộc nhóm cứu hộ khác");
                         }
 
                         RescueGroupMember member = RescueGroupMember
@@ -208,6 +225,23 @@ public class RescueGroupService {
                 }
 
                 return responses;
+        }
+
+        private int getMaxMembers(RescueGroup group) {
+
+                if (group.isHasSearchRescue()) {
+                        return SEARCH_RESCUE_MAX;
+                }
+
+                if (group.isHasLogistics()) {
+                        return LOGISTICS_MAX;
+                }
+
+                if (group.isHasBoat()) {
+                        return BOAT_MAX;
+                }
+
+                return Integer.MAX_VALUE;
         }
 
         // Pick group leader
@@ -313,7 +347,7 @@ public class RescueGroupService {
                 rescueGroupMemberRepository.delete(member);
         }
 
-        // Cập nhật trạng thái nhóm do team leader làm (từ OFFLINE sang AVAILABLE)
+        // Cập nhật trạng thái nhóm do team leader và group leader làm
         @Transactional
         public void updateStatus(
                         UUID groupId,
@@ -339,9 +373,9 @@ public class RescueGroupService {
                         throw new AppException(ErrorCode.INVALID_GROUP_STATUS);
                 }
 
-                // AVAILABLE -> OFFLINE
+                // AVAILABLE -> DISBANDED
                 if (group.getStatus() == RescueGroupStatus.AVAILABLE
-                                && request.getStatus() == RescueGroupStatus.OFFLINE) {
+                                && request.getStatus() == RescueGroupStatus.DISBANDED) {
 
                         removeAllMembers(group);
                 }
@@ -443,5 +477,192 @@ public class RescueGroupService {
                                         return response;
                                 })
                                 .toList();
+        }
+
+        // Chi tiết thông tin nhóm
+        @Transactional(readOnly = true)
+        public GroupDetailResponse getDetail(UUID groupId) {
+
+                RescueGroup group = rescueGroupRepository.findDetailById(groupId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.RESCUE_GROUP_NOT_FOUND));
+
+                // Danh sách member
+                List<GroupMemberResponse> members = rescueGroupMemberRepository
+                                .findAllWithUserByGroupId(groupId)
+                                .stream()
+                                .map(member -> GroupMemberResponse.builder()
+                                                .userId(member.getUser().getId())
+                                                .fullName(member.getUser().getHoten())
+                                                .phone(member.getUser().getSodt())
+                                                .build())
+                                .toList();
+
+                // Số lượng thành viên trong nhóm
+                long currentMember = rescueGroupMemberRepository.countByGroup_Id(groupId);
+
+                GroupLeaderResponse leader = null;
+
+                if (group.getLeader() != null) {
+
+                        leader = GroupLeaderResponse.builder()
+                                        .groupId(group.getId())
+                                        .groupName(group.getName())
+                                        .leaderId(group.getLeader().getId())
+                                        .leaderName(group.getLeader().getHoten())
+                                        .phone(group.getLeader().getSodt())
+                                        .build();
+                }
+
+                return GroupDetailResponse.builder()
+                                .id(group.getId())
+                                .name(group.getName())
+                                .status(group.getStatus())
+                                .type(group.getType())
+
+                                .teamId(group.getTeam().getId())
+                                .teamName(group.getTeam().getName())
+
+                                .hasBoat(group.isHasBoat())
+                                .hasMedical(group.isHasMedical())
+                                .hasSearchRescue(group.isHasSearchRescue())
+                                .hasLogistics(group.isHasLogistics())
+
+                                .currentMember(currentMember)
+                                .minMember(getMinMembers(group))
+                                .maxMember(getMaxMembers(group))
+                                .enoughMember(currentMember >= getMinMembers(group))
+
+                                .notes(group.getNotes())
+
+                                .leader(leader)
+                                .members(members)
+                                .build();
+        }
+
+        private int getMinMembers(RescueGroup group) {
+
+                if (group.isHasSearchRescue()) {
+                        return SEARCH_RESCUE_MIN;
+                }
+
+                if (group.isHasLogistics()) {
+                        return LOGISTICS_MIN;
+                }
+
+                if (group.isHasBoat()) {
+                        return BOAT_MIN;
+                }
+
+                return 1;
+        }
+
+        // Cập nhật thông tin nhóm
+        @Transactional
+        public RescueGroupResponse updateGroup(
+                        UUID groupId,
+                        UpdateRescueGroupRequest request) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                RescueGroup group = rescueGroupRepository.findById(groupId)
+                                .orElseThrow(() -> new AppException(
+                                                ErrorCode.RESCUE_GROUP_NOT_FOUND));
+
+                RescueTeam team = group.getTeam();
+
+                if (team.getLeader() == null
+                                || !team.getLeader().getId().equals(currentUser.getId())) {
+
+                        throw new AppException(ErrorCode.NO_PERMISSION);
+                }
+
+                if (group.getStatus() == RescueGroupStatus.BUSY) {
+                        throw new AppException(ErrorCode.INVALID_GROUP_STATUS);
+                }
+
+                if (!group.getName().equals(request.getName())
+                                && rescueGroupRepository.existsByTeam_IdAndNameAndIdNot(
+                                                team.getId(),
+                                                request.getName(),
+                                                groupId)) {
+
+                        throw new AppException(ErrorCode.RESCUE_GROUP_EXISTED);
+                }
+
+                boolean hasSearchRescue = Boolean.TRUE.equals(request.getHasSearchRescue());
+                boolean hasLogistics = Boolean.TRUE.equals(request.getHasLogistics());
+
+                boolean hasBoat = Boolean.TRUE.equals(request.getHasBoat())
+                                || hasSearchRescue
+                                || hasLogistics;
+
+                boolean hasMedical = Boolean.TRUE.equals(request.getHasMedical())
+                                || hasSearchRescue
+                                || hasLogistics;
+
+                group.setName(request.getName());
+
+                group.setHasBoat(hasBoat);
+                group.setHasMedical(hasMedical);
+                group.setHasSearchRescue(hasSearchRescue);
+                group.setHasLogistics(hasLogistics);
+
+                group.setNotes(request.getNotes());
+
+                group.setUpdatedAt(LocalDateTime.now());
+
+                validateHotlineGroup(group);
+
+                rescueGroupRepository.save(group);
+
+                return RescueGroupResponse.builder()
+                                .id(group.getId())
+                                .name(group.getName())
+
+                                .teamId(team.getId())
+                                .teamName(team.getName())
+
+                                .status(group.getStatus())
+
+                                .hasBoat(group.isHasBoat())
+                                .hasMedical(group.isHasMedical())
+                                .hasSearchRescue(group.isHasSearchRescue())
+                                .hasLogistics(group.isHasLogistics())
+
+                                .notes(group.getNotes())
+                                .build();
+        }
+
+        @Transactional(readOnly = true)
+        public Page<RescueGroupResponse> getDisbandedGroups(Pageable pageable) {
+
+                User currentUser = authenticationService.getCurrentUser();
+
+                RescueTeam team = rescueTeamRepository
+                                .findByLeaderId(currentUser.getId())
+                                .orElseThrow(() -> new AppException(ErrorCode.NO_PERMISSION));
+
+                return rescueGroupRepository
+                                .findByTeam_IdAndStatus(
+                                                team.getId(),
+                                                RescueGroupStatus.DISBANDED,
+                                                pageable)
+                                .map(group -> RescueGroupResponse.builder()
+                                                .id(group.getId())
+                                                .name(group.getName())
+
+                                                .teamId(team.getId())
+                                                .teamName(team.getName())
+
+                                                .status(group.getStatus())
+
+                                                .hasBoat(group.isHasBoat())
+                                                .hasMedical(group.isHasMedical())
+                                                .hasSearchRescue(group.isHasSearchRescue())
+                                                .hasLogistics(group.isHasLogistics())
+
+                                                .notes(group.getNotes())
+                                                .build());
         }
 }

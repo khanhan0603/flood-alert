@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.flood_alert.dbo.request.AddGroupMembersRequest;
 import com.example.flood_alert.dbo.request.AssignGroupLeaderRequest;
 import com.example.flood_alert.dbo.request.CreateRescueGroupRequest;
+import com.example.flood_alert.dbo.request.UpdateRescueGroupRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueGroupStatusRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.AvailableMemberResponse;
+import com.example.flood_alert.dbo.response.GroupDetailResponse;
 import com.example.flood_alert.dbo.response.GroupLeaderResponse;
 import com.example.flood_alert.dbo.response.GroupMemberResponse;
 import com.example.flood_alert.dbo.response.ListMemberOfGroupResponse;
@@ -146,6 +149,35 @@ public class RescueGroupController {
                 return ApiResponse.<List<SupportCandidateGroupResponse>>builder()
                                 .result(rescueGroupService.getSupportCandidateGroups(
                                                 supportRequestItemId))
+                                .build();
+        }
+
+        @GetMapping("/{groupId}")
+        public ApiResponse<GroupDetailResponse> getDetail(
+                        @PathVariable UUID groupId) {
+
+                return ApiResponse.<GroupDetailResponse>builder()
+                                .result(rescueGroupService.getDetail(groupId))
+                                .build();
+        }
+
+        @PutMapping("/{groupId}")
+        public ApiResponse<RescueGroupResponse> updateGroup(
+                        @PathVariable UUID groupId,
+                        @Valid @RequestBody UpdateRescueGroupRequest request) {
+
+                return ApiResponse.<RescueGroupResponse>builder()
+                                .result(rescueGroupService.updateGroup(groupId, request))
+                                .build();
+        }
+
+        // Danh sách các group đã giải tán
+        @GetMapping("/disbanded")
+        public ApiResponse<Page<RescueGroupResponse>> getDisbandedGroups(
+                        @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
+
+                return ApiResponse.<Page<RescueGroupResponse>>builder()
+                                .result(rescueGroupService.getDisbandedGroups(pageable))
                                 .build();
         }
 }

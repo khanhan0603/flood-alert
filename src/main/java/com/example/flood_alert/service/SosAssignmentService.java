@@ -71,7 +71,15 @@ public class SosAssignmentService {
         CallTaskRepository callTaskRepository;
         SosStatusHistoryRepository sosStatusHistoryRepository;
 
-        // Dispatcher giao nhiệm vụ cho Rescue Group
+        private static final int BOAT_MIN = 3;
+        private static final int BOAT_MAX = 5;
+
+        private static final int SEARCH_RESCUE_MIN = 10;
+        private static final int SEARCH_RESCUE_MAX = 25;
+
+        private static final int LOGISTICS_MIN = 5;
+        private static final int LOGISTICS_MAX = 8;
+
         // Dispatcher giao nhiệm vụ cho Rescue Group
         @Transactional
         public AssignmentResponse assignGroup(AssignGroupRequest request) {
@@ -102,6 +110,13 @@ public class SosAssignmentService {
                 // Group phải đang AVAILABLE
                 if (group.getStatus() != RescueGroupStatus.AVAILABLE) {
                         throw new AppException(ErrorCode.GROUP_NOT_AVAILABLE);
+                }
+
+                //Group phải đủ quân số
+                long memberCount = rescueGroupMemberRepository.countByGroup_Id(group.getId());
+
+                if (memberCount < getMinMembers(group)) {
+                        throw new AppException(ErrorCode.GROUP_MEMBER_NOT_ENOUGH);
                 }
 
                 // Xác định note trước khi đổi status (cần biết SOS đang PENDING hay không,
@@ -161,6 +176,23 @@ public class SosAssignmentService {
                                 .assignmentId(assignment.getId())
                                 .callTask(callTaskMapper.toResponse(callTask))
                                 .build();
+        }
+
+        private int getMinMembers(RescueGroup group) {
+
+                if (group.isHasSearchRescue()) {
+                        return SEARCH_RESCUE_MIN;
+                }
+
+                if (group.isHasLogistics()) {
+                        return LOGISTICS_MIN;
+                }
+
+                if (group.isHasBoat()) {
+                        return BOAT_MIN;
+                }
+
+                return 1;
         }
 
         private void saveStatusHistory(SosRequest sos, StatusSOS status, String note) {

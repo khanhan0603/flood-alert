@@ -17,9 +17,9 @@ import com.example.flood_alert.enums.RescueGroupType;
 
 public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> {
      boolean existsByTeam_IdAndNameAndStatus(
-        UUID teamId,
-        String name,
-        RescueGroupStatus status);
+               UUID teamId,
+               String name,
+               RescueGroupStatus status);
 
      @Query("""
                   SELECT new com.example.flood_alert.dbo.response.RescueGroupResponse
@@ -35,6 +35,10 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
                        rg.notes)
                   FROM RescueGroup rg
                   WHERE rg.team.id = :teamId
+                         AND (rg.status = com.example.flood_alert.enums.RescueGroupStatus.AVAILABLE
+                             OR rg.status = com.example.flood_alert.enums.RescueGroupStatus.BUSY
+                             OR rg.status = com.example.flood_alert.enums.RescueGroupStatus.OFFLINE)
+                    ORDER BY rg.status ASC
                """)
      Page<RescueGroupResponse> findGroupByTeamId(UUID teamId, Pageable pageable);
 
@@ -99,4 +103,25 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
                """)
      List<RescueGroup> findAvailableByTeamId(@Param("teamId") UUID teamId);
 
+     // Chi tiết thông tin nhóm
+     @Query("""
+               SELECT rg
+               FROM RescueGroup rg
+               LEFT JOIN FETCH rg.team
+               LEFT JOIN FETCH rg.leader
+               WHERE rg.id = :groupId
+               """)
+     Optional<RescueGroup> findDetailById(UUID groupId);
+
+     // Kiem tra group name da ton tai khong
+     boolean existsByTeam_IdAndNameAndIdNot(
+               UUID teamId,
+               String name,
+               UUID groupId);
+
+     // Danh sách các nhóm đã giải tán
+     Page<RescueGroup> findByTeam_IdAndStatus(
+               UUID teamId,
+               RescueGroupStatus status,
+               Pageable pageable);
 }
