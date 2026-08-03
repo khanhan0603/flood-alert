@@ -6,10 +6,10 @@ import java.util.UUID;
 
 import com.example.flood_alert.enums.DeviceStatus;
 
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 @Data
 @Builder
 @AllArgsConstructor
@@ -21,6 +21,7 @@ public class IoTDeviceDetailResponse {
     String tenkhuvuc;
     String ten_thietbi;
     Double nguong_canh_bao;
+    BigDecimal device_height;
     DeviceStatus trang_thai;
     BigDecimal lat;
     BigDecimal lon;
