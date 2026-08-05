@@ -108,7 +108,8 @@ public enum ErrorCode {
     WRONG_PASSWORD(2001, "Mật khẩu hiện tại không chính xác."),
     NEW_PASSWORD_MUST_BE_DIFFERENT(2002, "Mật khẩu mới phải khác mật khẩu hiện tại."),
     GROUP_MEMBER_LIMIT_EXCEEDED(2003,"Số lượng thành viên đã vượt giới hạn của nhóm!"),
-    GROUP_MEMBER_NOT_ENOUGH(2004,"Số lượng thành viên trong nhóm không đủ để thực hiện nhiệm vụ");
+    GROUP_MEMBER_NOT_ENOUGH(2004,"Số lượng thành viên trong nhóm không đủ để thực hiện nhiệm vụ"),
+    ACCOUNT_LOCKED(2005,"Tài khoản đã bị khóa!"),
     ;
 
     int code;

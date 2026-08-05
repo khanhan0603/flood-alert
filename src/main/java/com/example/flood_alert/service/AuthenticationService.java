@@ -73,539 +73,544 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
-    private final InvalidatedTokenRepository invalidatedTokenRepository;
-    UserRepository userRepository;
-    RescueTeamRepository rescueTeamRepository;
-    RescueGroupRepository rescueGroupRepository;
-    RefreshTokenRepository refreshTokenRepository;
-    RescueGroupMemberRepository rescueGroupMemberRepository;
-    UserFcmTokenRepository userFcmTokenRepository;
-    PasswordResetTokenRepository passwordResetTokenRepository;
-    EmailService emailService;
-    PasswordEncoder passwordEncoder;
-    AccountUnlockTokenRepository accountUnlockTokenRepository;
+        private final InvalidatedTokenRepository invalidatedTokenRepository;
+        UserRepository userRepository;
+        RescueTeamRepository rescueTeamRepository;
+        RescueGroupRepository rescueGroupRepository;
+        RefreshTokenRepository refreshTokenRepository;
+        RescueGroupMemberRepository rescueGroupMemberRepository;
+        UserFcmTokenRepository userFcmTokenRepository;
+        PasswordResetTokenRepository passwordResetTokenRepository;
+        EmailService emailService;
+        PasswordEncoder passwordEncoder;
+        AccountUnlockTokenRepository accountUnlockTokenRepository;
 
-    @NonFinal
-    @Value("${jwt.signedKey}")
-    protected String SIGNED_KEY;
+        @NonFinal
+        @Value("${jwt.signedKey}")
+        protected String SIGNED_KEY;
 
-    public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
+        public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
 
-        try {
+                try {
 
-            verifyToken(request.getToken());
+                        verifyToken(request.getToken());
 
-            return IntrospectResponse.builder()
-                    .valid(true)
-                    .build();
+                        return IntrospectResponse.builder()
+                                        .valid(true)
+                                        .build();
 
-        } catch (Exception e) {
+                } catch (Exception e) {
 
-            return IntrospectResponse.builder()
-                    .valid(false)
-                    .build();
+                        return IntrospectResponse.builder()
+                                        .valid(false)
+                                        .build();
 
-        }
-    }
-
-    @Transactional
-    public AuthenticateResponse refresh(RefreshRequest request)
-            throws ParseException, JOSEException {
-
-        log.info("Refresh token = {}", request.getRefreshToken());
-        if (request == null
-                || request.getRefreshToken() == null
-                || request.getRefreshToken().isBlank()) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
         }
 
-        SignedJWT signedJWT = verifyToken(request.getRefreshToken());
+        @Transactional
+        public AuthenticateResponse refresh(RefreshRequest request)
+                        throws ParseException, JOSEException {
 
-        String type = signedJWT.getJWTClaimsSet()
-                .getStringClaim("type");
+                log.info("Refresh token = {}", request.getRefreshToken());
+                if (request == null
+                                || request.getRefreshToken() == null
+                                || request.getRefreshToken().isBlank()) {
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
 
-        if (!"refresh".equals(type)) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+                SignedJWT signedJWT = verifyToken(request.getRefreshToken());
+
+                String type = signedJWT.getJWTClaimsSet()
+                                .getStringClaim("type");
+
+                if (!"refresh".equals(type)) {
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
+
+                // Lấy refresh token từ DB
+                RefreshToken refreshToken = refreshTokenRepository
+                                .findByToken(request.getRefreshToken())
+                                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+                // Kiểm tra revoke
+                if (refreshToken.isRevoked()) {
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
+
+                // Kiểm tra token trong DB quá hạn chưa
+                if (refreshToken.getExpiryTime().isBefore(LocalDateTime.now())) {
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
+
+                // Lấy user
+                User user = refreshToken.getUser();
+
+                // Thu hồi refresh token cũ
+                refreshToken.setRevoked(true); // Đánh dấu token đã bị thu hồi
+
+                refreshTokenRepository.save(refreshToken);
+
+                // Sinh token mới
+                String accessToken = generateAccessToken(user);
+
+                String newRefreshToken = generateRefreshToken(user);
+
+                // Lưu refresh token mới
+                saveRefreshToken(user, newRefreshToken);
+
+                // Trả response
+                return AuthenticateResponse.builder()
+                                .accessToken(accessToken)
+                                .refreshToken(newRefreshToken)
+                                .authenticated(true)
+                                .id(user.getId())
+                                .areaId(user.getArea().getId())
+                                .hoten(user.getHoten())
+                                .sodt(user.getSodt())
+                                .role(user.getRole().name())
+                                .teamId(user.getTeam() != null ? user.getTeam().getId() : null)
+                                .teamName(user.getTeam() != null ? user.getTeam().getName() : null)
+                                .build();
         }
 
-        // Lấy refresh token từ DB
-        RefreshToken refreshToken = refreshTokenRepository
-                .findByToken(request.getRefreshToken())
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        @Transactional
+        public AuthenticateResponse authenticate(AuthenticateRequest request) {
+                var user = userRepository.findActiveByEmailOrPhone(request.getLoginInfo())
+                                .orElseThrow(() -> new AppException(ErrorCode.LOGIN_INFO_EXISTED));
+                // Kiểm tra tài khoản bị khóa
+                // Người dân bị khóa tài khoản
+                if (user.getRole() == Role.CITIZEN
+                                && user.getTrangthai() == Status.INACTIVE) {
+                        throw new AppException(ErrorCode.ACCOUNT_LOCKED);
+                }
+                // Test team leader
+                Boolean isTeamLeader = false;
+                // Test group leader
+                Boolean isGroupLeader = false;
 
-        // Kiểm tra revoke
-        if (refreshToken.isRevoked()) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
+                Boolean isTeamDeputy = false;
 
-        // Kiểm tra token trong DB quá hạn chưa
-        if (refreshToken.getExpiryTime().isBefore(LocalDateTime.now())) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
+                if (user.getRole().equals(Role.RESCUER)) {
+                        isTeamLeader = rescueTeamRepository.existsByLeaderId(user.getId());
+                        isTeamDeputy = rescueTeamRepository.existsByDeputyLeaderId(user.getId());
+                        isGroupLeader = rescueGroupRepository.existsByLeaderId(user.getId());
+                }
 
-        // Lấy user
-        User user = refreshToken.getUser();
+                RescueGroupType groupType = null;
 
-        // Thu hồi refresh token cũ
-        refreshToken.setRevoked(true); // Đánh dấu token đã bị thu hồi
+                if (user.getRole() == Role.RESCUER) {
+                        groupType = rescueGroupMemberRepository
+                                        .findGroupTypeByUserId(user.getId())
+                                        .orElse(null);
+                }
 
-        refreshTokenRepository.save(refreshToken);
+                PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 
-        // Sinh token mới
-        String accessToken = generateAccessToken(user);
+                boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
-        String newRefreshToken = generateRefreshToken(user);
+                if (!authenticated)
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
 
-        // Lưu refresh token mới
-        saveRefreshToken(user, newRefreshToken);
+                String accessToken = generateAccessToken(user);
 
-        // Trả response
-        return AuthenticateResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(newRefreshToken)
-                .authenticated(true)
-                .id(user.getId())
-                .areaId(user.getArea().getId())
-                .hoten(user.getHoten())
-                .sodt(user.getSodt())
-                .role(user.getRole().name())
-                .teamId(user.getTeam() != null ? user.getTeam().getId() : null)
-                .teamName(user.getTeam() != null ? user.getTeam().getName() : null)
-                .build();
-    }
+                String refreshToken = generateRefreshToken(user);
 
-    @Transactional
-    public AuthenticateResponse authenticate(AuthenticateRequest request) {
-        var user = userRepository.findActiveByEmailOrPhone(request.getLoginInfo())
-                .orElseThrow(() -> new AppException(ErrorCode.LOGIN_INFO_EXISTED));
+                saveRefreshToken(user, refreshToken);
 
-        // Test team leader
-        Boolean isTeamLeader = false;
-        // Test group leader
-        Boolean isGroupLeader = false;
-
-        Boolean isTeamDeputy = false;
-
-        if (user.getRole().equals(Role.RESCUER)) {
-            isTeamLeader = rescueTeamRepository.existsByLeaderId(user.getId());
-            isTeamDeputy = rescueTeamRepository.existsByDeputyLeaderId(user.getId());
-            isGroupLeader = rescueGroupRepository.existsByLeaderId(user.getId());
-        }
-
-        RescueGroupType groupType = null;
-
-        if (user.getRole() == Role.RESCUER) {
-            groupType = rescueGroupMemberRepository
-                    .findGroupTypeByUserId(user.getId())
-                    .orElse(null);
-        }
-
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-
-        boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
-
-        if (!authenticated)
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-
-        String accessToken = generateAccessToken(user);
-
-        String refreshToken = generateRefreshToken(user);
-
-        saveRefreshToken(user, refreshToken);
-
-        return AuthenticateResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .authenticated(true)
-                .id(user.getId())
-                .areaId(user.getArea().getId())
-                .hoten(user.getHoten())
-                .sodt(user.getSodt())
-                .role(user.getRole().name())
-                .teamId(user.getTeam() != null
-                        ? user.getTeam().getId()
-                        : null)
-                .teamName(user.getTeam() != null
-                        ? user.getTeam().getName()
-                        : null)
-                .isTeamLeader(isTeamLeader)
-                .isGroupLeader(isGroupLeader)
-                .isTeamDeputy(isTeamDeputy)
-                .groupType(groupType)
-                .build();
-
-    }
-
-    // Hàm lấy người dùng nếu có đăng nhập trên hệ thống phục vụ tạo sos
-    public User getCurrentUserOrNull() {
-
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || "anonymousUser".equals(authentication.getPrincipal())) {
-
-            return null;
-        }
-
-        UUID userId = UUID.fromString(authentication.getName());
-
-        return userRepository.findById(userId).orElse(null);
-    }
-
-    // Logout
-    @Transactional
-    public void logout(LogoutRequest request)
-            throws ParseException, JOSEException {
-
-        // Verify JWT
-        SignedJWT signedJWT = verifyToken(request.getAccessToken());
-        log.info("Access OK");
-
-        verifyToken(request.getRefreshToken());
-        log.info("Refresh OK");
-
-        String jti = signedJWT.getJWTClaimsSet().getJWTID();
-
-        RefreshToken refreshToken = refreshTokenRepository
-                .findByToken(request.getRefreshToken())
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
-        log.info("Find refresh OK");
-
-        User user = refreshToken.getUser();
-
-        if (request.getFcmToken() != null && !request.getFcmToken().isBlank()) {
-            userFcmTokenRepository.deleteByUserIdAndToken(
-                    user.getId(),
-                    request.getFcmToken());
-        }
-
-        if (!refreshToken.isRevoked()) {
-
-            refreshToken.setRevoked(true);
-
-            refreshTokenRepository.save(refreshToken);
-        }
-        // Lưu blacklist
-        InvalidatedToken token = InvalidatedToken.builder()
-                .jwtId(jti)
-                .expiryTime(
-                        LocalDateTime.now().plusHours(1))
-                .build();
-
-        invalidatedTokenRepository.save(token);
-
-    }
-
-    @Scheduled(cron = "0 0 * * * *")
-    @Transactional
-    public void cleanInvalidatedToken() {
-
-        invalidatedTokenRepository.deleteByExpiryTimeBefore(LocalDateTime.now());
-
-    }
-
-    // Hàm generate token
-    private String generateToken(
-            User user,
-            String type,
-            long amount,
-            ChronoUnit unit) {
-
-        JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
-
-        JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                .jwtID(UUID.randomUUID().toString())
-                .subject(user.getId().toString())
-                .issuer("api-lulut.io.vn")
-                .issueTime(new Date())
-                .expirationTime(
-                        new Date(
-                                Instant.now()
-                                        .plus(amount, unit)
-                                        .toEpochMilli()))
-                .claim("scope", buildScope(user))
-                .claim("type", type)
-                .build();
-
-        Payload payload = new Payload(claims.toJSONObject());
-
-        JWSObject jwsObject = new JWSObject(header, payload);
-
-        try {
-
-            jwsObject.sign(new MACSigner(SIGNED_KEY.getBytes()));
-
-            return jwsObject.serialize();
-
-        } catch (JOSEException e) {
-
-            throw new RuntimeException(e);
+                return AuthenticateResponse.builder()
+                                .accessToken(accessToken)
+                                .refreshToken(refreshToken)
+                                .authenticated(true)
+                                .id(user.getId())
+                                .areaId(user.getArea().getId())
+                                .hoten(user.getHoten())
+                                .sodt(user.getSodt())
+                                .role(user.getRole().name())
+                                .teamId(user.getTeam() != null
+                                                ? user.getTeam().getId()
+                                                : null)
+                                .teamName(user.getTeam() != null
+                                                ? user.getTeam().getName()
+                                                : null)
+                                .isTeamLeader(isTeamLeader)
+                                .isGroupLeader(isGroupLeader)
+                                .isTeamDeputy(isTeamDeputy)
+                                .groupType(groupType)
+                                .build();
 
         }
 
-    }
+        // Hàm lấy người dùng nếu có đăng nhập trên hệ thống phục vụ tạo sos
+        public User getCurrentUserOrNull() {
 
-    private String generateAccessToken(User user) {
+                Authentication authentication = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication();
 
-        return generateToken(
-                user,
-                "access",
-                1,
-                ChronoUnit.HOURS);
+                if (authentication == null
+                                || !authentication.isAuthenticated()
+                                || "anonymousUser".equals(authentication.getPrincipal())) {
 
-    }
+                        return null;
+                }
 
-    private String generateRefreshToken(User user) {
+                UUID userId = UUID.fromString(authentication.getName());
 
-        return generateToken(
-                user,
-                "refresh",
-                7,
-                ChronoUnit.DAYS);
-
-    }
-
-    // Lưu refresh token
-    private void saveRefreshToken(User user, String token) {
-
-        RefreshToken refreshToken = RefreshToken.builder()
-                .token(token)
-                .user(user)
-                .expiryTime(LocalDateTime.now().plusDays(7))
-                .revoked(false)
-                .build();
-
-        refreshTokenRepository.save(refreshToken);
-
-    }
-
-    private SignedJWT verifyToken(String token)
-            throws JOSEException, ParseException {
-
-        SignedJWT signedJWT = SignedJWT.parse(token);
-
-        JWSVerifier verifier = new MACVerifier(SIGNED_KEY.getBytes());
-
-        boolean verified = signedJWT.verify(verifier);
-
-        Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
-
-        if (!verified || expiration.before(new Date())) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+                return userRepository.findById(userId).orElse(null);
         }
 
-        return signedJWT;
+        // Logout
+        @Transactional
+        public void logout(LogoutRequest request)
+                        throws ParseException, JOSEException {
 
-    }
+                // Verify JWT
+                SignedJWT signedJWT = verifyToken(request.getAccessToken());
+                log.info("Access OK");
 
-    private String buildScope(User user) {
-        StringJoiner stringJoiner = new StringJoiner(" ");
+                verifyToken(request.getRefreshToken());
+                log.info("Refresh OK");
 
-        if (user.getRole() != null) {
-            stringJoiner.add(user.getRole().name());
+                String jti = signedJWT.getJWTClaimsSet().getJWTID();
+
+                RefreshToken refreshToken = refreshTokenRepository
+                                .findByToken(request.getRefreshToken())
+                                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+                log.info("Find refresh OK");
+
+                User user = refreshToken.getUser();
+
+                if (request.getFcmToken() != null && !request.getFcmToken().isBlank()) {
+                        userFcmTokenRepository.deleteByUserIdAndToken(
+                                        user.getId(),
+                                        request.getFcmToken());
+                }
+
+                if (!refreshToken.isRevoked()) {
+
+                        refreshToken.setRevoked(true);
+
+                        refreshTokenRepository.save(refreshToken);
+                }
+                // Lưu blacklist
+                InvalidatedToken token = InvalidatedToken.builder()
+                                .jwtId(jti)
+                                .expiryTime(
+                                                LocalDateTime.now().plusHours(1))
+                                .build();
+
+                invalidatedTokenRepository.save(token);
+
         }
 
-        return stringJoiner.toString();
-    }
+        @Scheduled(cron = "0 0 * * * *")
+        @Transactional
+        public void cleanInvalidatedToken() {
 
-    public User getCurrentUser() {
+                invalidatedTokenRepository.deleteByExpiryTimeBefore(LocalDateTime.now());
 
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || "anonymousUser".equals(authentication.getPrincipal())) {
-
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
-        UUID userId = UUID.fromString(authentication.getName());
+        // Hàm generate token
+        private String generateToken(
+                        User user,
+                        String type,
+                        long amount,
+                        ChronoUnit unit) {
 
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-    }
+                JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
-    @Transactional
-    public ForgotPasswordResponse forgotPassword(ForgotPasswordRequest request) {
+                JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                                .jwtID(UUID.randomUUID().toString())
+                                .subject(user.getId().toString())
+                                .issuer("api-lulut.io.vn")
+                                .issueTime(new Date())
+                                .expirationTime(
+                                                new Date(
+                                                                Instant.now()
+                                                                                .plus(amount, unit)
+                                                                                .toEpochMilli()))
+                                .claim("scope", buildScope(user))
+                                .claim("type", type)
+                                .build();
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                Payload payload = new Payload(claims.toJSONObject());
 
-        // Xóa OTP cũ của người dùng
-        passwordResetTokenRepository.deleteByUserId(user.getId());
+                JWSObject jwsObject = new JWSObject(header, payload);
 
-        // Sinh OTP 6 chữ số
-        String otp = String.format("%06d",
-                ThreadLocalRandom.current().nextInt(1_000_000));
+                try {
 
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(otp)
-                .user(user)
-                .expiredAt(LocalDateTime.now().plusMinutes(15))
-                .used(false)
-                .build();
+                        jwsObject.sign(new MACSigner(SIGNED_KEY.getBytes()));
 
-        passwordResetTokenRepository.save(resetToken);
+                        return jwsObject.serialize();
 
-        String content = """
-                Xin chào %s,
+                } catch (JOSEException e) {
 
-                Bạn đã yêu cầu đặt lại mật khẩu.
+                        throw new RuntimeException(e);
 
-                Mã xác thực của bạn là:
+                }
 
-                %s
-
-                Mã có hiệu lực trong 15 phút.
-
-                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.
-
-                Trân trọng,
-                Flood Alert System
-                """
-                .formatted(
-                        user.getHoten(),
-                        otp);
-
-        emailService.sendEmail(
-                user.getEmail(),
-                "Đặt lại mật khẩu",
-                content);
-
-        return ForgotPasswordResponse.builder()
-                .email(user.getEmail())
-                .message("Đã gửi mã xác thực đến email của bạn.")
-                .build();
-    }
-
-    @Transactional
-    public ForgotPasswordResponse resetPassword(ResetPasswordRequest request) {
-
-        PasswordResetToken resetToken = passwordResetTokenRepository
-                .findByUserEmailAndToken(request.getEmail(), request.getToken())
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
-
-        if (Boolean.TRUE.equals(resetToken.getUsed())) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
-        if (resetToken.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        private String generateAccessToken(User user) {
+
+                return generateToken(
+                                user,
+                                "access",
+                                1,
+                                ChronoUnit.HOURS);
+
         }
 
-        User user = resetToken.getUser();
+        private String generateRefreshToken(User user) {
 
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+                return generateToken(
+                                user,
+                                "refresh",
+                                7,
+                                ChronoUnit.DAYS);
 
-        userRepository.save(user);
-
-        resetToken.setUsed(true);
-
-        passwordResetTokenRepository.save(resetToken);
-
-        return ForgotPasswordResponse.builder()
-                .email(user.getEmail())
-                .message("Đổi mật khẩu thành công.")
-                .build();
-    }
-
-    @Transactional
-    public UnlockAccountResponse sendUnlockCode(SendUnlockCodeRequest request) {
-
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
-        if (user.getRole() != Role.CITIZEN) {
-            throw new AppException(ErrorCode.USER_IS_NOT_CITIZEN);
         }
 
-        if (user.getTrangthai() == Status.ACTIVE) {
-            throw new AppException(ErrorCode.ACCOUNT_ALREADY_ACTIVE);
+        // Lưu refresh token
+        private void saveRefreshToken(User user, String token) {
+
+                RefreshToken refreshToken = RefreshToken.builder()
+                                .token(token)
+                                .user(user)
+                                .expiryTime(LocalDateTime.now().plusDays(7))
+                                .revoked(false)
+                                .build();
+
+                refreshTokenRepository.save(refreshToken);
+
         }
 
-        accountUnlockTokenRepository.deleteByUserId(user.getId());
+        private SignedJWT verifyToken(String token)
+                        throws JOSEException, ParseException {
 
-        String otp = String.format("%06d",
-                ThreadLocalRandom.current().nextInt(1000000));
+                SignedJWT signedJWT = SignedJWT.parse(token);
 
-        AccountUnlockToken unlockToken = AccountUnlockToken.builder()
-                .otp(otp)
-                .user(user)
-                .expiredAt(LocalDateTime.now().plusMinutes(5))
-                .used(false)
-                .build();
+                JWSVerifier verifier = new MACVerifier(SIGNED_KEY.getBytes());
 
-        accountUnlockTokenRepository.save(unlockToken);
+                boolean verified = signedJWT.verify(verifier);
 
-        String content = """
-                Xin chào %s,
+                Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
 
-                Bạn đã yêu cầu mở khóa tài khoản.
+                if (!verified || expiration.before(new Date())) {
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
 
-                Mã xác thực của bạn là:
+                return signedJWT;
 
-                %s
-
-                Mã có hiệu lực trong 5 phút.
-
-                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.
-
-                Flood Alert System
-                """
-                .formatted(user.getHoten(), otp);
-
-        emailService.sendEmail(
-                user.getEmail(),
-                "Mở khóa tài khoản",
-                content);
-
-        return UnlockAccountResponse.builder()
-                .email(user.getEmail())
-                .message("Đã gửi mã xác thực đến email.")
-                .build();
-    }
-
-    @Transactional
-    public UnlockAccountResponse unlockAccount(UnlockAccountRequest request) {
-
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
-        AccountUnlockToken unlockToken = accountUnlockTokenRepository
-                .findByUserIdAndOtp(user.getId(), request.getOtp())
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_UNLOCK_OTP));
-
-        if (Boolean.TRUE.equals(unlockToken.getUsed())) {
-            throw new AppException(ErrorCode.UNLOCK_OTP_USED);
         }
 
-        if (unlockToken.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new AppException(ErrorCode.UNLOCK_OTP_EXPIRED);
+        private String buildScope(User user) {
+                StringJoiner stringJoiner = new StringJoiner(" ");
+
+                if (user.getRole() != null) {
+                        stringJoiner.add(user.getRole().name());
+                }
+
+                return stringJoiner.toString();
         }
 
-        user.setTrangthai(Status.ACTIVE);
+        public User getCurrentUser() {
 
-        userRepository.save(user);
+                Authentication authentication = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication();
 
-        unlockToken.setUsed(true);
+                if (authentication == null
+                                || !authentication.isAuthenticated()
+                                || "anonymousUser".equals(authentication.getPrincipal())) {
 
-        accountUnlockTokenRepository.save(unlockToken);
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
 
-        return UnlockAccountResponse.builder()
-                .email(user.getEmail())
-                .message("Mở khóa tài khoản thành công.")
-                .build();
-    }
+                UUID userId = UUID.fromString(authentication.getName());
 
-    // Dọn OTP hết hạn
-    @Scheduled(cron = "0 */10 * * * *")
-    @Transactional
-    public void cleanUnlockOtp() {
-        accountUnlockTokenRepository.deleteByExpiredAtBefore(LocalDateTime.now());
-    }
+                return userRepository.findById(userId)
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        }
+
+        @Transactional
+        public ForgotPasswordResponse forgotPassword(ForgotPasswordRequest request) {
+
+                User user = userRepository.findByEmail(request.getEmail())
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+                // Xóa OTP cũ của người dùng
+                passwordResetTokenRepository.deleteByUserId(user.getId());
+
+                // Sinh OTP 6 chữ số
+                String otp = String.format("%06d",
+                                ThreadLocalRandom.current().nextInt(1_000_000));
+
+                PasswordResetToken resetToken = PasswordResetToken.builder()
+                                .token(otp)
+                                .user(user)
+                                .expiredAt(LocalDateTime.now().plusMinutes(15))
+                                .used(false)
+                                .build();
+
+                passwordResetTokenRepository.save(resetToken);
+
+                String content = """
+                                Xin chào %s,
+
+                                Bạn đã yêu cầu đặt lại mật khẩu.
+
+                                Mã xác thực của bạn là:
+
+                                %s
+
+                                Mã có hiệu lực trong 15 phút.
+
+                                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.
+
+                                Trân trọng,
+                                Flood Alert System
+                                """
+                                .formatted(
+                                                user.getHoten(),
+                                                otp);
+
+                emailService.sendEmail(
+                                user.getEmail(),
+                                "Đặt lại mật khẩu",
+                                content);
+
+                return ForgotPasswordResponse.builder()
+                                .email(user.getEmail())
+                                .message("Đã gửi mã xác thực đến email của bạn.")
+                                .build();
+        }
+
+        @Transactional
+        public ForgotPasswordResponse resetPassword(ResetPasswordRequest request) {
+
+                PasswordResetToken resetToken = passwordResetTokenRepository
+                                .findByUserEmailAndToken(request.getEmail(), request.getToken())
+                                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+                if (Boolean.TRUE.equals(resetToken.getUsed())) {
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
+
+                if (resetToken.getExpiredAt().isBefore(LocalDateTime.now())) {
+                        throw new AppException(ErrorCode.UNAUTHENTICATED);
+                }
+
+                User user = resetToken.getUser();
+
+                user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+                userRepository.save(user);
+
+                resetToken.setUsed(true);
+
+                passwordResetTokenRepository.save(resetToken);
+
+                return ForgotPasswordResponse.builder()
+                                .email(user.getEmail())
+                                .message("Đổi mật khẩu thành công.")
+                                .build();
+        }
+
+        @Transactional
+        public UnlockAccountResponse sendUnlockCode(SendUnlockCodeRequest request) {
+
+                User user = userRepository.findByEmail(request.getEmail())
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+                if (user.getRole() != Role.CITIZEN) {
+                        throw new AppException(ErrorCode.USER_IS_NOT_CITIZEN);
+                }
+
+                if (user.getTrangthai() == Status.ACTIVE) {
+                        throw new AppException(ErrorCode.ACCOUNT_ALREADY_ACTIVE);
+                }
+
+                accountUnlockTokenRepository.deleteByUserId(user.getId());
+
+                String otp = String.format("%06d",
+                                ThreadLocalRandom.current().nextInt(1000000));
+
+                AccountUnlockToken unlockToken = AccountUnlockToken.builder()
+                                .otp(otp)
+                                .user(user)
+                                .expiredAt(LocalDateTime.now().plusMinutes(5))
+                                .used(false)
+                                .build();
+
+                accountUnlockTokenRepository.save(unlockToken);
+
+                String content = """
+                                Xin chào %s,
+
+                                Bạn đã yêu cầu mở khóa tài khoản.
+
+                                Mã xác thực của bạn là:
+
+                                %s
+
+                                Mã có hiệu lực trong 5 phút.
+
+                                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.
+
+                                Flood Alert System
+                                """
+                                .formatted(user.getHoten(), otp);
+
+                emailService.sendEmail(
+                                user.getEmail(),
+                                "Mở khóa tài khoản",
+                                content);
+
+                return UnlockAccountResponse.builder()
+                                .email(user.getEmail())
+                                .message("Đã gửi mã xác thực đến email.")
+                                .build();
+        }
+
+        @Transactional
+        public UnlockAccountResponse unlockAccount(UnlockAccountRequest request) {
+
+                User user = userRepository.findByEmail(request.getEmail())
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+                AccountUnlockToken unlockToken = accountUnlockTokenRepository
+                                .findByUserIdAndOtp(user.getId(), request.getOtp())
+                                .orElseThrow(() -> new AppException(ErrorCode.INVALID_UNLOCK_OTP));
+
+                if (Boolean.TRUE.equals(unlockToken.getUsed())) {
+                        throw new AppException(ErrorCode.UNLOCK_OTP_USED);
+                }
+
+                if (unlockToken.getExpiredAt().isBefore(LocalDateTime.now())) {
+                        throw new AppException(ErrorCode.UNLOCK_OTP_EXPIRED);
+                }
+
+                user.setTrangthai(Status.ACTIVE);
+
+                userRepository.save(user);
+
+                unlockToken.setUsed(true);
+
+                accountUnlockTokenRepository.save(unlockToken);
+
+                return UnlockAccountResponse.builder()
+                                .email(user.getEmail())
+                                .message("Mở khóa tài khoản thành công.")
+                                .build();
+        }
+
+        // Dọn OTP hết hạn
+        @Scheduled(cron = "0 */10 * * * *")
+        @Transactional
+        public void cleanUnlockOtp() {
+                accountUnlockTokenRepository.deleteByExpiredAtBefore(LocalDateTime.now());
+        }
 }

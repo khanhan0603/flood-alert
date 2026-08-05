@@ -86,6 +86,7 @@ public interface IoTDeviceRepository extends JpaRepository<IoTDevice, UUID> {
                 d.area.tenkhuvuc,
                 d.tenThietBi,
                 d.nguongCanhBao,
+                d.deviceHeight,
                 d.trangThai,
                 d.lat,
                 d.lon,
