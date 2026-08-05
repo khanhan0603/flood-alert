@@ -25,8 +25,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   @Query("""
           SELECT u
           FROM User u
-          WHERE u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
-            AND (u.email = :username OR u.sodt = :username)
+          WHERE (u.email = :username OR u.sodt = :username)
+            AND (
+                  u.role = com.example.flood_alert.enums.Role.CITIZEN
+                  OR u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
+            )
       """)
   Optional<User> findActiveByEmailOrPhone(String username);
 

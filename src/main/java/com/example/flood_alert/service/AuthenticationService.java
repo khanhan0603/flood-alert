@@ -26,12 +26,10 @@ import com.example.flood_alert.dbo.request.RefreshRequest;
 import com.example.flood_alert.dbo.request.ResetPasswordRequest;
 import com.example.flood_alert.dbo.request.SendUnlockCodeRequest;
 import com.example.flood_alert.dbo.request.UnlockAccountRequest;
-import com.example.flood_alert.dbo.request.UpdateUserStatusRequest;
 import com.example.flood_alert.dbo.response.AuthenticateResponse;
 import com.example.flood_alert.dbo.response.ForgotPasswordResponse;
 import com.example.flood_alert.dbo.response.IntrospectResponse;
 import com.example.flood_alert.dbo.response.UnlockAccountResponse;
-import com.example.flood_alert.dbo.response.UpdateUserStatusResponse;
 import com.example.flood_alert.entity.AccountUnlockToken;
 import com.example.flood_alert.entity.InvalidatedToken;
 import com.example.flood_alert.entity.PasswordResetToken;
@@ -178,7 +176,7 @@ public class AuthenticationService {
         public AuthenticateResponse authenticate(AuthenticateRequest request) {
                 var user = userRepository.findActiveByEmailOrPhone(request.getLoginInfo())
                                 .orElseThrow(() -> new AppException(ErrorCode.LOGIN_INFO_EXISTED));
-                // Kiểm tra tài khoản bị khóa
+
                 // Người dân bị khóa tài khoản
                 if (user.getRole() == Role.CITIZEN
                                 && user.getTrangthai() == Status.INACTIVE) {
