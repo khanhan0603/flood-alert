@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 public class IoTAggregateScheduler {
     private final IoTAreaAggregateService ioTAreaAggregateService;
 
-    @Scheduled(cron = "0 */1 * * * *")
+    @Scheduled(cron = "*/30 * * * * *")
     public void aggregate() {
         ioTAreaAggregateService.aggregateAllAreas();
     }
