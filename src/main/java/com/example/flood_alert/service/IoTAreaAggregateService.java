@@ -45,13 +45,14 @@ public class IoTAreaAggregateService {
         @Transactional
         public void aggregateArea(UUID areaId) {
                 // recordedAt: slot làm tròn — dùng để check duplicate và lưu DB
-                LocalDateTime recordedAt = LocalDateTime.now()
-                                .withSecond(0)
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime recordedAt = now
+                                .withSecond(now.getSecond() < 30 ? 0 : 30)
                                 .withNano(0);
 
                 // endTime: now() thực sự — dùng để query readings, không truncate
                 LocalDateTime endTime = LocalDateTime.now();
-                LocalDateTime startTime = endTime.minusMinutes(1);
+                LocalDateTime startTime = endTime.minusSeconds(30);
 
                 if (ioTAreaAggregateRepository.existsByAreaIdAndRecordedAt(areaId, recordedAt)) {
                         log.info("Skip aggregate area={} — already exists at {}", areaId, recordedAt);
