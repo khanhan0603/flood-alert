@@ -23,6 +23,7 @@ import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
 import com.example.flood_alert.dbo.request.CreateRescuerRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
+import com.example.flood_alert.dbo.request.UpdateRescuerRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
@@ -104,7 +105,7 @@ public class RescueTeamController {
         }
 
         @GetMapping("/detail/{teamId}")
-        public ApiResponse<RescueTeamResponse> getDetailTem(@PathVariable UUID teamId) {
+        public ApiResponse<RescueTeamResponse> getDetailTeam(@PathVariable UUID teamId) {
                 return ApiResponse.<RescueTeamResponse>builder()
                                 .result(rescueTeamService.getDetailTeam(teamId))
                                 .build();
@@ -166,5 +167,16 @@ public class RescueTeamController {
                                 .build();
         }
 
-        
+        // Update thông tin của thành viên trong team cho admin
+        @PutMapping("/rescuers/{userId}")
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+        public ApiResponse<RescuerResponse> updateRescuer(
+                        @PathVariable UUID userId,
+                        @RequestBody UpdateRescuerRequest request) {
+
+                return ApiResponse.<RescuerResponse>builder()
+                                .result(rescueTeamService.updateRescuer(userId, request))
+                                .build();
+        }
+
 }

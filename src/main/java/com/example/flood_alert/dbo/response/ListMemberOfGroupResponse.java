@@ -18,5 +18,7 @@ public class ListMemberOfGroupResponse {
 
     String phone;
 
+    String email;
+
     Boolean isLeader;
 }

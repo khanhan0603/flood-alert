@@ -28,6 +28,7 @@ import com.example.flood_alert.dbo.request.CreateRescueTeamRequest;
 import com.example.flood_alert.dbo.request.CreateRescuerRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
+import com.example.flood_alert.dbo.request.UpdateRescuerRequest;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamLeaderResponse;
@@ -93,7 +94,6 @@ public class RescueTeamService {
         team = rescueTeamRepository.save(team);
 
         // Lưu 1 group hotline khi tạo team
-        // Lưu 1 group Hotline khi tạo Team
         RescueGroup hotline = RescueGroup.builder()
                 .team(team)
                 .name("Hotline")
@@ -650,5 +650,64 @@ public class RescueTeamService {
         user = userRepository.save(user);
 
         return userMapper.toRescuerResponse(user);
+    }
+
+    @Transactional
+    public RescuerResponse updateRescuer(
+            UUID userId,
+            UpdateRescuerRequest request) {
+
+        User rescuer = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.USER_NOT_EXISTED));
+
+        // Phải là RESCUER
+        if (rescuer.getRole() != Role.RESCUER) {
+            throw new AppException(
+                    ErrorCode.USER_IS_NOT_RESCUER);
+        }
+
+        // Kiểm tra email mới
+        if (request.getEmail() != null
+                && !request.getEmail().equals(rescuer.getEmail())
+                && userRepository.existsActiveByEmail(request.getEmail())) {
+
+            throw new AppException(
+                    ErrorCode.EMAIL_EXISTED);
+        }
+
+        // Kiểm tra số điện thoại mới
+        if (request.getSodt() != null
+                && !request.getSodt().equals(rescuer.getSodt())
+                && userRepository.existsActiveBySodt(request.getSodt())) {
+
+            throw new AppException(
+                    ErrorCode.PHONE_EXISTED);
+        }
+
+        if (request.getHoten() != null)
+            rescuer.setHoten(request.getHoten());
+
+        if (request.getGioitinh() != null)
+            rescuer.setGioitinh(request.getGioitinh());
+
+        if (request.getNgaysinh() != null)
+            rescuer.setNgaysinh(request.getNgaysinh());
+
+        if (request.getSodt() != null)
+            rescuer.setSodt(request.getSodt());
+
+        if (request.getDiachi() != null)
+            rescuer.setDiachi(request.getDiachi());
+
+        if (request.getEmail() != null)
+            rescuer.setEmail(request.getEmail());
+
+        if (request.getGhichu() != null)
+            rescuer.setGhichu(request.getGhichu());
+
+        userRepository.save(rescuer);
+
+        return userMapper.toRescuerResponse(rescuer);
     }
 }

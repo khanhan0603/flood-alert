@@ -28,6 +28,7 @@ public interface RescueGroupMemberRepository extends JpaRepository<RescueGroupMe
                     u.id,
                     u.hoten,
                     u.sodt,
+                    u.email,
                     CASE
                         WHEN rg.leader.id = u.id THEN true
                         ELSE false

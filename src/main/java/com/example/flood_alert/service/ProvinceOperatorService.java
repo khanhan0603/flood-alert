@@ -183,30 +183,42 @@ public class ProvinceOperatorService {
         }
 
         @Transactional
-        public ProvinceOperatorDetailResponse update(UpdateProvinceOperatorRequest request){
-                User province=userRepository.findById(request.getId())
-                                        .orElseThrow(()->new AppException(ErrorCode.USER_NOT_EXISTED));
-                if(request.getEmail()!=null 
+        public ProvinceOperatorDetailResponse update(UpdateProvinceOperatorRequest request) {
+                User province = userRepository.findById(request.getId())
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                if (request.getEmail() != null
                                 && !request.getEmail().equals(province.getEmail())
-                                && userRepository.existsActiveByEmail(request.getEmail()))
-                {
+                                && userRepository.existsActiveByEmail(request.getEmail())) {
                         throw new AppException(ErrorCode.EMAIL_EXISTED);
                 }
-                if(request.getSodt()!=null 
+                if (request.getSodt() != null
                                 && !request.getSodt().equals(province.getSodt())
-                                && userRepository.existsActiveBySodt(request.getSodt()))
-                {
+                                && userRepository.existsActiveBySodt(request.getSodt())) {
                         throw new AppException(ErrorCode.PHONE_EXISTED);
                 }
-                province.setHoten(request.getHoten());
-                province.setGioitinh(request.getGioitinh());
-                province.setNgaysinh(request.getNgaysinh());
-                province.setSodt(request.getSodt());
-                province.setDiachi(request.getDiachi());
-                province.setEmail(request.getEmail());
-                province.setGhichu(request.getGhichu());
+                if (request.getHoten() != null)
+                        province.setHoten(request.getHoten());
+
+                if (request.getGioitinh() != null)
+                        province.setGioitinh(request.getGioitinh());
+
+                if (request.getNgaysinh() != null)
+                        province.setNgaysinh(request.getNgaysinh());
+
+                if (request.getSodt() != null)
+                        province.setSodt(request.getSodt());
+
+                if (request.getDiachi() != null)
+                        province.setDiachi(request.getDiachi());
+
+                if (request.getEmail() != null)
+                        province.setEmail(request.getEmail());
+
+                if (request.getGhichu() != null)
+                        province.setGhichu(request.getGhichu());
+                        
                 province.setArea(areaRepository.findById(request.getAreaId())
-                                        .orElseThrow(()->new AppException(ErrorCode.AREA_NOT_FOUND)));
+                                .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND)));
                 userRepository.save(province);
 
                 return ProvinceOperatorDetailResponse

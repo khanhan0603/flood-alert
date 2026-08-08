@@ -70,18 +70,7 @@ public class UserService {
 
         User user = authenticationService.getCurrentUser();
 
-        if (request.getEmail() != null
-                && !request.getEmail().equals(user.getEmail())
-                && userRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.EMAIL_EXISTED);
-        }
-
-        if (request.getSodt() != null
-                && !request.getSodt().equals(user.getSodt())
-                && userRepository.existsBySodt(request.getSodt())) {
-            throw new AppException(ErrorCode.PHONE_EXISTED);
-        }
-
+        // Các thông tin mọi role đều được phép cập nhật
         if (request.getHoten() != null)
             user.setHoten(request.getHoten());
 
@@ -91,29 +80,25 @@ public class UserService {
         if (request.getNgaysinh() != null)
             user.setNgaysinh(request.getNgaysinh());
 
-        if (request.getSodt() != null)
-            user.setSodt(request.getSodt());
-
         if (request.getDiachi() != null)
             user.setDiachi(request.getDiachi());
-
-        if (request.getEmail() != null)
-            user.setEmail(request.getEmail());
 
         if (request.getGhichu() != null)
             user.setGhichu(request.getGhichu());
 
-        // Chỉ công dân được phép thay đổi khu vực sinh sống
-        if (user.getRole() == Role.CITIZEN
-                && request.getAreaId() != null) {
+        // Chỉ công dân được phép thay đổi khu vực
+        if (user.getRole() == Role.CITIZEN) {
+            if (request.getAreaId() != null) {
+                Area area = areaRepository.findById(
+                        UUID.fromString(request.getAreaId()))
+                        .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
 
-            Area area = areaRepository.findById(UUID.fromString(request.getAreaId()))
-                    .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
-
-            user.setArea(area);
+                user.setArea(area);
+            }
         }
 
         userRepository.save(user);
+
         return getMyProfile();
     }
 
