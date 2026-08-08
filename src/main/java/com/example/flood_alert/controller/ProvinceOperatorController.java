@@ -36,7 +36,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 
 import com.example.flood_alert.dbo.request.UpdateProvinceOperatorRequest;
 
-
 @RestController
 @RequestMapping("/province-operator")
 @RequiredArgsConstructor
@@ -64,6 +63,17 @@ public class ProvinceOperatorController {
                 return ApiResponse
                                 .<Page<ProvinceOperatorResponse>>builder()
                                 .result(provinceOperatorService.getAll(pageable))
+                                .build();
+        }
+
+        @GetMapping("/search")
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+        public ApiResponse<Page<ProvinceOperatorResponse>> search(
+                        @RequestParam String keyword,
+                        @PageableDefault(size = 20) Pageable pageable) {
+
+                return ApiResponse.<Page<ProvinceOperatorResponse>>builder()
+                                .result(provinceOperatorService.search(keyword, pageable))
                                 .build();
         }
 
@@ -120,9 +130,10 @@ public class ProvinceOperatorController {
 
         @PutMapping
         @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-        public ApiResponse<ProvinceOperatorDetailResponse> update(@RequestBody @Valid UpdateProvinceOperatorRequest request){
-            return ApiResponse.<ProvinceOperatorDetailResponse>builder()
-                                                        .result(provinceOperatorService.update(request))
-                                                        .build();
+        public ApiResponse<ProvinceOperatorDetailResponse> update(
+                        @RequestBody @Valid UpdateProvinceOperatorRequest request) {
+                return ApiResponse.<ProvinceOperatorDetailResponse>builder()
+                                .result(provinceOperatorService.update(request))
+                                .build();
         }
 }

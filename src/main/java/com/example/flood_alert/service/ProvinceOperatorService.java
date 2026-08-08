@@ -54,6 +54,26 @@ public class ProvinceOperatorService {
                                                 .builder()
                                                 .id(user.getId())
                                                 .hoten(user.getHoten())
+                                                .email(user.getEmail())
+                                                .sodt(user.getSodt())
+                                                .tenkhuvuc_phutrach(
+                                                                user.getArea()
+                                                                                .getTenkhuvuc())
+                                                .build());
+        }
+
+        //Tìm kiếm pro theo keyword
+        @Transactional(readOnly = true)
+        public Page<ProvinceOperatorResponse> search(String keyword, Pageable pageable) {
+
+                return userRepository
+                                .searchActiveProvinceOperators(keyword, pageable)
+                                .map(user -> ProvinceOperatorResponse
+                                                .builder()
+                                                .id(user.getId())
+                                                .hoten(user.getHoten())
+                                                .email(user.getEmail())
+                                                .sodt(user.getSodt())
                                                 .tenkhuvuc_phutrach(
                                                                 user.getArea()
                                                                                 .getTenkhuvuc())

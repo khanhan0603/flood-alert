@@ -14,5 +14,7 @@ import lombok.experimental.FieldDefaults;
 public class ProvinceOperatorResponse {
     UUID id;
     String hoten;
+    String email;
+    String sodt;
     String tenkhuvuc_phutrach;
 }

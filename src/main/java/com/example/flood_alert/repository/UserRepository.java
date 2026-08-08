@@ -131,4 +131,21 @@ public interface UserRepository extends JpaRepository<User, UUID> {
           ORDER BY u.hoten ASC
       """)
   List<User> searchActiveRescuers(String keyword);
+
+  // Tìm kiếm pro theo keyword
+  @Query("""
+          SELECT u
+          FROM User u
+          WHERE u.role = com.example.flood_alert.enums.Role.PROVINCE_OPERATOR
+            AND u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
+            AND (
+                  LOWER(u.hoten) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR u.sodt LIKE CONCAT('%', :keyword, '%')
+            )
+          ORDER BY u.id ASC
+      """)
+  Page<User> searchActiveProvinceOperators(
+      String keyword,
+      Pageable pageable);
 }
