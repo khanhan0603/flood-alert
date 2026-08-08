@@ -18,6 +18,23 @@ import com.example.flood_alert.enums.Status;
 public interface UserRepository extends JpaRepository<User, UUID> {
   boolean existsByRole(Role role);
 
+  @Query("""
+          SELECT COUNT(u) > 0
+          FROM User u
+          WHERE u.email = :email
+            AND u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
+      """)
+  boolean existsActiveByEmail(String email);
+
+  @Query("""
+          SELECT COUNT(u) > 0
+          FROM User u
+          WHERE u.sodt = :sodt
+            AND u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
+      """)
+  boolean existsActiveBySodt(String sodt);
+
+  // Cho citizen update tài khoản
   boolean existsByEmail(String email);
 
   boolean existsBySodt(String sodt);

@@ -622,11 +622,11 @@ public class RescueTeamService {
     @Transactional
     public RescuerResponse createRescuer(CreateRescuerRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsActiveByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_EXISTED);
         }
 
-        if (userRepository.existsBySodt(request.getSodt())) {
+        if (userRepository.existsActiveBySodt(request.getSodt())) {
             throw new AppException(ErrorCode.PHONE_EXISTED);
         }
 

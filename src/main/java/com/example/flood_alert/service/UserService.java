@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.ChangePasswordRequest;
 import com.example.flood_alert.dbo.request.UpdateUserRequest;
-import com.example.flood_alert.dbo.request.UpdateUserStatusRequest;
 import com.example.flood_alert.dbo.request.UserCreationRequest;
 import com.example.flood_alert.dbo.response.ChangePasswordResponse;
 import com.example.flood_alert.dbo.response.MyProfileResponse;
@@ -43,9 +42,9 @@ public class UserService {
     AuthenticationService authenticationService;
 
     public User createUser(UserCreationRequest request) {
-        if (userRepository.existsByEmail(request.getEmail()))
+        if (userRepository.existsActiveByEmail(request.getEmail()))
             throw new AppException(ErrorCode.EMAIL_EXISTED);
-        if (userRepository.existsBySodt(request.getSodt()))
+        if (userRepository.existsActiveBySodt(request.getSodt()))
             throw new AppException(ErrorCode.PHONE_EXISTED);
         User user = userMapper.toUser(request);
 

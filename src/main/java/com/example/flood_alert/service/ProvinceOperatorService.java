@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.flood_alert.dbo.request.CreateProvinceOperatorRequest;
 import com.example.flood_alert.dbo.request.DeleteProvinceOperatorRequest;
+import com.example.flood_alert.dbo.request.UpdateProvinceOperatorRequest;
 import com.example.flood_alert.dbo.response.ProvinceOperatorDetailResponse;
 import com.example.flood_alert.dbo.response.ProvinceOperatorResponse;
 import com.example.flood_alert.dbo.response.RescueTeamSummaryResponse;
@@ -77,8 +78,12 @@ public class ProvinceOperatorService {
                                 .builder()
                                 .id(user.getId())
                                 .hoten(user.getHoten())
+                                .gioitinh(user.isGioitinh())
+                                .ngaysinh(user.getNgaysinh())
                                 .sodt(user.getSodt())
+                                .diachi(user.getDiachi())
                                 .email(user.getEmail())
+                                .ghichu(user.getGhichu())
                                 .areaId(user.getArea().getId())
                                 .tenKhuVucPhuTrach(
                                                 user.getArea()
@@ -123,11 +128,11 @@ public class ProvinceOperatorService {
         public ProvinceOperatorResponse create(
                         CreateProvinceOperatorRequest request) {
 
-                if (userRepository.existsByEmail(request.getEmail())) {
+                if (userRepository.existsActiveByEmail(request.getEmail())) {
                         throw new AppException(ErrorCode.EMAIL_EXISTED);
                 }
 
-                if (userRepository.existsBySodt(request.getSodt())) {
+                if (userRepository.existsActiveBySodt(request.getSodt())) {
                         throw new AppException(ErrorCode.PHONE_EXISTED);
                 }
 
@@ -175,5 +180,53 @@ public class ProvinceOperatorService {
                 }
 
                 userRepository.saveAll(provinceOperators);
+        }
+
+        @Transactional
+        public ProvinceOperatorDetailResponse update(UpdateProvinceOperatorRequest request){
+                User province=userRepository.findById(request.getId())
+                                        .orElseThrow(()->new AppException(ErrorCode.USER_NOT_EXISTED));
+                if(request.getEmail()!=null 
+                                && !request.getEmail().equals(province.getEmail())
+                                && userRepository.existsActiveByEmail(request.getEmail()))
+                {
+                        throw new AppException(ErrorCode.EMAIL_EXISTED);
+                }
+                if(request.getSodt()!=null 
+                                && !request.getSodt().equals(province.getSodt())
+                                && userRepository.existsActiveBySodt(request.getSodt()))
+                {
+                        throw new AppException(ErrorCode.PHONE_EXISTED);
+                }
+                province.setHoten(request.getHoten());
+                province.setGioitinh(request.getGioitinh());
+                province.setNgaysinh(request.getNgaysinh());
+                province.setSodt(request.getSodt());
+                province.setDiachi(request.getDiachi());
+                province.setEmail(request.getEmail());
+                province.setGhichu(request.getGhichu());
+                province.setArea(areaRepository.findById(request.getAreaId())
+                                        .orElseThrow(()->new AppException(ErrorCode.AREA_NOT_FOUND)));
+                userRepository.save(province);
+
+                return ProvinceOperatorDetailResponse
+                                .builder()
+                                .id(province.getId())
+                                .hoten(province.getHoten())
+                                .gioitinh(province.isGioitinh())
+                                .ngaysinh(province.getNgaysinh())
+                                .sodt(province.getSodt())
+                                .diachi(province.getDiachi())
+                                .email(province.getEmail())
+                                .ghichu(province.getGhichu())
+                                .areaId(province.getArea().getId())
+                                .tenKhuVucPhuTrach(
+                                                province.getArea()
+                                                                .getTenkhuvuc())
+                                .teamCount(rescueTeamRepository
+                                                .countByProvinceId(
+                                                                province.getArea()
+                                                                                .getId()))
+                                .build();
         }
 }

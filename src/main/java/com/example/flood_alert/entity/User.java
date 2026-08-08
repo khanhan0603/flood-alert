@@ -36,10 +36,7 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_email", columnNames = "email"),
-        @UniqueConstraint(name = "uk_sodt", columnNames = "sodt")
-})
+@Table(name = "users")
 public class User extends BaseEntity {
     String hoten;
     boolean gioitinh;

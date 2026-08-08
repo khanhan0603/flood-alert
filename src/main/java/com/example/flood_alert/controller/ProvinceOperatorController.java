@@ -32,6 +32,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import org.springframework.web.bind.annotation.PutMapping;
+
+import com.example.flood_alert.dbo.request.UpdateProvinceOperatorRequest;
+
+
 @RestController
 @RequestMapping("/province-operator")
 @RequiredArgsConstructor
@@ -102,6 +107,7 @@ public class ProvinceOperatorController {
         }
 
         @DeleteMapping
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
         public ApiResponse<Void> deleteProvinceOperators(
                         @RequestBody @Valid DeleteProvinceOperatorRequest request) {
 
@@ -110,5 +116,13 @@ public class ProvinceOperatorController {
                 return ApiResponse.<Void>builder()
                                 .message("Xóa điều phối viên cấp tỉnh thành công.")
                                 .build();
+        }
+
+        @PutMapping
+        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+        public ApiResponse<ProvinceOperatorDetailResponse> update(@RequestBody @Valid UpdateProvinceOperatorRequest request){
+            return ApiResponse.<ProvinceOperatorDetailResponse>builder()
+                                                        .result(provinceOperatorService.update(request))
+                                                        .build();
         }
 }
