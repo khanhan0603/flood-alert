@@ -26,6 +26,7 @@ import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
 import com.example.flood_alert.dbo.request.UpdateRescuerRequest;
 import com.example.flood_alert.dbo.response.ApiResponse;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
+import com.example.flood_alert.dbo.response.ListMemberOfGroupResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamLeaderResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
@@ -179,4 +180,13 @@ public class RescueTeamController {
                                 .build();
         }
 
+        // Tìm kiếm thành viên theo keyword
+        @GetMapping("/rescuers/search")
+        public ApiResponse<List<ListMemberOfGroupResponse>> searchRescuers(
+                        @RequestParam String keyword) {
+
+                return ApiResponse.<List<ListMemberOfGroupResponse>>builder()
+                                .result(rescueTeamService.searchRescuers(keyword))
+                                .build();
+        }
 }

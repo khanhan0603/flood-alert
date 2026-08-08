@@ -30,6 +30,7 @@ import com.example.flood_alert.dbo.request.UpdateRescueTeamLeaderRequest;
 import com.example.flood_alert.dbo.request.UpdateRescueTeamRequest;
 import com.example.flood_alert.dbo.request.UpdateRescuerRequest;
 import com.example.flood_alert.dbo.response.ImportRescuerResponse;
+import com.example.flood_alert.dbo.response.ListMemberOfGroupResponse;
 import com.example.flood_alert.dbo.response.RescueGroupResponse;
 import com.example.flood_alert.dbo.response.RescueTeamLeaderResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
@@ -709,5 +710,21 @@ public class RescueTeamService {
         userRepository.save(rescuer);
 
         return userMapper.toRescuerResponse(rescuer);
+    }
+
+    // Tìm kiếm thành viên theo keyword
+    @Transactional(readOnly = true)
+    public List<ListMemberOfGroupResponse> searchRescuers(String keyword) {
+
+        return userRepository.searchActiveRescuers(keyword)
+                .stream()
+                .map(user -> ListMemberOfGroupResponse.builder()
+                        .userId(user.getId())
+                        .fullName(user.getHoten())
+                        .phone(user.getSodt())
+                        .email(user.getEmail())
+                        .isLeader(false)
+                        .build())
+                .toList();
     }
 }

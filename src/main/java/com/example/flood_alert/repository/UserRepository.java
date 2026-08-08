@@ -117,4 +117,18 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   List<User> findAllByIdIn(Set<UUID> ids);
 
+  // Tìm kiếm res theo keyword
+  @Query("""
+          SELECT u
+          FROM User u
+          WHERE u.role = com.example.flood_alert.enums.Role.RESCUER
+            AND u.trangthai = com.example.flood_alert.enums.Status.ACTIVE
+            AND (
+                  LOWER(u.hoten) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR u.sodt LIKE CONCAT('%', :keyword, '%')
+            )
+          ORDER BY u.hoten ASC
+      """)
+  List<User> searchActiveRescuers(String keyword);
 }
