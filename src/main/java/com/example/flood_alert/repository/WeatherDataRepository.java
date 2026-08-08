@@ -92,9 +92,8 @@ public interface WeatherDataRepository extends JpaRepository<WeatherData, UUID> 
             """, nativeQuery = true)
     List<WeatherData> findWeatherDataByAreaAndTime(
             @Param("areaId") UUID areaId,
-            @Param("start")  LocalDateTime start,
-            @Param("end")    LocalDateTime end);
-
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 
     // Xoá data quá khứ cũ hơn cutoff — forecast (time > now) giữ nguyên
     @Modifying
@@ -104,4 +103,17 @@ public interface WeatherDataRepository extends JpaRepository<WeatherData, UUID> 
                 WHERE w.time < :cutoff
             """)
     int deleteByTimeBefore(@Param("cutoff") LocalDateTime cutoff);
+
+    List<WeatherData> findByArea_IdOrderByTimeAsc(UUID areaId);
+
+    List<WeatherData> findByTimeGreaterThanEqualAndTimeLessThanOrderByTimeAsc(
+            LocalDateTime startTime,
+            LocalDateTime endTime);
+
+    List<WeatherData> findByArea_IdAndTimeGreaterThanEqualAndTimeLessThanOrderByTimeAsc(
+            UUID areaId,
+            LocalDateTime startTime,
+            LocalDateTime endTime);
+
+    List<WeatherData> findAllByOrderByTimeAsc();
 }

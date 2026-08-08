@@ -74,7 +74,7 @@ public enum ErrorCode {
     INVALID_CALL_EVENT_STATUS(1064, "Trang thái cuộc gọi không hợp lệ!"),
     GENERATE_TRACKING_CODE_FAILED(1065, "Không thể tạo mã tra cứu. Vui lòng thử lại!"),
     TRACKING_CODE_REQUIRED(1066, "Mã tra cứu không được để trống!"),
-    SEARCH_CONDITION_REQUIRED(1067, "Vui lòng nhập ít nhất một điều kiện!"),
+    SEARCH_CONDITION_REQUIRED(1067, "Vui lòng nhập đủ các điều kiện!"),
     PREDICTION_JOB_NOT_FOUND(1068, "Không tìm thấy phiên chạy dự báo lũ lụt theo dữ liệu thời tiết!"),
     SOS_CANNOT_BE_UPDATED(1069, "Yêu cầu cứu hộ không thể cập nhật!"),
     INVALID_ASSIGNMENT_STATUS(1070, "Trạng thái nhiệm vụ không hợp lệ!"),
@@ -98,9 +98,9 @@ public enum ErrorCode {
     RESET_TOKEN_EXPIRED(1088, "Token đặt lại mật khẩu đã hết hạn!"),
     RESET_TOKEN_USED(1089, "Token đặt lại mật khẩu đã được sử dụng!"),
     USER_ALREADY_INACTIVE(1087, "Tài khoản đã bị khóa!"),
-    ACCOUNT_ALREADY_ACTIVE(1087, "Tài khoản đã ở trạng thái hoạt động!"),
-    ACCOUNT_LOCKED_NOT_FOUND(1088, "Không tìm thấy tài khoản bị khóa!"),
-    INVALID_UNLOCK_OTP(1089, "Mã xác thực không hợp lệ!"),
+    ACCOUNT_ALREADY_ACTIVE(1088, "Tài khoản đã ở trạng thái hoạt động!"),
+    ACCOUNT_LOCKED_NOT_FOUND(1089, "Không tìm thấy tài khoản bị khóa!"),
+    INVALID_UNLOCK_OTP(1092, "Mã xác thực không hợp lệ!"),
     UNLOCK_OTP_EXPIRED(1090, "Mã xác thực đã hết hạn!"),
     UNLOCK_OTP_USED(1091, "Mã xác thực đã được sử dụng!"),
     USER_IS_NOT_PROVINCE_OPERATOR(1099, "Người dùng không phải điều phối viên cấp tỉnh!"),
@@ -110,6 +110,9 @@ public enum ErrorCode {
     GROUP_MEMBER_LIMIT_EXCEEDED(2003,"Số lượng thành viên đã vượt giới hạn của nhóm!"),
     GROUP_MEMBER_NOT_ENOUGH(2004,"Số lượng thành viên trong nhóm không đủ để thực hiện nhiệm vụ"),
     ACCOUNT_LOCKED(2005,"Tài khoản đã bị khóa!"),
+    INVALID_DATE_RANGE(
+        2006,
+        "Ngày kết thúc không được nhỏ hơn ngày bắt đầu!"),
     ;
 
     int code;

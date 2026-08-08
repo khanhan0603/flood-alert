@@ -75,4 +75,13 @@ public class WeatherDataController {
 
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/filter")
+    public List<WDataResponse> filterWeatherData(
+            @RequestParam(required = false) UUID areaId,
+            @RequestParam(required = false) LocalDate start,
+            @RequestParam(required = false) LocalDate end) {
+
+        return weatherDataService.filterWeatherData(areaId, start, end);
+    }
 }
