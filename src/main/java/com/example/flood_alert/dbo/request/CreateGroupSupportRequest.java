@@ -2,6 +2,7 @@ package com.example.flood_alert.dbo.request;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -13,8 +14,9 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateGroupSupportRequest {
-    @NotBlank
+    @NotBlank(message = "REASON_REQUIRED")
     String reason;
 
+    @Valid
     List<CreateSupportRequestItem> items;
 }

@@ -81,14 +81,14 @@ public class RiskScoreCalculator {
         if (latest.getDangerRatio() != null
                 && latest.getDangerRatio() >= DANGER_RATIO_THRESHOLD
                 && latest.getDangerDurationMinutes() != null
-                && latest.getDangerDurationMinutes() >= 2) {
+                && latest.getDangerDurationMinutes().compareTo(BigDecimal.valueOf(2)) >= 0) {
             return RiskLevel.HIGH;
         }
-        // Nếu duy trì trạng thái nguy hiểm từ 1 phút trở lên => MEDIUM
+
         if (latest.getDangerRatio() != null
                 && latest.getDangerRatio() >= DANGER_RATIO_THRESHOLD
                 && latest.getDangerDurationMinutes() != null
-                && latest.getDangerDurationMinutes() >= 1) {
+                && latest.getDangerDurationMinutes().compareTo(BigDecimal.ONE) >= 0) {
             return RiskLevel.MEDIUM;
         }
 

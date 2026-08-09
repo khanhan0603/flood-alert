@@ -1,5 +1,6 @@
 package com.example.flood_alert.dbo.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +17,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateRescueGroupRequest {
 
+    @NotBlank(message="NAME_GROUP_REQUIRED")
     String name;
 
     Boolean hasBoat;

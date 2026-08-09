@@ -15,10 +15,10 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ApproveSupportRequestItem {
-    @NotNull
+    @NotNull(message="SUPPORT_REQUEST_ITEM_ID_REQUIRED")
     UUID supportRequestItemId;
 
-    @NotNull
+    @NotNull(message="STATUS_SUPPORT_REQUEST_ITEM_REQUIRED")
     SupportRequestItemStatus status;
 
     // Bắt buộc nếu APPROVED

@@ -14,7 +14,7 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ApproveSupportRequest {
-    @NotEmpty
+    @NotEmpty(message="SUPPORT_REQUEST_NOT_FULLY_REVIEWED")
     @Valid
     List<ApproveSupportRequestItem> items;
 }

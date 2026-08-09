@@ -1,5 +1,6 @@
 package com.example.flood_alert.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,7 +63,7 @@ public class ProvinceOperatorService {
                                                 .build());
         }
 
-        //Tìm kiếm pro theo keyword
+        // Tìm kiếm pro theo keyword
         @Transactional(readOnly = true)
         public Page<ProvinceOperatorResponse> search(String keyword, Pageable pageable) {
 
@@ -159,6 +160,9 @@ public class ProvinceOperatorService {
                 Area area = areaRepository.findById(request.getAreaId())
                                 .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND));
 
+                //kiểm tra ngày sinh phải đủ 18t
+                validateBirthDate(request.getNgaysinh());
+
                 User provinceOperator = User.builder()
                                 .hoten(request.getHoten())
                                 .email(request.getEmail())
@@ -181,6 +185,14 @@ public class ProvinceOperatorService {
                                 .tenkhuvuc_phutrach(
                                                 provinceOperator.getArea().getTenkhuvuc())
                                 .build();
+        }
+
+        private void validateBirthDate(LocalDate birthDate) {
+
+                //Ngày hiện tại lùi 18 năm
+                if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
+                        throw new AppException(ErrorCode.INVALID_BIRTH_DATE);
+                }
         }
 
         @Transactional
@@ -236,10 +248,13 @@ public class ProvinceOperatorService {
 
                 if (request.getGhichu() != null)
                         province.setGhichu(request.getGhichu());
-                        
+
                 province.setArea(areaRepository.findById(request.getAreaId())
                                 .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_FOUND)));
                 userRepository.save(province);
+
+                //kiểm tra ng/ay sinh phải đủ 18t
+                validateBirthDate(request.getNgaysinh());
 
                 return ProvinceOperatorDetailResponse
                                 .builder()

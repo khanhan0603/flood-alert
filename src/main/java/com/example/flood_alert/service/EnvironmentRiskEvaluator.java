@@ -9,11 +9,13 @@ import com.example.flood_alert.enums.EnvironmentRisk;
 
 @Component
 public class EnvironmentRiskEvaluator {
+
     // Ngưỡng mực nước cực đoan: tăng 10cm/phút
     private static final double EXTREME_WATER_RISE = 10.0;
 
     // Ngưỡng thời gian danger cực đoan: 90 phút
-    private static final int EXTREME_DANGER_DURATION = 90;
+    private static final BigDecimal EXTREME_DANGER_DURATION =
+            BigDecimal.valueOf(90);
 
     public EnvironmentRisk evaluate(
             AreaRiskSnapshot snapshot) {
@@ -27,7 +29,8 @@ public class EnvironmentRiskEvaluator {
                 && snapshot.getWaterRiseRatePerMinute()
                         .compareTo(BigDecimal.valueOf(EXTREME_WATER_RISE)) >= 0)
                 || (snapshot.getDangerDurationMinutes() != null
-                        && snapshot.getDangerDurationMinutes() >= EXTREME_DANGER_DURATION)) {
+                        && snapshot.getDangerDurationMinutes()
+                                .compareTo(EXTREME_DANGER_DURATION) >= 0)) {
 
             return EnvironmentRisk.HIGH;
         }

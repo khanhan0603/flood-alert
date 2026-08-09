@@ -6,6 +6,8 @@ import java.util.UUID;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,25 +15,27 @@ import lombok.Setter;
 @Setter
 public class CreateProvinceOperatorRequest {
 
-    @NotBlank(message = "Họ tên không được để trống!")
+    @NotBlank(message = "HOTEN_REQUIRED")
     private String hoten;
 
-    @NotBlank(message = "Email không được để trống!")
-    @Email(message = "Email không hợp lệ!")
+    @NotBlank(message = "EMAIL_REQUIRED")
+    @Email(message = "INVALID_EMAIL")
     private String email;
 
-    @NotBlank(message = "Số điện thoại không được để trống!")
+    @NotBlank(message = "SODT_REQUIRED")
+    @Pattern(regexp = "^0\\d{9}$", message = "INVALID_PHONE")
     private String sodt;
 
-    @NotNull(message = "Giới tính không được để trống!")
+    @NotNull(message = "GIOITINH_REQUIRED")
     private Boolean gioitinh;
 
-    @NotNull(message = "Ngày sinh không được để trống!")
+    @NotNull(message = "NGAYSINH_REQUIRED")
+    @Past(message = "BIRTH_DATE_INVALID") // @Past dùng để kiểm tra một giá trị ngày/thời gian phải nằm trong quá khứ.
     private LocalDate ngaysinh;
 
-    @NotBlank(message = "Địa chỉ không được để trống!")
+    @NotBlank(message = "LOCATION_REQUIRED")
     private String diachi;
 
-    @NotNull(message = "Khu vực phụ trách không được để trống!")
+    @NotNull(message = "WORK_AREA_REQUIRED")
     private UUID areaId;
 }

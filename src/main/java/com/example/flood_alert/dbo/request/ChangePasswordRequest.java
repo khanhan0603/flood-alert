@@ -9,10 +9,11 @@ import lombok.Setter;
 @Setter
 public class ChangePasswordRequest {
 
-    @NotBlank(message = "Mật khẩu hiện tại không được để trống!")
+    @NotBlank(message = "OLD_PASSWORD_REQUIRED")
     private String oldPassword;
 
-    @NotBlank(message = "Mật khẩu mới không được để trống!")
-    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự!")
+    @NotBlank(message = "NEW_PASSWORD_REQUIRED")
+    @Size(min = 6, message = "PASSWORD_TOO_SHORT")
+    // @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).+$", message = "PASSWORD_INVALID")
     private String newPassword;
 }

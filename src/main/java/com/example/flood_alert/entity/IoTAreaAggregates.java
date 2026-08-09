@@ -57,7 +57,7 @@ public class IoTAreaAggregates extends BaseEntity {
         Double dangerRatio;
 
         @Column(name = "danger_duration_minutes")
-        Integer dangerDurationMinutes;
+        BigDecimal dangerDurationMinutes;
 
         @Column(name = "recorded_at")
         LocalDateTime recordedAt;

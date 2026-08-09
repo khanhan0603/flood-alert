@@ -23,6 +23,6 @@ public class IoTAggregateResponse {
     Integer totalDeviceCount;
     BigDecimal waterRiseRatePerMinute;
     Double dangerRatio;
-    Integer dangerDurationMinutes;
+    BigDecimal dangerDurationMinutes;
     LocalDateTime recordedAt;
 }

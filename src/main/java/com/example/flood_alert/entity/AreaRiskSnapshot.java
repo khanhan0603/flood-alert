@@ -56,7 +56,7 @@ public class AreaRiskSnapshot extends BaseEntity {
     // % thiết bị đang vượt ngưỡng hiện tại
     Double dangerRatio;
     //đã nguy hiểm liên tục bao lâu
-    Integer dangerDurationMinutes;
+    BigDecimal dangerDurationMinutes;
     //nước đang tăng nhanh hay chậm
     BigDecimal waterRiseRatePerMinute;
     //Số lượng dữ liệu tổng hợp là nguy hiểm trong 30 phút gần nhất.

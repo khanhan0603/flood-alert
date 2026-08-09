@@ -9,6 +9,6 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AnonymousSosListRequest {
-    @NotBlank
+    @NotBlank(message="SODT_REQUIRED")
     String sodt;
 }

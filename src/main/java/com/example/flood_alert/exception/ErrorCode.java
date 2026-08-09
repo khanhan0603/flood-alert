@@ -22,6 +22,8 @@ public enum ErrorCode {
     NO_PERMISSION(1039, "Không có quyền hạn trong thao tác này!"),
     LOCATION_REQUIRED(1062, "Địa chỉ không được để trống!"),
     ADDRESS_TOO_LONG(2007, "Địa chỉ quá dài! Tối đa 500 ký tự!"),
+    LOGIN_INFO_REQUIRED(2016,"Thông tin đăng nhập không được để trống!"),
+    PASSWORD_REQUIRED(2017,"Mật khẩu đăng nhập không được để trống!"),
 
     INVALID_RESET_TOKEN(1087, "Token đặt lại mật khẩu không hợp lệ!"),
     RESET_TOKEN_EXPIRED(1088, "Token đặt lại mật khẩu đã hết hạn!"),
@@ -33,11 +35,20 @@ public enum ErrorCode {
     UNLOCK_OTP_EXPIRED(1090, "Mã xác thực đã hết hạn!"),
     UNLOCK_OTP_USED(1091, "Mã xác thực đã được sử dụng!"),
     WRONG_PASSWORD(2001, "Mật khẩu hiện tại không chính xác!"),
+    OLD_PASSWORD_REQUIRED(2018,"Mật khẩu hiện tại không được để trống!"),
+    NEW_PASSWORD_REQUIRED(2019,"Mật khẩu mới không được để trống!"),
+    PASSWORD_TOO_SHORT(2020,"Mật khẩu phải ít nhất 6 ký tự!"),
     NEW_PASSWORD_MUST_BE_DIFFERENT(2002, "Mật khẩu mới phải khác mật khẩu hiện tại!"),
     ACCOUNT_LOCKED(2005, "Tài khoản đã bị khóa!"),
 
     USER_NOT_EXISTED(1015, "Không tìm thấy người dùng!"),
     EMPTY_ACTIVE_USERS(1021, "Danh sách người dùng đang hoạt động trống!"),
+    HOTEN_REQUIRED(2020,"Họ tên không được để trống!"),
+    EMAIL_REQUIRED(2021,"Email không được để trống!"),
+    GIOITINH_REQUIRED(2022,"Phải chọn giới tính!"),
+    NGAYSINH_REQUIRED(2023,"Phải chọn ngày sinh!"),
+    BIRTH_DATE_INVALID(2024,"Ngày sinh phải trước thời điểm hiện tại!"),
+    INVALID_BIRTH_DATE(2025,"Người dùng hiện chưa đủ 18 tuổi!"),
 
     USER_IS_NOT_CITIZEN(2000, "Người dùng không phải người dân nên không dùng chức năng này!"),
 
@@ -48,6 +59,7 @@ public enum ErrorCode {
     EMPTY_POLYGIN_BY_ID(1003, "Không tìm thấy ranh giới hợp lệ!"),
     AREA_NOT_FOUND(1011, "Không tìm thấy khu vực phù hợp!"),
     EMPTY_AREA(1019, "Không tìm thấy bất kỳ khu vực nào phù hợp!"),
+    WORK_AREA_REQUIRED(2026,"Khu vực phụ trách không được để trống!"),
 
     DEVICE_CODE_EXISTED(1012, "Mã thiết bị này đã tồn tại!"),
     DEVICE_NOT_FOUND(1013, "Không tìm thấy thiết bị!"),
@@ -74,6 +86,7 @@ public enum ErrorCode {
     LEADER_AND_DEPUTY_CANNOT_BE_THE_SAME(1075, "Người này có thể đã là đội trưởng!"),
     TEAM_LEADER_NOT_FOUND(1076, "Không tìm thấy đội trưởng!"),
     DEPUTY_LEADER_NOT_FOUND(1079, "Không tìm thấy phó đội trưởng!"),
+    TEAM_REQUIRED(2028,"Đội cứu hộ không được để trống!"),
 
     LIST_GROUP_NOT_FOUND(1037, "Danh sách nhóm cứu hộ thuộc đội này đang trống!"),
     GROUP_NOT_FOUND(1043, "Không tìm thấy nhóm cứu hộ!"),
@@ -82,6 +95,7 @@ public enum ErrorCode {
     GROUP_LEADER_CANNOT_DELETE(1053, "Không được xóa trưởng nhóm!"),
     GROUP_MEMBER_LIMIT_EXCEEDED(2003, "Số lượng thành viên đã vượt giới hạn của nhóm!"),
     GROUP_MEMBER_NOT_ENOUGH(2004, "Số lượng thành viên trong nhóm không đủ để thực hiện nhiệm vụ"),
+    NAME_GROUP_REQUIRED(2027,"Tên nhóm không được để trống!"),
 
     CLIENT_DEVICE_REQUIRED(1030, "Không tìm thấy ID máy chủ!"),
     ACTIVE_SOS_ALREADY_EXISTS(1032, "Bạn đang có yêu cầu cứu hộ đang được xử lý!"),
@@ -96,8 +110,8 @@ public enum ErrorCode {
     LAT_INVALID(1103, "Vĩ độ phải nằm trong khoảng từ -90 đến 90!"),
     LON_REQUIRED(1104, "Kinh độ không được để trống!"),
     LON_INVALID(1105, "Kinh độ phải nằm trong khoảng từ -180 đến 180!"),
-    DESCRIPTION_TOO_LONG(2011,"Đoạn mô tả quá dài! Không vượt quá 1000 ký tự!"),
-    SOS_REQUIRED(2010,"Không được bỏ trống mã yêu cầu cứu hộ!"),
+    DESCRIPTION_TOO_LONG(2011, "Đoạn mô tả quá dài! Không vượt quá 1000 ký tự!"),
+    SOS_REQUIRED(2010, "Không được bỏ trống mã yêu cầu cứu hộ!"),
 
     ASSIGNMENT_NOT_FOUND(1040, "Không tìm thấy nhiệm vụ!"),
     GROUP_NOT_AVAILABLE(1042, "Nhóm cứu hộ hiện tại không sẵn sàng nhận nhiệm vụ!"),
@@ -122,9 +136,13 @@ public enum ErrorCode {
     INVALID_SUPPORT_TYPE(1073, "Loại hỗ trợ không hợp lệ!"),
     SUPPORT_REQUEST_ITEM_REQUIRED(1072, "Không được để chi tiết yêu cầu hỗ trợ trống!"),
     SUPPORT_REQUEST_ALREADY_CLAIMED(1084, "Yêu cầu hỗ trợ đã có người nhận điều phối!"),
-    REASON_REQUIRED(2008,"Lý do cần hỗ trợ không được để trống!"),
-    REASON_TOO_LONG(2009,"Lý do hỗ trợ quá dài! Không được vượt quá 1000 ký tự!"),
-    SUPPORT_TYPE_REQUIRED(2011,"Không được để trống loại nhóm cần hỗ trợ!"),
+    REASON_REQUIRED(2008, "Lý do cần hỗ trợ không được để trống!"),
+    REASON_TOO_LONG(2009, "Lý do hỗ trợ quá dài! Không được vượt quá 1000 ký tự!"),
+    SUPPORT_TYPE_REQUIRED(2011, "Không được để trống loại nhóm cần hỗ trợ!"),
+    REQUIRED_GROUP_COUNT_REQUIRED(2012, "Không được để trống số lượng nhóm cần hỗ trợ!"),
+    REQUIRED_GROUP_COUNT_INVALID(2013, "Số lượng nhóm cần hỗ trợ không hợp lệ!"),
+    SUPPORT_REQUEST_ITEM_ID_REQUIRED(2014,"Mã chi tiết yêu cầu hỗ trợ không được để trống!"),
+    STATUS_SUPPORT_REQUEST_ITEM_REQUIRED(2015,"Trạng thái chi tiết yêu cầu hỗ trợ không được để trống!"),
 
     INVALID_HOTLINE_GROUP_CAPABILITY(1061, "Nhóm Hotline không được có năng lực cứu hộ!"),
     CALL_EVENT_NOT_FOUND(1063, "Không tìm thấy cuộc gọi hoặc cuộc gọi đã được xử lý!"),

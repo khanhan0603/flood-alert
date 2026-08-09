@@ -18,7 +18,7 @@ public class AreaRiskSnapshotResponse {
     Double iotRiskScore;
     Double predictionProbability;
     Double dangerRatio;
-    Integer dangerDurationMinutes;
+    BigDecimal dangerDurationMinutes;
     BigDecimal waterRiseRatePerMinute;
     Integer dangerAggregateCount;
     Double dangerPercent;

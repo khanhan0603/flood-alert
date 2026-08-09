@@ -13,9 +13,9 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CancelAnonymousSosRequest {
-    @NotBlank
+    @NotBlank(message="SODT_REQUIRED")
     String sodt;
 
-    @NotBlank
+    @NotBlank(message="CLIENT_DEVICE_ID_REQUIRED")
     String clientDeviceId;
 }

@@ -6,6 +6,7 @@ import java.util.UUID;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,25 +14,26 @@ import lombok.Setter;
 @Setter
 public class CreateRescuerRequest {
 
-    @NotBlank(message = "Họ tên không được để trống!")
+    @NotBlank(message = "HOTEN_REQUIRED")
     private String hoten;
 
-    @NotBlank(message = "Email không được để trống!")
-    @Email(message = "Email không hợp lệ!")
+    @NotBlank(message = "EMAIL_REQUIRED")
+    @Email(message = "INVALID_EMAIL")
     private String email;
 
-    @NotBlank(message = "Số điện thoại không được để trống!")
+    @NotBlank(message = "SODT_REQUIRED")
     private String sodt;
 
-    @NotNull(message = "Giới tính không được để trống!")
+    @NotNull(message = "GIOITINH_REQUIRED")
     private Boolean gioitinh;
 
-    @NotNull(message = "Ngày sinh không được để trống!")
+    @NotNull(message = "NGAYSINH_REQUIRED")
+    @Past(message = "BIRTH_DATE_INVALID")
     private LocalDate ngaysinh;
 
-    @NotBlank(message = "Địa chỉ không được để trống!")
+    @NotBlank(message = "LOCATION_REQUIRED")
     private String diachi;
 
-    @NotNull(message = "Đội cứu hộ không được để trống!")
+    @NotNull(message = "TEAM_REQUIRED")
     private UUID teamId;
 }

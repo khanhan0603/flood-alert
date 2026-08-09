@@ -123,12 +123,15 @@ public class IoTAreaAggregateService {
                                 totalDeviceCount, dangerRatio);
                 Optional<IoTAreaAggregates> prev = ioTAreaAggregateRepository
                                 .findTopByAreaIdOrderByRecordedAtDesc(areaId);
-                int dangerDurationMinutes = 0;
+                BigDecimal dangerDurationMinutes = BigDecimal.ZERO;
                 if (dangerRatio >= 0.5) {
                         dangerDurationMinutes = prev
-                                        .filter(p -> p.getDangerRatio() != null && p.getDangerRatio() >= 0.5)
-                                        .map(p -> Optional.ofNullable(p.getDangerDurationMinutes()).orElse(0) + 1)
-                                        .orElse(1);
+                                        .filter(p -> p.getDangerRatio() != null
+                                                        && p.getDangerRatio() >= 0.5)
+                                        .map(p -> Optional.ofNullable(p.getDangerDurationMinutes())
+                                                        .orElse(BigDecimal.ZERO)
+                                                        .add(new BigDecimal("0.5")))
+                                        .orElse(new BigDecimal("0.5"));
                 }
 
                 // waterRiseRatePerMinute — tái sử dụng prev, không query thêm
@@ -322,12 +325,16 @@ public class IoTAreaAggregateService {
                                 .findTopByAreaIdOrderByRecordedAtDesc(areaId);
 
                 // dangerDurationMinutes
-                int dangerDurationMinutes = 0;
+                BigDecimal dangerDurationMinutes = BigDecimal.ZERO;
+
                 if (dangerRatio >= 0.5) {
                         dangerDurationMinutes = prev
-                                        .filter(p -> p.getDangerRatio() != null && p.getDangerRatio() >= 0.5)
-                                        .map(p -> Optional.ofNullable(p.getDangerDurationMinutes()).orElse(0) + 1)
-                                        .orElse(1);
+                                        .filter(p -> p.getDangerRatio() != null
+                                                        && p.getDangerRatio() >= 0.5)
+                                        .map(p -> Optional.ofNullable(p.getDangerDurationMinutes())
+                                                        .orElse(BigDecimal.ZERO)
+                                                        .add(new BigDecimal("0.5")))
+                                        .orElse(new BigDecimal("0.5"));
                 }
 
                 // waterRiseRatePerMinute — tái sử dụng prev, không query thêm
