@@ -291,7 +291,7 @@ public class IoTAreaAggregateService {
                                                 .max()
                                                 .orElse(0.0));
 
-                // ✅ Dùng chung latestByDevice cho cả currentWater, totalDeviceCount,
+                // Dùng chung latestByDevice cho cả currentWater, totalDeviceCount,
                 // dangerRatio
                 Map<UUID, IoTSensorReading> latestByDevice = readings.stream()
                                 .collect(Collectors.toMap(

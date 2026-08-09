@@ -39,6 +39,7 @@ public class SnapshotWriter {
 
         @Transactional
         public void generateSnapshot(UUID areaId, UUID predictionJobHistoryId) {
+                  // Lấy 10 aggregate gần nhất = khoảng 5 phút dữ liệu
                 List<IoTAreaAggregates> aggregates = ioTAreaAggregateRepository
                                 .findRecentAggregates(areaId, PageRequest.of(0, 15));
 

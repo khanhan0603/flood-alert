@@ -56,17 +56,19 @@ public class RiskScoreCalculator {
 
     /**
      * Đánh giá mức độ rủi ro của khu vực dựa trên
-     * dữ liệu IoT Aggregate trong 1 phút gần nhất.
+     * các aggregate IoT gần nhất.
      *
      * HIGH:
-     * - Ít nhất 50% aggregate ở trạng thái nguy hiểm
-     * - Mực nước 5 lần đo gần nhất không giảm
+     * - Duy trì trạng thái nguy hiểm từ 1 phút trở lên.
+     * - Hoặc ít nhất 50% aggregate nguy hiểm
+     * và mực nước 5 aggregate gần nhất không giảm.
      *
      * MEDIUM:
-     * - Ít nhất 30% aggregate ở trạng thái nguy hiểm
+     * - Duy trì trạng thái nguy hiểm từ 30 giây trở lên.
+     * - Hoặc ít nhất 30% aggregate nguy hiểm.
      *
      * LOW:
-     * - Các trường hợp còn lại
+     * - Các trường hợp còn lại.
      */
     private RiskLevel calculateIotRisk(List<IoTAreaAggregates> aggregates) {
 
@@ -135,7 +137,7 @@ public class RiskScoreCalculator {
 
     /**
      * Kiểm tra xu hướng mực nước
-     * của 5 aggregate gần nhất (~10 phút).
+     * của 5 aggregate gần nhất (~2 phút 30 giây).
      *
      * Trả về true nếu mực nước giữ nguyên
      * hoặc tăng liên tục.
@@ -167,7 +169,7 @@ public class RiskScoreCalculator {
         return true;
     }
 
-    // Đếm số lượng dữ liệu tổng hợp là nguy hiểm trong 30 phút gần nhất
+    // Đếm số lượng aggregate nguy hiểm trong 10 aggregate gần nhất (~5 phút)
     public long countDangerAggregates(
             List<IoTAreaAggregates> aggregates) {
 
