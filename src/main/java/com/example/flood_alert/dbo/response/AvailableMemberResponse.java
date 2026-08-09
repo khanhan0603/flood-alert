@@ -23,4 +23,6 @@ public class AvailableMemberResponse {
     String fullName;
 
     String phone;
+
+    String email;
 }

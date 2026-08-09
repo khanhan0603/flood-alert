@@ -15,7 +15,6 @@ import com.example.flood_alert.dbo.request.CreateSosRequest;
 import com.example.flood_alert.dbo.request.SearchSosRequest;
 import com.example.flood_alert.dbo.request.UpdateAnonymousSosRequest;
 import com.example.flood_alert.dbo.request.UpdateSosRequest;
-import com.example.flood_alert.dbo.response.CitizenAssignmentResponse;
 import com.example.flood_alert.dbo.response.CitizenSosDetailResponse;
 import com.example.flood_alert.dbo.response.SosAssignmentResponse;
 import com.example.flood_alert.dbo.response.SosDetailResponse;
@@ -86,7 +85,6 @@ public class SOSRequestService {
 
         SupportRequestMapper supportRequestMapper;
         AuthenticationService authenticationService;
-        NotificationService notificationService;
         TrackingCodeGenerator trackingCodeGenerator;
         List<StatusSOS> ACTIVE_STATUSES = List.of(
                         StatusSOS.PENDING,
@@ -185,7 +183,7 @@ public class SOSRequestService {
                 AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
                                 .findLatestSnapshotByAreaId(areaId)
                                 .orElseThrow(() -> new AppException(
-                                                ErrorCode.AREA_RISK_NOT_FOUND));
+                                                ErrorCode.SNAPSHOT_NOT_FOUND));
 
                 // 3. Tính EnvironmentRisk
                 EnvironmentRisk environmentRisk = environmentRiskEvaluator.evaluate(snapshot);
@@ -420,7 +418,7 @@ public class SOSRequestService {
                 AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
                                 .findLatestSnapshotByAreaId(areaId)
                                 .orElseThrow(() -> new AppException(
-                                                ErrorCode.AREA_RISK_NOT_FOUND));
+                                                ErrorCode.SNAPSHOT_NOT_FOUND));
 
                 EnvironmentRisk environmentRisk = environmentRiskEvaluator.evaluate(snapshot);
 
@@ -515,7 +513,7 @@ public class SOSRequestService {
                 AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
                                 .findLatestSnapshotByAreaId(areaId)
                                 .orElseThrow(() -> new AppException(
-                                                ErrorCode.AREA_RISK_NOT_FOUND));
+                                                ErrorCode.SNAPSHOT_NOT_FOUND));
 
                 EnvironmentRisk environmentRisk = environmentRiskEvaluator.evaluate(snapshot);
 

@@ -14,10 +14,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateSupportRequestItem {
 
-    @NotNull
+    @NotNull(message = "SUPPORT_TYPE_REQUIRED")
     SupportType supportType;
 
-    @NotNull
-    @Min(1)
+    @NotNull(message = "REQUIRED_GROUP_COUNT_REQUIRED")
+    @Min(value = 1, message = "REQUIRED_GROUP_COUNT_INVALID")
     Integer requiredGroupCount;
 }

@@ -157,6 +157,7 @@ public class RescueGroupService {
                                                 .userId(user.getId())
                                                 .fullName(user.getHoten())
                                                 .phone(user.getSodt())
+                                                .email(user.getEmail())
                                                 .build())
                                 .toList();
         }

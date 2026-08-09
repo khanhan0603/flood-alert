@@ -250,7 +250,7 @@ public class HotlineService {
                 AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
                                 .findLatestSnapshotByAreaId(areaId)
                                 .orElseThrow(() -> new AppException(
-                                                ErrorCode.AREA_RISK_NOT_FOUND));
+                                                ErrorCode.SNAPSHOT_NOT_FOUND));
 
                 // =====================
                 // Environment Risk
@@ -516,7 +516,7 @@ public class HotlineService {
                                         request);
 
                         case DONE, CANCELED -> throw new AppException(
-                                        ErrorCode.SOS_CANNOT_BE_UPDATED);
+                                        ErrorCode.SOS_CANNOT_UPDATE);
                 }
 
                 sos = sosRequestRepository.save(sos);
@@ -589,7 +589,7 @@ public class HotlineService {
                 AreaRiskSnapshot snapshot = areaRiskSnapshotRepository
                                 .findLatestSnapshotByAreaId(areaId)
                                 .orElseThrow(() -> new AppException(
-                                                ErrorCode.AREA_RISK_NOT_FOUND));
+                                                ErrorCode.SNAPSHOT_NOT_FOUND));
 
                 EnvironmentRisk environmentRisk = environmentRiskEvaluator.evaluate(snapshot);
 
