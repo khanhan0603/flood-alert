@@ -183,10 +183,10 @@ public class AlertService {
                         Khu vực %s đang ở mức cảnh báo %s.
 
                         Tỷ lệ dữ liệu nguy hiểm: %.1f%%
-                        Số phút nguy hiểm liên tục: %d phút
+                        Số phút nguy hiểm liên tục: %.2f phút
 
                         Người dân nên theo dõi tình hình và chuẩn bị phương án ứng phó khi cần thiết.
-                            """,
+                        """,
                 areaName,
                 riskText(snapshot.getRiskLevel()),
                 snapshot.getDangerPercent(),

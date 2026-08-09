@@ -13,6 +13,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateRescueGroupStatusRequest {
 
-    @NotNull
+    @NotNull(message="STATUS_GROUP_REQUIRED")
     RescueGroupStatus status;
 }

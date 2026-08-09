@@ -9,7 +9,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateRescueGroupRequest {
 
-    @NotBlank(message = "Tên nhóm không được để trống")
+    @NotBlank(message = "NAME_GROUP_REQUIRED")
     String name;
 
     Boolean hasBoat;

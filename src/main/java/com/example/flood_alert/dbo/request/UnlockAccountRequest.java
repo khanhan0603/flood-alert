@@ -9,10 +9,10 @@ import lombok.Setter;
 @Setter
 public class UnlockAccountRequest {
 
-    @NotBlank(message = "Email không được để trống!")
-    @Email(message = "Email không hợp lệ!")
+    @NotBlank(message = "EMAIL_REQUIRED")
+    @Email(message = "INVALID_EMAIL")
     private String email;
 
-    @NotBlank(message = "Mã OTP không được để trống!")
+    @NotBlank(message = "OTP_REQUIRED")
     private String otp;
 }

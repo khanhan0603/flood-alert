@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class SendUnlockCodeRequest {
 
-    @NotBlank(message = "Email không được để trống!")
-    @Email(message = "Email không hợp lệ!")
+    @NotBlank(message = "EMAIL_REQUIRED")
+    @Email(message = "INVALID_EMAIL")
     private String email;
 }

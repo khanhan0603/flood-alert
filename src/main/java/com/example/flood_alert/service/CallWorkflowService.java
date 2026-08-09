@@ -95,6 +95,11 @@ public class CallWorkflowService {
             throw new AppException(ErrorCode.CALL_TASK_FINISHED);
         }
 
+        //Thời điểm end phải lớn hơn thời điểm start
+        if (!request.getEndedAt().isAfter(request.getStartedAt())) {
+            throw new AppException(ErrorCode.INVALID_CALL_TIME);
+        }
+
         saveCallLog(callTask, request);
 
         switch (request.getCallResult()) {

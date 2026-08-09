@@ -32,6 +32,7 @@ public enum ErrorCode {
     ACCOUNT_ALREADY_ACTIVE(1088, "Tài khoản đã ở trạng thái hoạt động!"),
     ACCOUNT_LOCKED_NOT_FOUND(1089, "Không tìm thấy tài khoản bị khóa!"),
     INVALID_UNLOCK_OTP(1092, "Mã xác thực không hợp lệ!"),
+    OTP_REQUIRED(2030,"Mã xác thực không được để trống!"),
     UNLOCK_OTP_EXPIRED(1090, "Mã xác thực đã hết hạn!"),
     UNLOCK_OTP_USED(1091, "Mã xác thực đã được sử dụng!"),
     WRONG_PASSWORD(2001, "Mật khẩu hiện tại không chính xác!"),
@@ -86,7 +87,9 @@ public enum ErrorCode {
     LEADER_AND_DEPUTY_CANNOT_BE_THE_SAME(1075, "Người này có thể đã là đội trưởng!"),
     TEAM_LEADER_NOT_FOUND(1076, "Không tìm thấy đội trưởng!"),
     DEPUTY_LEADER_NOT_FOUND(1079, "Không tìm thấy phó đội trưởng!"),
+    LEADER_REQUIRED(2036,"Phải chọn đội trưởng đội cứu hộ!"),
     TEAM_REQUIRED(2028,"Đội cứu hộ không được để trống!"),
+    NAME_TEAM_REQUIRED(2037,"Tên đội cứu hộ không được để trống!"),
 
     LIST_GROUP_NOT_FOUND(1037, "Danh sách nhóm cứu hộ thuộc đội này đang trống!"),
     GROUP_NOT_FOUND(1043, "Không tìm thấy nhóm cứu hộ!"),
@@ -96,6 +99,7 @@ public enum ErrorCode {
     GROUP_MEMBER_LIMIT_EXCEEDED(2003, "Số lượng thành viên đã vượt giới hạn của nhóm!"),
     GROUP_MEMBER_NOT_ENOUGH(2004, "Số lượng thành viên trong nhóm không đủ để thực hiện nhiệm vụ"),
     NAME_GROUP_REQUIRED(2027,"Tên nhóm không được để trống!"),
+    STATUS_GROUP_REQUIRED(2033,"Trạng thái của nhóm cứu hộ không được để trống!"),
 
     CLIENT_DEVICE_REQUIRED(1030, "Không tìm thấy ID máy chủ!"),
     ACTIVE_SOS_ALREADY_EXISTS(1032, "Bạn đang có yêu cầu cứu hộ đang được xử lý!"),
@@ -150,6 +154,10 @@ public enum ErrorCode {
     CALL_TASK_NOT_FOUND(1077, "Không tìm thấy tác vụ cuộc gọi!"),
     CALL_TASK_FINISHED(1078, "Tác vụ này đã hoàn thành!"),
     INVALID_CALL_TARGET(1081, "Đối tượng gọi không hợp lệ!"),
+    CALL_RESULT_REQUIRED(2031,"Kết quả cuộc gọi không được để trống!"),
+    STARTED_AT_REQUIRED(2032,"Thời điểm bắt đầu cuộc gọi không được để trống!"),
+    ENDED_AT_REQUIRED(2033,"Thời điểm kết thúc cuộc gọi không được để trống!"),
+    INVALID_CALL_TIME(2034,"Thời điểm kết thúc không được nhỏ hơn hoặc bằng thời điểm bắt đầu!"),
 
     GENERATE_TRACKING_CODE_FAILED(1065, "Không thể tạo mã tra cứu. Vui lòng thử lại!"),
     TRACKING_CODE_REQUIRED(1066, "Mã tra cứu không được để trống!"),

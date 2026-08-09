@@ -11,14 +11,12 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateRescueTeamRequest {
-    @NotBlank
+    @NotBlank(message = "NAME_TEAM_REQUIRED")
     String name;
 
     String description;
 
-    @Pattern(
-        regexp = "^(0|\\+84)[0-9]{9,10}$",
-        message = "Số điện thoại không hợp lệ")
+    @Pattern(regexp = "^0[0-9]{9}$",message = "INVALID_PHONE")
     String emergencyPhone;
 
     BigDecimal lat;

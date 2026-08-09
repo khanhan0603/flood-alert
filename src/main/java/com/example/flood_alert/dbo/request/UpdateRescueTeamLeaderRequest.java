@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateRescueTeamLeaderRequest {
 
-    @NotNull
+    @NotNull(message = "LEADER_REQUIRED")
     UUID leaderId;
 
     UUID deputyLeaderId;
