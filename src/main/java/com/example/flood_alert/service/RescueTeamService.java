@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,6 +18,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -38,6 +40,7 @@ import com.example.flood_alert.dbo.response.RescuerResponse;
 import com.example.flood_alert.dbo.response.RowError;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderResponse;
+import com.example.flood_alert.dbo.response.TeamMemberDetailResponse;
 import com.example.flood_alert.entity.Area;
 import com.example.flood_alert.entity.RescueGroup;
 import com.example.flood_alert.entity.RescueTeam;
@@ -726,5 +729,54 @@ public class RescueTeamService {
                         .isLeader(false)
                         .build())
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TeamMemberDetailResponse getDetailMember(UUID id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        String role;
+        boolean isLeader = rescueTeamRepository.existsByLeaderId(user.getId());
+        boolean isDeputyLeader = rescueTeamRepository.existsByDeputyLeaderId(user.getId());
+        boolean isGroupLeader = rescueGroupRepository.existsByLeaderId(user.getId());
+
+        if (isLeader) {
+            role = "Đội trưởng";
+        } else if (isDeputyLeader) {
+            role = "Đội phó";
+        } else if (isGroupLeader) {
+            role = "Nhóm trưởng";
+        } else {
+            role = "Thành viên";
+        }
+        String tenDoiTrucThuoc = user.getTeam() != null
+                ? user.getTeam().getName()
+                : null;
+        List<RescueGroup> groups = rescueGroupRepository.findGroupsByMemberUserId(
+                user.getId(),
+                PageRequest.of(0, 1));
+
+        String tenNhom = groups.isEmpty()
+                ? "Chưa có nhóm"
+                : groups.get(0).getName();
+
+        String trangThaiHoatDong = user.getTrangthai() == Status.ACTIVE
+                ? "Đang hoạt động"
+                : "Không hoạt động";
+
+        return TeamMemberDetailResponse.builder()
+                .id(user.getId())
+                .hoten(user.getHoten())
+                .gioitinh(user.isGioitinh())
+                .ngaysinh(user.getNgaysinh())
+                .sodt(user.getSodt())
+                .diachi(user.getDiachi())
+                .email(user.getEmail())
+                .ghichu(user.getGhichu())
+                .role(role)
+                .tenDoiTrucThuoc(tenDoiTrucThuoc)
+                .tenNhomPhuTrach(tenNhom)
+                .trangThaiHoatDong(trangThaiHoatDong)
+                .build();
     }
 }

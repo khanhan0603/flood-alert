@@ -32,6 +32,7 @@ import com.example.flood_alert.dbo.response.RescueTeamLeaderResponse;
 import com.example.flood_alert.dbo.response.RescueTeamResponse;
 import com.example.flood_alert.dbo.response.RescuerResponse;
 import com.example.flood_alert.dbo.response.TeamLeaderItemResponse;
+import com.example.flood_alert.dbo.response.TeamMemberDetailResponse;
 import com.example.flood_alert.service.RescueTeamService;
 
 import jakarta.validation.Valid;
@@ -187,6 +188,13 @@ public class RescueTeamController {
 
                 return ApiResponse.<List<ListMemberOfGroupResponse>>builder()
                                 .result(rescueTeamService.searchRescuers(keyword))
+                                .build();
+        }
+
+        @GetMapping("/detail-member/{id}")
+        public ApiResponse<TeamMemberDetailResponse> getDetailMember(@PathVariable UUID id) {
+                return ApiResponse.<TeamMemberDetailResponse>builder()
+                                .result(rescueTeamService.getDetailMember(id))
                                 .build();
         }
 }

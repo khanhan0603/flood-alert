@@ -124,4 +124,14 @@ public interface RescueGroupRepository extends JpaRepository<RescueGroup, UUID> 
                UUID teamId,
                RescueGroupStatus status,
                Pageable pageable);
+
+               //Nhóm mà thành viên đang hoạt động
+     @Query("""
+                   SELECT rg
+                   FROM RescueGroup rg
+                   JOIN RescueGroupMember rgm ON rgm.group.id = rg.id
+                   WHERE rgm.user.id = :userId
+                   ORDER BY rgm.joinedAt DESC
+               """)
+     List<RescueGroup> findGroupsByMemberUserId(UUID userId, Pageable pageable);
 }
