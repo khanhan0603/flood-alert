@@ -56,7 +56,7 @@ public class RiskScoreCalculator {
 
     /**
      * Đánh giá mức độ rủi ro của khu vực dựa trên
-     * dữ liệu IoT Aggregate trong 2 phút gần nhất.
+     * dữ liệu IoT Aggregate trong 1 phút gần nhất.
      *
      * HIGH:
      * - Ít nhất 50% aggregate ở trạng thái nguy hiểm
@@ -77,19 +77,21 @@ public class RiskScoreCalculator {
         // Lấy aggregate mới nhất
         IoTAreaAggregates latest = aggregates.get(0);
 
-        // Nếu duy trì trạng thái nguy hiểm từ 2 phút trở lên => HIGH
-        if (latest.getDangerRatio() != null
-                && latest.getDangerRatio() >= DANGER_RATIO_THRESHOLD
-                && latest.getDangerDurationMinutes() != null
-                && latest.getDangerDurationMinutes().compareTo(BigDecimal.valueOf(2)) >= 0) {
-            return RiskLevel.HIGH;
-        }
+        BigDecimal dangerDuration = latest.getDangerDurationMinutes();
 
         if (latest.getDangerRatio() != null
                 && latest.getDangerRatio() >= DANGER_RATIO_THRESHOLD
-                && latest.getDangerDurationMinutes() != null
-                && latest.getDangerDurationMinutes().compareTo(BigDecimal.ONE) >= 0) {
-            return RiskLevel.MEDIUM;
+                && dangerDuration != null) {
+
+            // Duy trì nguy hiểm từ 1 phút trở lên → HIGH
+            if (dangerDuration.compareTo(BigDecimal.ONE) >= 0) {
+                return RiskLevel.HIGH;
+            }
+
+            // Duy trì nguy hiểm từ 30 giây trở lên → MEDIUM
+            if (dangerDuration.compareTo(new BigDecimal("0.5")) >= 0) {
+                return RiskLevel.MEDIUM;
+            }
         }
 
         long dangerCount = aggregates.stream()
