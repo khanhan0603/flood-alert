@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -179,8 +178,14 @@ public class RescueTeamService {
                         throw new RuntimeException("Email không hợp lệ");
                     }
 
-                    if (birthDate != null && birthDate.isAfter(LocalDate.now())) {
+                    if (birthDate == null) {
                         throw new RuntimeException("Ngày sinh không hợp lệ");
+                    }
+
+                    LocalDate minimumBirthDate = LocalDate.now().minusYears(18);
+
+                    if (birthDate.isAfter(minimumBirthDate)) {
+                        throw new RuntimeException("Người dùng phải đủ 18 tuổi");
                     }
 
                     validateRow(fullName, email, phone, existingEmails, existingPhones);
@@ -634,6 +639,8 @@ public class RescueTeamService {
             throw new AppException(ErrorCode.PHONE_EXISTED);
         }
 
+        validateBirthDate(request.getNgaysinh());
+
         RescueTeam team = rescueTeamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new AppException(ErrorCode.RESCUE_TEAM_NOT_FOUND));
 
@@ -695,8 +702,10 @@ public class RescueTeamService {
         if (request.getGioitinh() != null)
             rescuer.setGioitinh(request.getGioitinh());
 
-        if (request.getNgaysinh() != null)
+        if (request.getNgaysinh() != null) {
+            validateBirthDate(request.getNgaysinh());
             rescuer.setNgaysinh(request.getNgaysinh());
+        }
 
         if (request.getSodt() != null)
             rescuer.setSodt(request.getSodt());
@@ -713,6 +722,16 @@ public class RescueTeamService {
         userRepository.save(rescuer);
 
         return userMapper.toRescuerResponse(rescuer);
+    }
+
+    private void validateBirthDate(LocalDate birthDate) {
+        if (birthDate == null) {
+            throw new AppException(ErrorCode.NGAYSINH_REQUIRED);
+        }
+
+        if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
+            throw new AppException(ErrorCode.BIRTH_DATE_INVALID);
+        }
     }
 
     // Tìm kiếm thành viên theo keyword

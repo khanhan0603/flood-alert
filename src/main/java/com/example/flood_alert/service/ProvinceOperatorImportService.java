@@ -1,6 +1,7 @@
 package com.example.flood_alert.service;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -33,193 +34,207 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ProvinceOperatorImportService {
-    ProvinceOperatorExcelReader provinceOperatorExcelReader;
-    UserRepository userRepository;
-    AreaRepository areaRepository;
-    PasswordEncoder passwordEncoder;
+        ProvinceOperatorExcelReader provinceOperatorExcelReader;
+        UserRepository userRepository;
+        AreaRepository areaRepository;
+        PasswordEncoder passwordEncoder;
 
-    public ImportProvinceOperatorResponse importExcel(MultipartFile file)
-            throws IOException {
-        List<ProvinceOperatorExcelRow> rows = provinceOperatorExcelReader.read(file);
+        public ImportProvinceOperatorResponse importExcel(MultipartFile file)
+                        throws IOException {
+                List<ProvinceOperatorExcelRow> rows = provinceOperatorExcelReader.read(file);
 
-        log.info("Rows size={}", rows.size());
+                log.info("Rows size={}", rows.size());
 
-        List<RowError> errors = new ArrayList<>();
-        List<User> users = new ArrayList<>();
+                List<RowError> errors = new ArrayList<>();
+                List<User> users = new ArrayList<>();
 
-        Set<String> existingEmails = userRepository.findAllEmails()
-                .stream()
-                .map(String::toLowerCase)
-                .collect(Collectors.toSet());
+                Set<String> existingEmails = userRepository.findAllEmails()
+                                .stream()
+                                .map(String::toLowerCase)
+                                .collect(Collectors.toSet());
 
-        Set<String> existingPhones = new HashSet<>(userRepository.findAllPhones());
+                Set<String> existingPhones = new HashSet<>(userRepository.findAllPhones());
 
-        Map<String, Area> provinceMap = areaRepository.findByLevel(1)
-                .stream()
-                .collect(Collectors.toMap(
-                        a -> a.getTenkhuvuc().trim().toLowerCase(),
-                        Function.identity()));
+                Map<String, Area> provinceMap = areaRepository.findByLevel(1)
+                                .stream()
+                                .collect(Collectors.toMap(
+                                                a -> a.getTenkhuvuc().trim().toLowerCase(),
+                                                Function.identity()));
 
-        for (ProvinceOperatorExcelRow row : rows) {
-            if (isBlank(row.getEmail())) {
+                for (ProvinceOperatorExcelRow row : rows) {
+                        if (isBlank(row.getEmail())) {
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message("Email trống")
-                                .build());
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Email trống")
+                                                                .build());
 
-                continue;
-            }
-            if (isBlank(row.getSodt())) {
+                                continue;
+                        }
+                        if (isBlank(row.getSodt())) {
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message("Số điện thoại trống")
-                                .build());
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Số điện thoại trống")
+                                                                .build());
 
-                continue;
-            }
-            String email = row.getEmail().trim().toLowerCase();
+                                continue;
+                        }
+                        String email = row.getEmail().trim().toLowerCase();
 
-            String sodt = row.getSodt().trim();
+                        String sodt = row.getSodt().trim();
 
-            if (isBlank(row.getHoten())) {
+                        if (isBlank(row.getHoten())) {
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message("Họ tên trống")
-                                .build());
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Họ tên trống")
+                                                                .build());
 
-                continue;
-            }
+                                continue;
+                        }
 
-            if (row.getNgaysinh() == null) {
+                        if (row.getNgaysinh() == null) {
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message("Ngày sinh không hợp lệ")
-                                .build());
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Ngày sinh không hợp lệ")
+                                                                .build());
 
-                continue;
-            }
+                                continue;
+                        }
 
-            if (row.getGioitinh() == null) {
+                        //Kiểm tra đủ tuổi
+                        LocalDate minimumBirthDate = LocalDate.now().minusYears(18);
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message("Giới tính không hợp lệ")
-                                .build());
+                        if (row.getNgaysinh().isAfter(minimumBirthDate)) {
 
-                continue;
-            }
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Người dùng phải đủ 18 tuổi")
+                                                                .build());
 
-            if (!isValidEmail(email)) {
+                                continue;
+                        }
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message("Email không hợp lệ")
-                                .build());
+                        if (row.getGioitinh() == null) {
 
-                continue;
-            }
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Giới tính không hợp lệ")
+                                                                .build());
 
-            if (!isValidPhone(sodt)) {
+                                continue;
+                        }
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message("Số điện thoại không hợp lệ")
-                                .build());
+                        if (!isValidEmail(email)) {
 
-                continue;
-            }
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Email không hợp lệ")
+                                                                .build());
 
-            if (existingEmails.contains(email)) {
+                                continue;
+                        }
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message("Email đã tồn tại")
-                                .build());
+                        if (!isValidPhone(sodt)) {
 
-                continue;
-            }
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Số điện thoại không hợp lệ")
+                                                                .build());
 
-            if (existingPhones.contains(sodt)) {
+                                continue;
+                        }
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message("Số điện thoại đã tồn tại")
-                                .build());
+                        if (existingEmails.contains(email)) {
 
-                continue;
-            }
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Email đã tồn tại")
+                                                                .build());
 
-            Area province = provinceMap.get(
-                    row.getProvinceName()
-                            .trim()
-                            .toLowerCase());
+                                continue;
+                        }
 
-            if (province == null) {
+                        if (existingPhones.contains(sodt)) {
 
-                errors.add(
-                        RowError.builder()
-                                .row(row.getRowNumber())
-                                .message(
-                                        "Không tìm thấy tỉnh: "
-                                                + row.getProvinceName())
-                                .build());
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message("Số điện thoại đã tồn tại")
+                                                                .build());
 
-                continue;
-            }
+                                continue;
+                        }
 
-            User user = User.builder()
-                    .hoten(row.getHoten())
-                    .gioitinh(row.getGioitinh())
-                    .ngaysinh(row.getNgaysinh())
-                    .sodt(sodt)
-                    .email(email)
-                    .password(
-                            passwordEncoder.encode("123456"))
-                    .role(Role.PROVINCE_OPERATOR)
-                    .trangthai(Status.ACTIVE)
-                    .diachi(row.getDiachi())
-                    .area(province)
-                    .team(null)
-                    .build();
+                        Area province = provinceMap.get(
+                                        row.getProvinceName()
+                                                        .trim()
+                                                        .toLowerCase());
 
-            users.add(user);
+                        if (province == null) {
 
-            existingEmails.add(email);
-            existingPhones.add(sodt);
+                                errors.add(
+                                                RowError.builder()
+                                                                .row(row.getRowNumber())
+                                                                .message(
+                                                                                "Không tìm thấy tỉnh: "
+                                                                                                + row.getProvinceName())
+                                                                .build());
 
+                                continue;
+                        }
+
+                        User user = User.builder()
+                                        .hoten(row.getHoten())
+                                        .gioitinh(row.getGioitinh())
+                                        .ngaysinh(row.getNgaysinh())
+                                        .sodt(sodt)
+                                        .email(email)
+                                        .password(
+                                                        passwordEncoder.encode("123456"))
+                                        .role(Role.PROVINCE_OPERATOR)
+                                        .trangthai(Status.ACTIVE)
+                                        .diachi(row.getDiachi())
+                                        .area(province)
+                                        .team(null)
+                                        .build();
+
+                        users.add(user);
+
+                        existingEmails.add(email);
+                        existingPhones.add(sodt);
+
+                }
+                userRepository.saveAll(users);
+
+                return ImportProvinceOperatorResponse
+                                .builder()
+                                .successCount(users.size())
+                                .failedCount(errors.size())
+                                .errors(errors)
+                                .build();
         }
-        userRepository.saveAll(users);
 
-        return ImportProvinceOperatorResponse
-                .builder()
-                .successCount(users.size())
-                .failedCount(errors.size())
-                .errors(errors)
-                .build();
-    }
+        private boolean isValidEmail(String email) {
+                return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+        }
 
-    private boolean isValidEmail(String email) {
-        return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
-    }
+        private boolean isValidPhone(String phone) {
+                return phone.matches("^0\\d{9}$");
+        }
 
-    private boolean isValidPhone(String phone) {
-        return phone.matches("^0\\d{9}$");
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
-    }
+        private boolean isBlank(String value) {
+                return value == null || value.isBlank();
+        }
 }

@@ -56,14 +56,20 @@ public class RescueGroupService {
         AuthenticationService authenticationService;
         SupportRequestItemRepository supportRequestItemRepository;
 
+        private static final int HOTLINE_MIN = 15;
+        private static final int HOTLINE_MAX = 20;
+
+        private static final int MEDICAL_MIN = 3;
+        private static final int MEDICAL_MAX = 10;
+
         private static final int BOAT_MIN = 3;
         private static final int BOAT_MAX = 5;
 
-        private static final int SEARCH_RESCUE_MIN = 10;
-        private static final int SEARCH_RESCUE_MAX = 25;
-
         private static final int LOGISTICS_MIN = 5;
         private static final int LOGISTICS_MAX = 8;
+
+        private static final int SEARCH_RESCUE_MIN = 10;
+        private static final int SEARCH_RESCUE_MAX = 25;
 
         public RescueGroupResponse create(
                         UUID teamId,
@@ -238,8 +244,16 @@ public class RescueGroupService {
                         return LOGISTICS_MAX;
                 }
 
+                if (group.isHasMedical()) {
+                        return MEDICAL_MAX;
+                }
+
                 if (group.isHasBoat()) {
                         return BOAT_MAX;
+                }
+
+                if (group.getType() == RescueGroupType.HOTLINE) {
+                        return HOTLINE_MAX;
                 }
 
                 return Integer.MAX_VALUE;
@@ -551,8 +565,16 @@ public class RescueGroupService {
                         return LOGISTICS_MIN;
                 }
 
+                if (group.isHasMedical()) {
+                        return MEDICAL_MIN;
+                }
+
                 if (group.isHasBoat()) {
                         return BOAT_MIN;
+                }
+
+                if (group.getType() == RescueGroupType.HOTLINE) {
+                        return HOTLINE_MIN;
                 }
 
                 return 1;

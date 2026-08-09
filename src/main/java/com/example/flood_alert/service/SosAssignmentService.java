@@ -30,6 +30,7 @@ import com.example.flood_alert.enums.AssignmentStatus;
 import com.example.flood_alert.enums.CallTargetType;
 import com.example.flood_alert.enums.CallTaskStatus;
 import com.example.flood_alert.enums.RescueGroupStatus;
+import com.example.flood_alert.enums.RescueGroupType;
 import com.example.flood_alert.enums.StatusSOS;
 import com.example.flood_alert.enums.SupportRequestItemStatus;
 import com.example.flood_alert.exception.AppException;
@@ -71,14 +72,20 @@ public class SosAssignmentService {
         CallTaskRepository callTaskRepository;
         SosStatusHistoryRepository sosStatusHistoryRepository;
 
+        private static final int HOTLINE_MIN = 15;
+        private static final int HOTLINE_MAX = 20;
+
+        private static final int MEDICAL_MIN = 3;
+        private static final int MEDICAL_MAX = 10;
+
         private static final int BOAT_MIN = 3;
         private static final int BOAT_MAX = 5;
 
-        private static final int SEARCH_RESCUE_MIN = 10;
-        private static final int SEARCH_RESCUE_MAX = 25;
-
         private static final int LOGISTICS_MIN = 5;
         private static final int LOGISTICS_MAX = 8;
+
+        private static final int SEARCH_RESCUE_MIN = 10;
+        private static final int SEARCH_RESCUE_MAX = 25;
 
         // Dispatcher giao nhiệm vụ cho Rescue Group
         @Transactional
@@ -112,7 +119,7 @@ public class SosAssignmentService {
                         throw new AppException(ErrorCode.GROUP_NOT_AVAILABLE);
                 }
 
-                //Group phải đủ quân số
+                // Group phải đủ quân số
                 long memberCount = rescueGroupMemberRepository.countByGroup_Id(group.getId());
 
                 if (memberCount < getMinMembers(group)) {
@@ -188,8 +195,16 @@ public class SosAssignmentService {
                         return LOGISTICS_MIN;
                 }
 
+                if (group.isHasMedical()) {
+                        return MEDICAL_MIN;
+                }
+
                 if (group.isHasBoat()) {
                         return BOAT_MIN;
+                }
+
+                if (group.getType() == RescueGroupType.HOTLINE) {
+                        return HOTLINE_MIN;
                 }
 
                 return 1;

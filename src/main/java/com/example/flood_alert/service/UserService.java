@@ -1,5 +1,6 @@
 package com.example.flood_alert.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -46,6 +47,7 @@ public class UserService {
             throw new AppException(ErrorCode.EMAIL_EXISTED);
         if (userRepository.existsActiveBySodt(request.getSodt()))
             throw new AppException(ErrorCode.PHONE_EXISTED);
+        validateBirthDate(request.getNgaysinh());
         User user = userMapper.toUser(request);
 
         UUID areaId = UUID.fromString(request.getArea_id());
@@ -77,9 +79,10 @@ public class UserService {
         if (request.getGioitinh() != null)
             user.setGioitinh(request.getGioitinh());
 
-        if (request.getNgaysinh() != null)
+        if (request.getNgaysinh() != null) {
+            validateBirthDate(request.getNgaysinh());
             user.setNgaysinh(request.getNgaysinh());
-
+        }
         if (request.getDiachi() != null)
             user.setDiachi(request.getDiachi());
 
@@ -230,5 +233,15 @@ public class UserService {
         return ChangePasswordResponse.builder()
                 .message("Đổi mật khẩu thành công.")
                 .build();
+    }
+
+    private void validateBirthDate(LocalDate birthDate) {
+        if (birthDate == null) {
+            throw new AppException(ErrorCode.NGAYSINH_REQUIRED);
+        }
+
+        if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
+            throw new AppException(ErrorCode.BIRTH_DATE_INVALID);
+        }
     }
 }
