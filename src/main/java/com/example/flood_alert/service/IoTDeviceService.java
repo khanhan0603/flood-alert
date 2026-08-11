@@ -112,6 +112,11 @@ public class IoTDeviceService {
                 User admin = userRepository.findById(adminId)
                                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
+                // Chiều cao mặc định khi duyệt thiết bị
+                if (device.getDeviceHeight() == null) {
+                        device.setDeviceHeight(BigDecimal.valueOf(14.00));
+                }
+
                 device.setTrangThai(DeviceStatus.ACTIVE);
                 device.setApprovedBy(admin);
                 device.setApprovedAt(LocalDateTime.now());
@@ -131,6 +136,11 @@ public class IoTDeviceService {
 
                 User admin = userRepository.findById(adminId)
                                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+                // Chiều cao mặc định khi từ chối thiết bị
+                if (device.getDeviceHeight() == null) {
+                        device.setDeviceHeight(BigDecimal.valueOf(14.00));
+                }
 
                 device.setTrangThai(DeviceStatus.REJECTED);
                 device.setApprovedBy(admin);
