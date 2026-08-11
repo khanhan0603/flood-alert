@@ -89,6 +89,7 @@ public class IoTDeviceService {
                                                 .tenkhuvuc(device.getArea().getTenkhuvuc())
                                                 .ten_thietbi(device.getTenThietBi())
                                                 .trang_thai(device.getTrangThai())
+                                                .device_height(device.getDeviceHeight())
                                                 .lat(device.getLat())
                                                 .lon(device.getLon())
                                                 .nguong_canh_bao(device.getNguongCanhBao())
