@@ -84,8 +84,7 @@ public class HotlineService {
         NotificationManagerService notificationManagerService;
 
         List<StatusSOS> ACTIVE_STATUSES = List.of(
-                        StatusSOS.PENDING,
-                        StatusSOS.PROCESSING);
+                        StatusSOS.PENDING);
 
         EmergencyCallEventMapper emergencyCallEventMapper;
         TrackingCodeGenerator trackingCodeGenerator;
