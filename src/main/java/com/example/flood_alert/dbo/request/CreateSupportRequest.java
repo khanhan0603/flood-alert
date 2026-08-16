@@ -17,8 +17,6 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateSupportRequest {
-
-    @NotBlank(message="SOS_REQUIRED")
     UUID sosId;
 
     @NotBlank(message="REASON_REQUIRED")
