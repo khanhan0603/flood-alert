@@ -41,13 +41,14 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
                     rt.area.tenkhuvuc,
                     rt.leader.id,
                     rt.leader.hoten,
-                    rt.deputyLeader.id,
-                    rt.deputyLeader.hoten,
+                    deputy.id,
+                    deputy.hoten,
                     rt.lat,
                     rt.lon,
                     rt.emergencyPhone
                 )
                 FROM RescueTeam rt
+                LEFT JOIN rt.deputyLeader deputy
                 WHERE rt.id = :teamId
             """)
     RescueTeamResponse findDetail(UUID teamId);
@@ -85,11 +86,11 @@ public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
             """)
     List<RescueTeam> findAllSupportTeams(UUID provinceId);
 
-    //Kiểm tra người này có phải là leader của team khác ko
+    // Kiểm tra người này có phải là leader của team khác ko
     // WHERE leader_id = :leaderId
-    //   AND id <> :teamId
+    // AND id <> :teamId
     boolean existsByLeaderIdAndIdNot(UUID leaderId, UUID teamId);
 
-    //Kiem tra nguoi nay co phai deputy leader cua team khac khong
+    // Kiem tra nguoi nay co phai deputy leader cua team khac khong
     boolean existsByDeputyLeaderIdAndIdNot(UUID deputyLeaderId, UUID teamId);
 }

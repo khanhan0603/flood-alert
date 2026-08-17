@@ -32,7 +32,7 @@ public class PredictionController {
     @PostMapping("/run")
     public ResponseEntity<String> runPrediction() {
 
-        predictionSchedulerService.runManualPrediction();
+        predictionSchedulerService.predictEvening();
 
         return ResponseEntity.ok("Prediction started.");
     }
