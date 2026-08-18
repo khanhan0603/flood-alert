@@ -91,7 +91,6 @@ public class ProvinceOperatorController {
 
         // Chi tiết đội
         @GetMapping("/{id}/teams")
-        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
         public ApiResponse<Page<RescueTeamSummaryResponse>> getTeams(
                         @PathVariable UUID id,
                         @PageableDefault(size = 10) Pageable pageable) {
@@ -129,7 +128,6 @@ public class ProvinceOperatorController {
         }
 
         @PutMapping
-        @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
         public ApiResponse<ProvinceOperatorDetailResponse> update(
                         @RequestBody @Valid UpdateProvinceOperatorRequest request) {
                 return ApiResponse.<ProvinceOperatorDetailResponse>builder()
