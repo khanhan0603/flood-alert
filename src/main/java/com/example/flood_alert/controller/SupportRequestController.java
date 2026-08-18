@@ -49,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SupportRequestController {
         SupportRequestService supportRequestService;
 
-        // Team Leader tạo yêu cầu chi viện
+        // Người điều phối tạo yêu cầu chi viện
         @PostMapping
         @PreAuthorize("hasAuthority('SCOPE_RESCUER')")
         public ApiResponse<CreateSupportRequestResponse> create(

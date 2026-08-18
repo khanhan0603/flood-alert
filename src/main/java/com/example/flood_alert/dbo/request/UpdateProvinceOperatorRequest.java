@@ -32,6 +32,6 @@ public class UpdateProvinceOperatorRequest {
     @Email(message = "INVALID_EMAIL")
     String email;
     String ghichu;
-    @NotBlank(message = "WORK_AREA_REQUIRED")
+
     UUID areaId;
 }
