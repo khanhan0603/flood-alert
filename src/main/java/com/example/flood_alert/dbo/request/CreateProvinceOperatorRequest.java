@@ -32,8 +32,7 @@ public class CreateProvinceOperatorRequest {
     @NotNull(message = "NGAYSINH_REQUIRED")
     @Past(message = "BIRTH_DATE_INVALID") // @Past dùng để kiểm tra một giá trị ngày/thời gian phải nằm trong quá khứ.
     private LocalDate ngaysinh;
-
-    @NotBlank(message = "LOCATION_REQUIRED")
+    
     private String diachi;
 
     @NotNull(message = "WORK_AREA_REQUIRED")

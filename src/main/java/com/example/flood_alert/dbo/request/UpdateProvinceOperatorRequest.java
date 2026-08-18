@@ -26,7 +26,7 @@ public class UpdateProvinceOperatorRequest {
     @NotBlank(message = "SODT_REQUIRED")
     @Pattern(regexp = "^0[0-9]{9}$", message = "INVALID_PHONE")
     String sodt;
-    @NotBlank(message = "LOCATION_REQUIRED")
+
     String diachi;
     @NotBlank(message = "EMAIL_REQUIRED")
     @Email(message = "INVALID_EMAIL")
