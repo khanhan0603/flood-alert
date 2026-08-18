@@ -240,8 +240,11 @@ public class UserService {
             throw new AppException(ErrorCode.NGAYSINH_REQUIRED);
         }
 
+        System.out.println(">>> CREATE USER BIRTH DATE = " + birthDate);
+
         if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
-            throw new AppException(ErrorCode.BIRTH_DATE_INVALID);
+            throw new AppException(ErrorCode.INVALID_BIRTH_DATE);
         }
+        System.out.println(">>> PASSED VALIDATE BIRTH DATE");
     }
 }

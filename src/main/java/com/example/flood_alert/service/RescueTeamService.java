@@ -730,7 +730,7 @@ public class RescueTeamService {
         }
 
         if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
-            throw new AppException(ErrorCode.BIRTH_DATE_INVALID);
+            throw new AppException(ErrorCode.INVALID_BIRTH_DATE);
         }
     }
 
