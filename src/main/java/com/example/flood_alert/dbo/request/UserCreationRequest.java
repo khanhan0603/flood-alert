@@ -25,7 +25,7 @@ public class UserCreationRequest {
     @NotBlank(message = "HOTEN_REQUIRED")
     String hoten;
     @NotNull(message = "GIOITINH_REQUIRED")
-    boolean gioitinh;
+    Boolean gioitinh;
     @NotNull(message = "NGAYSINH_REQUIRED")
     @Past(message = "BIRTH_DATE_INVALID")
     LocalDate ngaysinh;
