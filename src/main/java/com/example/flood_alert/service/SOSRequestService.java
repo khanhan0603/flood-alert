@@ -333,10 +333,9 @@ public class SOSRequestService {
                         UpdateAnonymousSosRequest request,
                         HttpServletRequest httpRequest) {
                 SosRequest sos = sosRequestRepository
-                                .findByIdAndSodtAndClientDeviceId(
+                                .findByIdAndSodt(
                                                 sosId,
-                                                request.getSodt(),
-                                                request.getClientDeviceId())
+                                                request.getSodt())
                                 .orElseThrow(() -> new AppException(
                                                 ErrorCode.UNAUTHORIZED_UPDATE_SOS));
                 switch (sos.getStatus()) {
@@ -591,10 +590,10 @@ public class SOSRequestService {
         // Get detail sos for người không có tài khoản
         @Transactional(readOnly = true)
         public CitizenSosDetailResponse getAnonymousSosDetail(
-                        UUID sosId, String sodt, String clientDeviceId) {
+                        UUID sosId, String sodt) {
 
                 SosRequest sos = sosRequestRepository
-                                .findByIdAndSodtAndClientDeviceId(sosId, sodt, clientDeviceId)
+                                .findByIdAndSodt(sosId, sodt)
                                 .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
 
                 return buildCitizenDetail(sos);
@@ -906,10 +905,9 @@ public class SOSRequestService {
                         String clientDeviceId) {
 
                 SosRequest sos = sosRequestRepository
-                                .findByIdAndSodtAndClientDeviceId(
+                                .findByIdAndSodt(
                                                 sosId,
-                                                sodt,
-                                                clientDeviceId)
+                                                sodt)
                                 .orElseThrow(() -> new AppException(ErrorCode.SOS_NOT_FOUND));
 
                 if (sos.getStatus() != StatusSOS.PENDING) {

@@ -109,8 +109,7 @@ public class SosRequestController {
                 return ApiResponse.<CitizenSosDetailResponse>builder()
                                 .result(sosRequestService.getAnonymousSosDetail(
                                                 sosId,
-                                                request.getSodt(),
-                                                request.getClientDeviceId()))
+                                                request.getSodt()))
                                 .build();
         }
 

@@ -38,10 +38,9 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
                         UUID userId);
 
         // Tìm kiếm yêu cầu SOS theo Id và Sodt và ClientDeviceId
-        Optional<SosRequest> findByIdAndSodtAndClientDeviceId(
+        Optional<SosRequest> findByIdAndSodt(
                         UUID sosId,
-                        String sodt,
-                        String clientDeviceId);
+                        String sodt);
 
         // Danh sách yêu cầu SOS theo UserId theo trạng thái
         @Query("""
