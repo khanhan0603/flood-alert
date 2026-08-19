@@ -84,7 +84,8 @@ public interface SosRequestRepository extends JpaRepository<SosRequest, UUID> {
                             WHERE s.team.id = :teamId
                               AND s.status IN (
                                     com.example.flood_alert.enums.StatusSOS.PENDING,
-                                    com.example.flood_alert.enums.StatusSOS.PROCESSING
+                                    com.example.flood_alert.enums.StatusSOS.PROCESSING,
+                                    com.example.flood_alert.enums.StatusSOS.ASSIGNED
                               )
                             ORDER BY
                                 CASE
